@@ -12,8 +12,6 @@ if len(sys.argv) != 3:
   print("USAGE:  python3 make_raw_ref_data.py reffile.csv outfile")
   exit(-1)
 
-print("WARNING:  Samples from ZWE (Zimbabwe) are DROPPED as they do not yet have an assigned region.")
-
 reffile = sys.argv[1]
 outfilename = sys.argv[2]
 
@@ -30,18 +28,13 @@ with open(reffile,newline="") as csvfile:
       lastmsat = firstmsat+32
       continue
     sid = line[matchindex]
-    if sid.startswith("ZWE"):  continue   # these don't have a usable region yet
     region = line[regionindex]
     if region == "NA":  continue   # can't use this region-unknown individual
     assert len(line[firstmsat:lastmsat]) == 32
     rdat[sid] = [region,line[firstmsat:lastmsat]]
 
 outfile = open(outfilename,"w")
-outline = "Sample\tRegion\t"
-msatnames = header[firstmsat:lastmsat:2] 
-outline += "\t".join(msatnames)
-outline += "\n"
-outfile.write(outline)
+# no header:  for Structure we will slap one on, and the other programs don't want it
 sortsids = sorted(list(rdat.keys()))
 for sid in sortsids:
   region = rdat[sid][0]
