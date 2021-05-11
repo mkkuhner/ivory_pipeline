@@ -2,7 +2,7 @@ This file explains how to pull seizure data from the master database
 and prepare it to feed into the seizure pipeline.  It is different from
 the standard seizure pipeline because the "For Scat" tab found in new
 seizure data is not present in the master database, and the tabs that
-are present are differently formatted..
+are present are differently formatted.
 
 A.  Extract seizure (ivory) data from master database.
 
