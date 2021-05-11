@@ -1,0 +1,22 @@
+This pipeline takes an Elephant Master Database and creates the data
+files needed by other pipelines, such as the ivory and familial matching
+pipelines.
+
+***A)  Create a SCAT-style reference file
+
+A1)  Determine the PREFIX of the new database file.  Currently they are
+called REFELE_NNC, where NN is the two-digit year and C is a letter
+indicating different versions in the same year.  However, it may be
+better to key them to the name of the master database.
+
+A2)  Obtain the current ElephantMasterDatabase.xlsx file.  Save the tab
+named "Reference Genotypes Stats" as PREFIX_raw.csv.
+
+A3)  Run make_raw_ref_data.py with PREFIX_raw.csv and PREFIX_known.txt
+as the two arguments.  This creates a SCAT-style file with no header.
+
+***B)  Make a Structure file corresponding to the new reference.
+
+Instructions for this are found as step B) in the seizure_pipeline.txt
+document.  You will need a copy of the file "header_for_structure" to
+supply the needed header.
