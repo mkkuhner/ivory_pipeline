@@ -5,9 +5,9 @@ pipelines.
 ***A)  Create a SCAT-style reference file
 
 A1)  Determine the PREFIX of the new database file.  Currently they are
-called REFELE_NNC, where NN is the two-digit year and C is a letter
-indicating different versions in the same year.  However, it may be
-better to key them to the name of the master database.
+called REFELE_[DBno], where DBno is the numeric ID of the copy of
+the Master Elephant Genotypes file from which they were take.  (This
+scheme supersedes the old version containing the year.)
 
 A2)  Obtain the current ElephantMasterDatabase.xlsx file.  Save the tab
 named "Reference Genotypes Stats" as PREFIX_raw.csv (using comma as
@@ -19,11 +19,11 @@ as the two arguments.  This creates a SCAT-style file with no header.
 ***B)  Make a Structure file corresponding to the new reference.
 
 1) Make a reference file for Structure by prepending header_for_structure
-(in the auxillary_files directory) to REFELE_[year]_known.txt and naming
+(in the auxillary_files directory) to REFELE_[DBno]_known.txt and naming
 it REFELE_[year]_structure.txt.
 
 2)  Edit the "mainparams" file (in the auxillary_files directory)
-to set the INFILE to REFELE_[year]_structure.txt and the OUTFILE to 
+to set the INFILE to REFELE_[DBno]_structure.txt and the OUTFILE to 
 REFELE_[year]_known_structure.txt.  Set NUMINDS to the total individuals in your
 reference set (bearing in mind that the input file has 2 lines per
 individual).  Set NUMLOCI to your number of loci (16 for standard elephant
