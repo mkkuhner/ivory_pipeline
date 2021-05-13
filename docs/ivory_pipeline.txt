@@ -61,19 +61,32 @@ which can be used as a source for reference data and previously analyzed
 seizure data.  Data for a brand new seizure is generally not yet in this file; 
 it should be requested from the laboratory staff who genotyped it.
 
-You will minimally need the Master Elephant Genotype file, which is distributed
- as a .xlsx file, unfortunately with variations in its name.  It may be 
-something like:
+You will minimally need the Master Elephant Genotype file, which is 
+distributed as a .xlsx file, unfortunately with variations in its name.  
+It may be something like:
 
-Elephant_Genotypes_Master_X.Y.xlsx
-ElephantMasterFileX.Y.xlsx
+Elephant_Genotypes_Master_[DBno].xlsx
+ElephantMasterFile[DBno].xlsx
 
-where X.Y is a version number.  If your seizure has not yet been added to this 
-file, you will also need a data file containing its genotypes; this will 
-generally be an .xlsx file but its name is arbitrary.  (Also ask them what the
- official name of the new seizure is.)
+If your seizure has not yet been added to this file, you will also need a 
+data file containing its genotypes; this will generally be an .xlsx file 
+but its name is arbitrary.  (Also ask them what the official name of the 
+new seizure is.)
 
-***B)  Preprocessing the data for analysis
+***B)  Obtaining the reference data.
+
+If you already have SCAT-style formatted reference data and the 
+corresponding Structure results, you can stip this step.
+
+These files would be called:
+
+REFELE_[DBno]_known.txt                (formatted reference data)
+REFELE_[DBno]_known_structure.txt_f    (Structure results)
+
+If you do not have these files, steps to prepare them are in 
+/docs/reference_pipeline.txt.
+
+***C)  Preprocessing the data for analysis
 
 1)  Pick a PREFIX (ideally the official name of the seizure) that will 
 tag all runs for this case.
@@ -97,31 +110,22 @@ suppressed upstream by the author of the spreadsheet, but we double-
 check here.)
 
 
-***B)  Preparing a Structure file for the reference data set.
+***D)  Assigning species and identifying hybrids
 
-This step should only be done if the reference data have changed (for example
-adding or removing reference individuals or regions).  Otherwise, use the
-previously run results.  Instructions are in file reference_pipeline.txt.
-
-
-***C)  Assigning species and identifying hybrids
-
-This step assumes that Structure results for the reference data are available.
-(We do not run Structure on the seizure data.)  There should be an archived 
-version of the Structure results for reference in the data directory, 
-named REFELE_[DBno]_known_structure.txt_f; if this file does not exist go 
-to step B and make it.  IMPORTANT:  The reference data used below MUST
-be exactly the same as the reference data on which Structure was run!
-If in doubt, rerun Structure.
+This step relies on Structure results for the reference data; these
+will be called REFELE_[DBno]_known_structure.txt_f.  The Structure
+results MUST be for exactly the version of the database that you are
+using; even a single elephant change will invalidate them.  If in
+doubt, rerun.
 
 1)  Obtain the appropriate allelic dropout file.  This is
-currently "dropoutrates_savannahfirst.txt" and is in the data directory.  
-(It is a columns reversed version of the original file from Mondol et al, 
-which was named "Mondoletal_allelicdropoutrates.txt".)
+currently "dropoutrates_savannahfirst.txt" and is in the auxillary_files 
+directory.  (It is a columns reversed version of the original file from 
+Mondol et al, which was named "Mondoletal_allelicdropoutrates.txt".)
 
 Note:  In theory, you can create this file for novel data using R scripts, 
 but I have never gotten them to run successfully.  The R scripts you would 
-use are:
+use are in the /src directory:
 
 infermarkerspecnullalleleprob.R
 infernullalleleprobanderrorprob.R
@@ -130,7 +134,8 @@ infernullalleleprobanderrorprob.R
 is REFELE_[DBno]_known.txt, the region-known reference data file.
 Argument 3 is PREFIX.  Argument 4 is dropoutrates_savannahfirst.txt.
 The script also assumes that file ebscript_template.R is present in its 
-directory.  
+directory:  this file can be found in the auxillary_files directory of
+the ivory_pipeline repository.  
 
 There are three outputs.  
 
@@ -151,7 +156,7 @@ species or any of 4 hybrid types.  The HPs files give only the probability that
 it is a hybrid.  Information is identical between .csv and .txt.
 
 
-***D) Running SCAT2
+***E) Running SCAT2
 
 We do not recommend using the built-in species ranges in SCAT2 or
 the old-style boundary file 316forestboundary.txt.   The programs will
@@ -162,28 +167,29 @@ exclude valid habitat).
 
 -- Map files of choice; either the "full" map files mapfile_161220_[species].txt
 or the IUCN map files iucn_161220_[species].txt.  These are found in the
-data directory.
+auxillary_files directory.
 
--- Region file of choice.  This should be regionfile.v36.txt if you used the
-most recent version of the reference data (REFELE_20_known.txt) in step C 
-(recommended) and regionfile.v35.txt if you used a previous version.
-This is found in the data directory.
+-- Region file of choice.  The current version is regionfile.v38b. 
+This is found in the auxillary_files directory.  The regionfile gives the
+mapping between sampling location ("region") name, number, subregion,
+and latitude/longitude.  If new sampling regions have been added to the
+reference data, you will need to update this file and create a new
+version.
 
--- Prototype SCAT2 run file master_scat_runfile.sh.  This will be used as a basis
-for runfiles for your SCAT2 runs.   This is found in the auxillary_files
-directory.
+-- Prototype SCAT2 and VORONOI run files master_scat_runfile.sh and
+master_voronoi_runfile.sh.  These are found in the auxillary_files
+directory; they are templates for creating run commands for your
+SCAT2 and VORONOI runs.
 
--- Prototype VORONOI run master file master_voronoi_runfile.sh.
-This is found in the auxillary_files directory.
-
-OPTIONAL:  If you want a different run length than our standard one, edit the
-master_scat_runfile.sh file.  The last three numbers (currently 100 20 100)
-control the length of the run:  the first is number of sampled iterations, the 
-second is steps between samplings, and the third is burning.  Downstream
-code assumes exactly 100 sampled iterations and 100 non-sampled iterations and
-would have to be modified to change this, so your best bet may be changing the
-steps between samplings.  Runtime will increase linearly with this (if you
-double steps between samplings, runtime will approximately double).
+OPTIONAL:  If you want a different SCAT2 run length than our standard one, 
+edit the master_scat_runfile.sh file.  The last three numbers (currently 
+100 20 100) control the length of the run:  the first is number of sampled 
+iterations, the second is steps between samplings, and the third is burnin.
+VORONOI assumes exactly 100 sampled iterations and 100 non-sampled 
+iterations and would have to be modified to change this, so your best bet is
+to change the steps between samplings.  Runtime will increase linearly with 
+this (if you double steps between samplings, runtime will approximately 
+double).
 
 2)  Run make_species_files.py with the following arguments:
 
@@ -191,33 +197,38 @@ double steps between samplings, runtime will approximately double).
 -- Map prefix, for example mapfile_161220 or iucn_161220 (the part of
 the mapfile name before the species name).
 -- Regionfile name.  
--- Reference data prefix, for example REFELE_21.
+-- Reference data prefix REFELE_[DBno]
 
 The make_species_files.py program will print its hardwired hybrid cutoff to
 screen.  Make sure this cutoff is what you want.
 
-This program uses PREFIX_hybt.txt to sort the samples into, maximally, a forest 
-and a savannah SCAT input file, called PREFIX_[species].txt;
-if there are no unknown individuals from a species, that file will not be written.
-It discards individuals called as hybrids.  It writes one or two
-SCAT run files:  runfile_[species].sh.  It also writes one or two VORONOI 
-runfiles:  voronoi_runfile_[species].sh.  Finally, it writes one or two 
-species-specific versions of the reference file for use by the familial matching 
-code (REFELE_[DBno]_[species]_long.csv) and a corresonding version of the 
-samples (PREFIX_genotypes_[species]_wide.csv).
+This program uses PREFIX_hybt.txt to sort the samples into, maximally, a 
+forest and a savannah SCAT input file, called PREFIX_[species].txt;
+if there are no unknown individuals from a species, that file will not be 
+written.  It discards individuals called as hybrids.  
 
-3)  Create a directory for each species-specific SCAT2 analysis.  All subsequent
-steps will have to be done for both directories, if you have both
-species in your seizure.  Copy the corresponding SCAT input files 
-(PREFIX_[species].txt) into these directories.  Also copy in the corresponding 
-Voronoi runfiles (voronoi_runfile_[species].sh).
+Outputs:
 
-Place a SCAT2 executable in this species-specific SCAT2 directory.  I recommend a 
-clean optimized build from source.  
+SCAT run files:  runfile_[species].sh
+VORONOI run files:  voronoi_runfile_[species].sh
+familial matching reference files:  REFELE_[DBno]_[species]_long.csv
+familial matching genotype files:  PREFIX_genotypes_[species]_wide.csv
 
-4)  Run setupscatruns.py with the following arguments:
+3)  Create a directory for each species-specific SCAT2 analysis.  All 
+subsequent steps will have to be done for both directories, if you have both
+species in your seizure.  (We typically name these directories "nforest"
+and "nsavannah" but this is not required.  Copy the corresponding SCAT 
+input files (PREFIX_[species].txt) into these directories.  Also copy 
+in the corresponding Voronoi runfiles (voronoi_runfile_[species].sh).
+However, leave the SCAT run files where they are.
 
--- name of the run directory set up in 2
+Place a SCAT2 executable in this species-specific SCAT2 directory.  We 
+recommend a clean optimized build from source.  
+
+4)  Run setupscatruns.py with the following arguments (twice, if you
+have both forest and savannah individuals):
+
+-- name of the species-specific run directory
 -- name of the master scat run script (runfile_[species].sh) 
 -- random number seed (positive integer)
 
@@ -230,10 +241,10 @@ directory number) and an /outputs directory to hold the results.
 
 5)  Open a window for each numbered directory and run the runX.sh file (using
 "source" as they are not executable files).  This should run SCAT2 nine
-times.  It will take hours or days to run.
+times.  It likely will take hours or days to run.
 
 
-***E)  Running VORONOI
+***F)  Running VORONOI
 
 Do not do this step unless there were at least 2 samples in the species
 under consideration:  running VORONOI on one sample is not useful.
@@ -253,7 +264,10 @@ files:
 a)  A large number of files with names of the form nnnc where nnn are
 digits and c is a character between r and z.  These are single elephant
 SCAT result files:  001r is the result for the first elephant in directory
-1.
+1.  If something goes wrong in subsequent steps, the first thing to check
+is whether all of these files are present (often one letter of the
+alphabet is missing, which likely indicates that one of the SCAT2 runs
+has failed).
 
 b)  Files named samplemap.r through samplemap.z which relate the nnn numbers
 to elephant IDs.  In practice we only use samplemap.r; they should all be
@@ -270,7 +284,7 @@ species-specific directory (this file was written by make_species_files.py).
 It should take no more than 10-15 minutes for most data.
 
 
-***F)  Post-processing
+***G)  Post-processing
 
 
 1)  Run prep_reports.py in the directory where you ran VORONOI.  Its
@@ -285,9 +299,11 @@ takes 1 or 2 arguments.  If there is only 1 it is PREFIX, and all samples
 will be run.  If there are 2, they are PREFIX and SID, and only the
 sample with that SID will be run.  This fills up PREFIX_reports with
 graphics of the SCAT2 and VORONOI surfaces for each sample, plus three
-summary files:  VORONOI summarized as cell of highest posterior probability,
-SCAT2 summarized as median lat/long, and SCAT2 summarized as cell of
-highest number of SCAT results.
+summary files:  
+
+scat_summary_medians.jpg (SCAT2 results as median latitude/longitude)
+scat_summary_squares.jpg (SCAT2 results as grid square of highest count)
+voronoi_sumary.jpg (VORONOI results as grid square of highest posterior)
 
 If you need SCAT2 graphics without VORONOI graphics, for example because
 there was only 1 sample for this species, they can be gotten with
@@ -308,7 +324,7 @@ you find that you need those files back, they can be recreated by rerunning
 scat2voronoi.py.
 
 
-***G)  Familial matching
+***H)  Familial matching
 
 Recent versions of the familial matching code work with, in addition to
 reference data, two files of seizure data:  one containing all previous
