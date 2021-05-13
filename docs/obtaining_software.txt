@@ -8,7 +8,7 @@ probably work on other Linux distributions; they may work on Mac OSX;
 we have never tried them on Windows and do NOT expect them to work.  
 Your best bet on a Windows machine might be a Linux emulator.
 
-(0)  Git
+(1)  Git
 
 To make best use of the repositories, you will need to obtain and install
 git.  On an Ubuntu or Debiun Linux system, you can do this with:
@@ -21,7 +21,7 @@ repositories.
 
 https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token
 
-(1)  Python
+(2)  Python
 
 You will, unfortunately, need both python2 and python3 interpreters 
 for this pipeline; two programs rely on the Basemap package which is 
@@ -30,15 +30,29 @@ libraries.  Install both (as appropriate for your system) and keep
 an eye on which one you are using.  Except for the two python2 programs,
 screen output will be easier to read if you always use python3.
 
-(2)  SCAT2
+(3)  Ivory pipeline code
+
+The repository is at:
+
+https://github.com/mkkuhner/ivory_pipeline
+
+This is a private repository at this time; you will need permission from
+Mary Kuhner to access it.
+
+If you do not have a copy, check it out with:
+
+git clone https://github.com/ivory_pipeline
+
+(4)  SCAT2
 
 The repository is at:
 
 https://github.com/stephens999/scat
 
 The master branch should be used unless you know that there are recent
-bug fixes in the development branch which would make it preferable.  If 
-you do not have a copy of this repository, check it out with:
+bug fixes in the development branch which would make it preferable.  
+
+If you do not have a copy of this repository, check it out with:
 
 git clone https://github.com/scat
 git checkout master
@@ -57,7 +71,7 @@ necessary.
 If you have previously compiled SCAT2 in this directory we recommend
 "make clean" before "make".
 
-(3)  VORONOI
+(5)  VORONOI
 
 The repository is at:
 
@@ -69,7 +83,7 @@ development branch, use the master branch.
 Change directory into the /src directory of the resulting repository
 and type "make".  The executable will be called VORONOI.
 
-(4)  Structure
+(6)  Structure
 
 This program can be downloaded from:
 
@@ -78,22 +92,27 @@ https://web.stanford.edu/group/pritchardlab/structure_software/release_versions/
 You can download compiled executables or C++ source code, as preferred.
 Our instructions assume the command line version, not the graphical interface.
 
-(5)  EBhybrids
+(7)  EBhybrids
 
 The repository is at:
 
 https://github.com/stephenslab/EBhybrids
 
+However there are also copies of the 3 R files needed (calcfreqs.R,
+inferencefunctions.R, likelihoodfunctionsandem.R) in the /src
+directory of the ivory_pipeline repository.
+
 This is R code and needs to be copied into the directory where you
 will run it.
 
-(6)  Familial matching
+(8)  Familial matching
 
 The repository is at:
 
 https://github.com/cwolock/elephant_fam_match
 
 However, currently the version relied on by this pipeline is NOT on the
-repository; you will need to obtain a copy from Mary Kuhner.
+repository.  There are copies of the 2 R files needed (calculate_LRs.R,
+LR_functions.R) in the /src directory of the ivory_pipeline repository.
 
 
