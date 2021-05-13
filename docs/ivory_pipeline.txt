@@ -41,16 +41,45 @@ and as it is deprecated, it may not be available for much longer.
 3)  The term [DBno] refers to the numeric ID of a release of the Master Elephant Genotypes
 file.
 
+***A)  Obtaining all needed files
 
-***A)  Preprocessing the data for analysis
+1)  If you do not have up-to-date installations of the following programs:
+
+SCAT2
+VORONOI
+EBhybrids
+Familial Matching
+Structure
+
+obtain and install them now.  Detailed instructions are in document installing_software.txt
+in the ivory_pipeline directory.
+
+2)  Obtain the needed data files.  Files with elephant genotypes, reference or seizure,
+are not kept in the online repositories for security reasons.  Yves Horeau can provide the 
+most recent copy of the master elephant genotypes file, which can be used as a source for
+reference data and previously analyzed seizure data.  Data for a brand new seizure is generally
+not yet in this file; it should be requested from the laboratory staff who genotyped it.
+
+You will minimally need the Master Elephant Genotype file, which is distributed as a
+.xlsx file, unfortunately with variations in its name.  It may be something like:
+
+Elephant_Genotypes_Master_X.Y.xlsx
+ElephantMasterFileX.Y.xlsx
+
+where X.Y is a version number.  If your seizure has not yet been added to this file, 
+you will also need a data file containing its genotypes; this will generally be an 
+.xlsx file but its name is arbitrary.  (Also ask them what the official
+name of the new seizure is.)
+
+***B)  Preprocessing the data for analysis
 
 1)  Pick a PREFIX (ideally the official name of the seizure) that will 
 tag all runs for this case.
 
 2)  Obtain the seizure genotype data.  For a new seizure, open the
 spreadsheet and look for a tab labeled "Scat input".  To use data
-from older seizures, refer to the documentation file 
-master_database_pipeline.txt, which will replace step A3.
+from older seizures which are already in the database, refer to the 
+documentation file master_database_pipeline.txt, which will replace step A3.
 
 3)  Extract the "Scat input" data from the spreadsheet as a .tsv file; this
 can be done with LibreOffice by saving the file as .csv but setting the 

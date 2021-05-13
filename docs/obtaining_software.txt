@@ -1,0 +1,99 @@
+This document gives step by step instructions for obtaining software
+needed for the ivory pipeline, but not present on the ivory_pipeline
+GitHub site because it already had a repository elsewhere.  It also
+contains basic compiling instructions for the compiled programs.
+
+These instructions were tested on Ubuntu Linux.  Most of them will
+probably work on other Linux distributions; they may work on Mac OSX;
+we have never tried them on Windows and do NOT expect them to work.  
+Your best bet on a Windows machine might be a Linux emulator.
+
+(0)  Git
+
+To make best use of the repositories, you will need to obtain and install
+git.  On an Ubuntu or Debiun Linux system, you can do this with:
+
+sudo apt install git-all
+
+You will need an access token:  see the following web resource.  Be
+sure to save the access token in a safe place.  Never put them in
+repositories.
+
+https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token
+
+(1)  Python
+
+You will, unfortunately, need both python2 and python3 interpreters 
+for this pipeline; two programs rely on the Basemap package which is 
+only available for python2, whereas several others rely on python3 
+libraries.  Install both (as appropriate for your system) and keep 
+an eye on which one you are using.  Except for the two python2 programs,
+screen output will be easier to read if you always use python3.
+
+(2)  SCAT2
+
+The repository is at:
+
+https://github.com/stephens999/scat
+
+The master branch should be used unless you know that there are recent
+bug fixes in the development branch which would make it preferable.  If 
+you do not have a copy of this repository, check it out with:
+
+git clone https://github.com/scat
+git checkout master
+
+(if you need a different branch than "master" substitute it in the second
+line).
+
+Change directory into the /src directory of the resulting repository.
+Type "make" to compile the program.  The executable will appear in the
+same directory and will be called SCAT2.
+
+This is a C++ program and relies on presence of the g++ compiler.  You
+can edit the file "Makefile" to point to a different compiler if
+necessary.
+
+If you have previously compiled SCAT2 in this directory we recommend
+"make clean" before "make".
+
+(3)  VORONOI
+
+The repository is at:
+
+https://github.com/stephens999/voronoi
+
+Check out as for SCAT2:  again, unless you specifically know you need the
+development branch, use the master branch.
+
+Change directory into the /src directory of the resulting repository
+and type "make".  The executable will be called VORONOI.
+
+(4)  Structure
+
+This program can be downloaded from:
+
+https://web.stanford.edu/group/pritchardlab/structure_software/release_versions/v2.3.4/html/structure.html
+
+You can download compiled executables or C++ source code, as preferred.
+Our instructions assume the command line version, not the graphical interface.
+
+(5)  EBhybrids
+
+The repository is at:
+
+https://github.com/stephenslab/EBhybrids
+
+This is R code and needs to be copied into the directory where you
+will run it.
+
+(6)  Familial matching
+
+The repository is at:
+
+https://github.com/cwolock/elephant_fam_match
+
+However, currently the version relied on by this pipeline is NOT on the
+repository; you will need to obtain a copy from Mary Kuhner.
+
+
