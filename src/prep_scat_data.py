@@ -10,7 +10,7 @@
 
 def correct_missing(msats):
   for i in range(0,len(msats)):
-    if msats[i] == "":
+    if not msats[i].isnumeric():
       msats1[i] = "-999"
 
 import sys
