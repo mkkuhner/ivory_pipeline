@@ -6,6 +6,13 @@
 # input:  SCAT style data from the spreadsheets
 # output:  SCAT input that will actually work in EBhybrids and SCAT2
 
+# functions
+
+def correct_missing(msats):
+  for i in range(0,len(msats)):
+    if msats[i] == "":
+      msats1[i] = "-999"
+
 import sys
 if len(sys.argv) != 2:
   print("USAGE:  prep_scat_data.py PREFIX")
@@ -30,10 +37,12 @@ for line in open(infilename,"r"):
   if firstline:
     name1 = line[0]
     msats1 = line[1:]
+    correct_missing(msats1)
     firstline = False
   else:
     name2 = line[0]
     msats2 = line[1:]
+    correct_missing(msats2)
     firstline = True
     
     # make the output line
