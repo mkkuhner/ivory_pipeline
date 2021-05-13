@@ -40,7 +40,7 @@ Data file format
 #define EXTRACOLS 0     // (int) Number of additional columns of data 
                              before the genotype data start.
 
-#define MARKERNAMES      1  // (B) data file contains row of marker names
+#define MARKERNAMES      0  // (B) data file contains row of marker names
 #define RECESSIVEALLELES 0  // (B) data file contains dominant markers (eg AFLPs)
                             // and a row to indicate which alleles are recessive
 #define MAPDISTANCES     0  // (B) data file contains row of map distances 
