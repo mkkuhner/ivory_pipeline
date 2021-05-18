@@ -1,8 +1,18 @@
 import sys
 
-if len(sys.argv) != 5:
+if len(sys.argv) != 5 and len(sys.argv) != 6:
   print("USAGE: python make_eb_input.py structure_outfile refdata.txt PREFIX dropout.txt")
+  print("For a ref-only run, PREFIX is the reference prefix, and add the flag 'reference'")
+  print("at the end of the argument list.")
   exit()
+
+refonly = False
+if len(sys.argv) == 6:
+  if not sys.argv[5] == "reference":
+    print("For a reference-only run, use 'reference' as the last argument")
+  else:
+    refonly = True
+  
 
 # NOTE:  Structure truncates names to 11 characters.  This code tests if all
 # names will still be unique under truncation, and then uses the truncated names
@@ -11,7 +21,8 @@ if len(sys.argv) != 5:
 structdata = sys.argv[1]
 refdata = sys.argv[2]
 prefix = sys.argv[3]
-newdata = prefix+"_unknowns.txt"
+if not refonly:
+  newdata = prefix+"_unknowns.txt"
 dropdata = sys.argv[4]
 
 ####
@@ -38,14 +49,15 @@ if "CH0878" not in refsids:
 
 ####
 # read new data
-newsids = []
-newlines = open(newdata,"r").readlines()
-for line in newlines:
-  line = line.rstrip().split()
-  sid = line[0]
-  if sid not in newsids:
-    newsids.append(sid)
-print("Read",len(newsids),"unknown location individuals")
+if not refonly:
+  newsids = []
+  newlines = open(newdata,"r").readlines()
+  for line in newlines:
+    line = line.rstrip().split()
+    sid = line[0]
+    if sid not in newsids:
+      newsids.append(sid)
+  print("Read",len(newsids),"unknown location individuals")
 
 #####
 # read structure input
@@ -105,9 +117,10 @@ if flipprobs:
 ancestryprops_name = prefix+"_ancestryprops.txt"
 
 outfile = open(ancestryprops_name,"w")
-for sid in newsids:
-  outline = "0.500 0.500\n"
-  outfile.write(outline)
+if not refonly:
+  for sid in newsids:
+    outline = "0.500 0.500\n"
+    outfile.write(outline)
 
 for prob in probs:
   outline = prob[0] + " " + prob[1] + "\n"
@@ -118,10 +131,14 @@ outfile.close()
 print("Wrote output to file",ancestryprops_name)
 
 # write the ebhybrid input file
-ebhybrid_infilename = prefix+"_plus_ref.txt"
+if refonly:
+  ebhybrid_infilename = prefix+"_known.txt"
+else:
+  ebhybrid_infilename = prefix+"_plus_ref.txt"
 outfile = open(ebhybrid_infilename,"w")
-for line in newlines:
-  outfile.write(line)
+if not refonly:
+  for line in newlines:
+    outfile.write(line)
 for line in reflines:
   outfile.write(line)
 outfile.close()
