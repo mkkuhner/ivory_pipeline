@@ -1,0 +1,196 @@
+Pipeline for familial matching, version 1.0
+Mary Kuhner 4/29/2021
+
+This pipeline is designed to do an entire familial matching analysis on
+the full data set or selected subsets.  If you are adding a single seizure
+to an already existing familial matching analysis, see the instructions
+near the end of ivory_pipeline.txt.
+
+***A)  Prepare the seizure genotypes
+
+A1)  Obtain the most recent version of the master elephant genotype file.  
+Open it in LibreOffice and save the tab called "Ivory Genotypes Stats 
+(10+ Loci)" as a .tsv file.  Tell LibreOffice to save as .csv, select 
+tab as the delimiter, then rename the resulting file SEIZNN_raw.tsv, 
+where NN is the version number of the database file.  ("SEIZNN" will 
+be called "PREFIX" henceforward.)
+
+A2)  Run make_single_raw_seizure.py with arguments PREFIX_raw.csv and 
+PREFIX_unknowns.txt.  This pulls out the seizure info and puts it into SCAT 
+style format as PREFIX_unknowns.txt.  
+
+
+***B)  If necessary, update the seizure metadata file
+
+If new seizure individuals have been added to the database since the last run 
+of this pipeline, you will need to update the seizure metadata file, called 
+seizure_metadata_NN.tsv (where NN is the reference database version number).  
+Obtain a list of the new samples and the canonical name(s) of the seizures 
+they come from.  Copy the existing seizure metadata file, updating its 
+version number, and add the new samples at the end.  The format is
+ seizurename tab samplename.
+
+You may also have to update any individuals which have been renamed or merged, in the
+same way.  Be sure, if two individuals have been merged, that you update one of the
+entries to show the merged name, and delete the other entry.
+
+We may write code for this in the future, but the seizure_metadata file has seizure
+merges and deletions, so it is difficult to reconstruct from the master database.
+
+
+***C)  Classify samples by species and remove hybrids
+
+NB:  This step is identical between this pipeline and the standard seizure
+pipeline; consult seizure_pipeline.txt for more details.
+
+C1)  Obtain the most recent reference data.  Typically this will be a file named
+REFELE_[year]_known.txt. 
+
+C2)  Obtain the corresponding Structure output file, normally called
+REFELE_[year]_known_structure.txt_f.  If these results are not available, consult
+seizure_pipeline.txt, step (B), for instructions on how to run Structure to
+generate them.
+
+C3)  Obtain the alleleic dropout file, currently called "dropoutrates_savannahfirst.txt"
+and located in the seizure_pipeline/data directory.   Also obtain the EBhybrids
+program consisting of scripts inferencefunctions.R, likelihoodfunctionsandem.R,
+and calcfreqs.R and place it in the working directory, along with ebscript_template.R
+(a template run script for EBhybrids).
+
+C4)  Run make_eb_input.py.  Argument 1 is the Structure output file.  Argument 2
+is REFELE_[year]_known.txt, the region-known reference data file.
+Argument 3 is PREFIX.  Argument 4 is dropoutrates_savannahfirst.txt.
+The script also assumes that file ebscript_template.R is present in its
+directory.
+
+There are three outputs.
+
+PREFIX_ancestryprops.txt gives the ancestry proportions needed by EBhybrids.
+Be careful with this file; it does not contain sample IDs, but relies on
+being in the same order as the other files written by make_eb_input.py.
+
+PREFIX_plus_ref.txt contains genotype data for the seizure and all reference
+individuals (both species).
+
+ebscript.R is the EBhybrids run script modified to point at these files.
+Note that if this file exists, it will be overwritten.
+
+C5)  Run ebscript.R (command is "Rscript ebscript.R").  This will run
+EBhybrids and write four files:  PREFIX_hybt.csv and .txt, and PREFIX_HPs.csv
+and .txt.  The hybt files give the probability that the sample is either pure
+species or any of 4 hybrid types.  The HPs files give only the probability that
+it is a hybrid.  Information is identical between .csv and .txt.
+
+***D)  Run SCAT2 to assign subregions
+
+D1)  Run cast_out_hybrids.py with an argument of PREFIX.  This reads PREFIX_plus_ref.txt
+and PREFIX_hybt.txt, and writes PREFIX_joint.txt.  This file contains all non-hybrid
+reference and seizure samples.
+
+D2)  Prepare a seizure_modifications file containing any seizures to be deleted or merged.
+The format of this file is:
+REJECT
+seizure name 1
+seizure name 2 
+...
+MERGE
+newname	seizure name 3 seizure name 4 ...
+...
+
+It must be tab-separated.  The current version is named seizure_modifications_nature and
+corresponds to the paper submitted to Nature in early 2021.
+
+D3)  Run rembadseizures.py to remove deleted seizures from your data.  (Doing this now
+speeds up the familial matching runs.)  Arguments are:
+PREFIX_joint.txt
+seizure_modifications
+seizure_metadata
+
+(The seizure metadata file is in seizure_pipeline/data.)
+
+This writes PREFIX_joint_filtered.txt.
+
+D4)  Obtain a current executable of SCAT2.  Create an "outputs" directory for its
+output.  Also obtain the desired regionfile and place it in the current directory.
+
+D5)  Run SCAT2 with the following options:
+
+./SCAT2 -Z -H2 PREFIX_joint_filtered.txt regionfile outputdir 16
+
+This will assign individuals to subregions; results are found in Output_hybrid in the
+SCAT2 output directory specified.
+
+D6)  Edit make_fammatch_subregion.py to set the number of subregions, nsub,
+to the number you are using.  Run this program with the following
+arguments:
+
+Output_hybrid (from the C5 SCAT2 run)
+PREFIX_joint_filtered.txt (input used by the C3 SCAT2 run)
+regionfile
+
+This will write three files per subregion: refsN_fammatch.csv, oldN.txt, newN.txt,
+where N is the subregion.
+
+D7)  Place copies of calculate_LRs.R and LR_functions.R in the working directory and
+then run the script setupivoryfammatch.sh.  This script creates a directory "subN"
+for each subregion N and moves all needed files to that directory.  It also prints to
+screen a reminder of the Rscript command needed in each directory (note that these
+explicitly mention "forest" or "savannah" as well as subregion number).  This script
+assumes that subregions 0 and 1 are forest and all others are savannah, and will need
+to be revised if that changes.  
+
+D8)  In each subregion directory, start the familial matching program with the
+Rscript command suggested by the output of D7, which will be of the form:
+
+Rscript calculate_LRs.R forest/savannah refsN_fammatch.csv oldN.txt newN.txt
+
+This will take days, particularly for whichever subregion contains the large seizures
+in East Africa.  Run time is extremely variable by seizure.
+
+***E)  Postprocess results
+
+E1)  Obtain a file of false-positive rate estimates based on simulations.  (If you
+have changed the subregion system, you will need to run new simulations.)  This file
+is called fprates.tsv.
+
+E2)  Obtain a file of DMs (direct matches) from previous research.  This file is
+called dms.tsv and contains lines of the following format:
+
+sample1 sample2 seizure1 seizure2 species
+
+Justification: some DMs were determined with older algorithms (CERVUS or an 
+unidentified script) which could take dropout into consideration, whereas the familial
+matching code cannot.  It is seen as desirable to include these DMs.  If further
+DMs have been identified in the new seizures (for example by CERVUS), add them to this file.
+
+E3)  Obtain program create_network_input.py and edit it to have the correct list
+of familial matching output files (obsLRs.species.txt) for the case you are running:
+this list is found near the top of the main section.
+
+Run this program with the following inputs:
+seizure metadata file (in seizure_pipeline/data)
+dms.tsv
+seizure_modifications file
+likelihood ratio cutoff, as float--we normally use 2.0
+minimum number valid loci, as int--we normally use 13
+
+This prints a report about false positives to screen, and writes two files for network
+analysis:  seizure_nodes.csv, seizure_edges.csv.  It also writes a file with
+matrices of corrected matches between seizures:  ryanfile.tsv.
+
+E4)  Obtain nodes and edges for the forensic data:  files forensic_nodes.csv and
+forensic_edges.csv.  These will need to be updated if you have added any new
+seizures.  Also obtain the forensic spreadsheet:  currently this is called
+FamilialMatchingConnections_MK_Apr21.csv.
+
+E5)  Run network2.py with arguments:
+FamilialMatchingConnections filename
+minimum weight to use a link--we normally use 0.9
+seizure_modifications file
+
+This will graph the data to screen and also write graphs to file.
+
+
+
+
+
