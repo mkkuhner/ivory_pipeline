@@ -10,15 +10,6 @@ import statistics
 
 ########################################################################
 # functions
-def pull_voronoi(vfile,gridsize):
-  rawgrid = []
-  for line in open(vfile,"r"):
-    line = line.rstrip().split()
-    rawrow = [float(x) for x in line]
-    assert len(rawrow) == gridsize
-    rawgrid.append(rawrow)
-  assert len(rawgrid) == gridsize
-  return rawgrid
 
 def pull_scat(sfiles,gridsize,latmin,latmax,longmin,longmax):
   gridcounts = [[0 for x in xrange(gridsize)] for x in xrange(gridsize)]
@@ -74,43 +65,25 @@ def makemap_for_heatmaps(latmin,latmax,longmin,longmax):
 
 ########################################################################
 # main program
-if len(sys.argv) != 2 and len(sys.argv) != 3:
-  print("USAGE: python2 plot_voronoi_Africa.py prefix sid")
-  print("Assumes that Voronoi individual elephant results are in prefix_reports/")
-  print("and scat results are here, along with needed samplemaps")
-  print("If no sid is given, plots everything in that directory")
+if len(sys.argv) != 2:
+  print("USAGE: python2 plot_scat.py prefix")
+  print("Assumes that scat results are here, along with needed samplemaps")
+  print("(run scat2voronoi.py to get this set up)")
   print("Note that this program uses 'basemap' and only runs in Python2")
   exit(-1)
-
-# read Voronoi data
 
 prefix = sys.argv[1]
 reportdir = prefix + "_reports"
 
-v_infiles = []
-sids = []
-if len(sys.argv) == 2:
-  for root, dirs, files in os.walk(reportdir):
-    for file in files:
-      if file.endswith("_voronoi.txt"):
-        v_infiles.append(reportdir + "/" + file)
-        sid = file[0:-12]
-        sids.append(sid)
-else:
-  sid = sys.argv[2]
-  print("Analysis for sid",sid,"only")
-  infilename = reportdir + "/" + sid + "_voronoi.txt"
-  v_infiles.append(infilename)
-  sids.append(sid)
-
-# read corresponding Scat data
+# read Scat data
 taglist = ["r","s","t","u","v","w","x","y","z"]
 smap = {}
 for line in open("samplemap.r","r"):
   if line.startswith("Accept"):  continue
   fileno,mysid = line.rstrip().split()
-  if mysid in sids:
-    smap[mysid] = fileno
+  smap[mysid] = fileno
+
+sids = list(smap.keys())
   
 s_infiles = []
 for sid in sids:
@@ -140,34 +113,12 @@ figno = 1
 longs = [x for x in range(longmin,longmax+1)]
 lats = [x for x in range(latmin,latmax+1)]
 
-best_vorx = []
-best_vory = []
 best_scatx = []
 best_scaty = []
 med_scatx = []
 med_scaty = []
 
 for sfiles, sid in zip(s_infiles,sids):
-#  # voronoi data
-#  plt.figure(figno)
-#  figno += 1
-#  vgrid = pull_voronoi(vfile,gridsize)
-#
-#  # get best point for summary graph
-#  vorx,vory = get_maximum(vgrid)
-#  best_vorx.append(vorx+latmin+0.5)
-#  best_vory.append(vory+longmin+0.5)
-#
-#  m = makemap(latmin,latmax,longmin,longmax)
-#  x,y = m(*np.meshgrid(longs,lats))
-#  m.pcolormesh(x,y,vgrid,shading="flat",cmap=plt.cm.hot)
-#  m.colorbar(location="right")
-#
-#  plt.title("Voronoi " + sid);
-#  plt.savefig(reportdir + "/" + sid + "_voronoi.jpg")
-#  #plt.show()
-#  plt.close()
-
   # scat data
   plt.figure(figno) 
   figno += 1
@@ -192,17 +143,6 @@ for sfiles, sid in zip(s_infiles,sids):
 
 
 # summary figures
-
-# voronoi summary
-#figno += 1
-#plt.figure(figno)
-#m = makemap_for_summaries(latmin,latmax,longmin,longmax)
-#m.fillcontinents(color='tan')
-#for vx,vy in zip(best_vorx,best_vory):
-#  x,y = m(vx,vy)
-#  m.plot(y,x,"r+")
-#plt.title("Voronoi summary")
-#plt.savefig(reportdir+"/voronoi_summary.jpg")
 
 # scat summary by squares
 figno += 1
