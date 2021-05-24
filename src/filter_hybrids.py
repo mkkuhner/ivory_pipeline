@@ -36,6 +36,8 @@ def make_runfiles(clusterrun,species,prefix,numunknown,mapfile,regionfile):
   runline = runline.replace("DATAFILE","../"+outfilename)
   runline = runline.replace("REGIONFILE",regionfile)
   runfile = open("runfile_" + species + ".sh","w")
+  if clusterrun:
+    runfile.write(runlines[0:-1]
   runfile.write(runline)
   runfile.close()
   # make Voronoi run file
