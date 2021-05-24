@@ -19,11 +19,15 @@ def make_species_scatfile(species,prefix,unknowns,specieslines):
     outfile.write(line)
   outfile.close()
 
-def make_runfiles(species,prefix,numunknown,mapfile,regionfile):
+def make_runfiles(clusterrun,species,prefix,numunknown,mapfile,regionfile):
   # make Scat run file
-  runlines = open("master_scat_runfile.sh","r").readlines()
-  assert len(runlines) == 1
-  runline = runlines[0]
+  if clusterrun:
+    runlines = open("cluster_master_scat.sh","r").readlines()
+    runline = runlines[-1]
+  else:
+    runlines = open("master_scat_runfile.sh","r").readlines()
+    assert len(runlines) == 1
+    runline = runlines[0]
   runline = runline.replace("NUMIND",str(numunknown))
   # we do NOT replace SEED; that will be done downstream, as each
   # separate Scat run needs its own seed.
@@ -56,12 +60,14 @@ cutoff = 0.5
 print("NOTE:  this program assumes that Species 1 is savannah")
 print("and is using a hybrid cutoff of >", cutoff)
 
-if len(sys.argv) != 5:
-  print("USAGE:  filter_hybrids.py prefix mapprefix regionfile refprefix")
+if len(sys.argv) != 6:
+  print("USAGE:  filter_hybrids.py prefix mapprefix regionfile refprefix clusterrun")
   print("  datafile should contain both unknown and all known refs")
   print("  and must be the file the EBhybrid results came from!")
   print("  refprefix is which reference file the ref data came from")
   print("  frex. REFELE_21 for data that came from REFELE_21_known.txt")
+  print("  if clusterrun == T then this will be assumed to be a run on the biology")
+  print("     computing cluster, otherwise not")
   exit()
 
 prefix = sys.argv[1]
@@ -71,6 +77,10 @@ mapprefix = sys.argv[2]
 savannahmap = os.path.abspath(mapprefix+"_savannah.txt")
 forestmap = os.path.abspath(mapprefix+"_forest.txt")
 regionfile = os.path.abspath(sys.argv[3])
+
+clusterrun = False
+if sys.argv[5] == "T":
+  clusterrun = True
 
 savcount = 0
 forcount = 0
@@ -136,8 +146,8 @@ outfile.close()
 
 if unknown_savannah > 0:
   make_species_scatfile("savannah",prefix,unknown_savannah,savannahlines)
-  make_runfiles("savannah",prefix,unknown_savannah,savannahmap,regionfile)
+  make_runfiles(clusterrun,"savannah",prefix,unknown_savannah,savannahmap,regionfile)
 
 if unknown_forest > 0:
   make_species_scatfile("forest",prefix,unknown_forest,forestlines)
-  make_runfiles("forest",prefix,unknown_forest,forestmap,regionfile)
+  make_runfiles(clusterrun,"forest",prefix,unknown_forest,forestmap,regionfile)

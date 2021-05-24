@@ -5,17 +5,22 @@
 # $2 is the path to the elephant pipeline directory
 # $3 is the path to the source of raw seizure data files
 # $4 is the path to a current scat2 executable
+#
+# plus a directory "refdata" containing:
+#   REFELE_[Dbno]_known.txt, REFELE_[Dbno]_known_structure.txt_f
+#   regionfile_[vno].txt
+
 
 mkdir $1
-cp -r $2/* $1
+cp -r $2/src/* $1
+cp -r $2/auxillary_files/* $1
 cp $3/$1_raw.tsv $1
+cp refdata/* $1
 cd $1
 python3 prep_scat_data.py $1
-python3 make_eb_input.py data/REFELE_21_known_structure.txt_f data/REFELE_21_known.txt $1 data/dropoutrates_savannahfirst.txt
+python3 make_eb_input.py REFELE_4.3_known_structure.txt_f REFELE_4.3_known.txt $1 dropoutrates_savannahfirst.txt
 Rscript ebscript.R
-cp data/mapfile_161220_* .
-cp data/regionfile.v36.txt .
-python3 make_species_files.py $1 mapfile_161220 regionfile.v36.txt REFELE_21
+python3 make_species_files.py $1 mapfile_161220 regionfile.v36.txt REFELE_4.3 notT
 
 if test -f "runfile_forest.sh"; then
   mkdir nforest
