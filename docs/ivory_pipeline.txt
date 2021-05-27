@@ -169,7 +169,7 @@ exclude valid habitat).
 or the IUCN map files iucn_161220_[species].txt.  These are found in the
 auxillary_files directory.
 
--- Region file of choice.  The current version is regionfile.v38b. 
+-- Region file of choice.  The current version is regionfile.v38b.txt. 
 This is found in the auxillary_files directory.  The regionfile gives the
 mapping between sampling location ("region") name, number, subregion,
 and latitude/longitude.  If new sampling regions have been added to the
@@ -198,6 +198,7 @@ double).
 the mapfile name before the species name).
 -- Regionfile name.  
 -- Reference data prefix REFELE_[DBno]
+-- T if the SCAT runs will be done on the cluster, F otherwise
 
 The filter_hybrids.py program will print its hardwired hybrid cutoff to
 screen.  Make sure this cutoff is what you want.
