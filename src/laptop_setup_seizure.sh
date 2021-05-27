@@ -20,7 +20,7 @@ cd $1
 python3 prep_scat_data.py $1
 python3 make_eb_input.py REFELE_4.3_known_structure.txt_f REFELE_4.3_known.txt $1 dropoutrates_savannahfirst.txt
 Rscript ebscript.R
-python3 filter_hybrids.py $1 mapfile_161220 regionfile.v36.txt REFELE_4.3 notT
+python3 filter_hybrids.py $1 mapfile_161220 regionfile.v38b.txt REFELE_4.3 notT
 
 if test -f "runfile_forest.sh"; then
   mkdir nforest
