@@ -7,7 +7,7 @@
 # $4 is the absolute path to a current scat2 executable
 #
 # plus a directory "refdata" containing:
-#   REFELE_[Dbno]_known.txt, REFELE_[Dbno]_known_structure.txt_f
+#   REFELE_[Dbno]_raw.csv, REFELE_[Dbno]_known.txt, REFELE_[Dbno]_known_structure.txt_f
 #   regionfile_[vno].txt
 
 
@@ -17,6 +17,15 @@ cp -r $2/auxillary_files/* $1
 cp $3/$1_raw.tsv $1
 cp refdata/* $1
 cd $1
+
+python3 verifymsat.py 16 REFELE_4.3_raw.csv $1_raw.tsv
+if [ $? -ne 0] 
+then
+  echo "TERMINATING:  sample(s) with too many unfamiliar alleles detected."
+  echo "Likely problem:  microsatellites out of order in file."
+  exit(1)
+fi
+
 python3 prep_scat_data.py $1
 python3 make_eb_input.py REFELE_4.3_known_structure.txt_f REFELE_4.3_known.txt $1 dropoutrates_savannahfirst.txt
 Rscript ebscript.R
