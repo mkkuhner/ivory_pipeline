@@ -12,12 +12,12 @@
 mkdir $1
 cp $2/$1_raw.tsv $1
 cd $1
-python3 ../verifymsat.py 16 REFELE_4.3_raw.csv $1_raw.tsv
-if [ $? -ne 0] 
+python3 ../verifymsat.py 16 ../REFELE_4.3_raw.csv $1_raw.tsv
+if [ $? -ne 0 ] 
 then
   echo "TERMINATING:  sample(s) with too many unfamiliar alleles detected."
   echo "Likely problem:  microsatellites out of order in file."
-  exit(1)
+  exit 1 
 fi
 python3 ../prep_scat_data.py $1
 cp ../*.R .
@@ -45,6 +45,9 @@ if test -f "runfile_savannah.sh"; then
   echo "nsavannah created"
 fi
 
+cd ..
+
 echo ""
 echo "scat run directories now exist within nforest and/or nsavannah"
 echo ""
+

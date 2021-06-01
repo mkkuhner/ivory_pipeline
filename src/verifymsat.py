@@ -66,10 +66,11 @@ for line in seizlines[1:]:
       abberant[sid].append(stuff)
 
 retval = 0
-print("The following samples had alleles not found in the reference data")
-for sid in abberant:
-  print(sid,abberant[sid]) 
-  if len(abberant[sid]) > 2:
-    retval = 1
+if len(abberant) > 0:
+  print("The following samples had alleles not found in the reference data")
+  for sid in abberant:
+    print(sid,abberant[sid]) 
+    if len(abberant[sid]) > 2:
+      retval = 1
 
 exit(retval)
