@@ -8,8 +8,7 @@ Code and reference data for this pipeline are in the private GitHub
 repository https://github.com/mkkuhner/ivory_pipeline.  Within that
 repository, programs and scripts are in the src directory,
 additional files needed to run the scripts are in the auxillary_files
-directory, reference data are in the data directory, and documentation 
-files are in the docs directory.
+directory, and documentation files are in the docs directory.
 
 WARNING:  Never check anything into the GitHub repository which is
 law enforcement sensitive or otherwise high security.  
@@ -76,10 +75,11 @@ new seizure is.)
 ***B)  Obtaining the reference data.
 
 If you already have SCAT-style formatted reference data and the 
-corresponding Structure results, you can stip this step.
+corresponding Structure results, you can skip this step.
 
 These files would be called:
 
+REFELE_[DBno]_raw.txt                  (raw reference data)
 REFELE_[DBno]_known.txt                (formatted reference data)
 REFELE_[DBno]_known_structure.txt_f    (Structure results)
 
@@ -101,7 +101,27 @@ can be done with LibreOffice by saving the file as .csv but setting the
 delimiter to tab rather than comma, and then changing the name of the
 resulting file.  Name this file PREFIX_raw.tsv.
 
-4)  Run prep_scat_data.py with an argument of PREFIX. This will read
+**OPTIONAL**
+
+Steps C4 through E4 can be run with a shell script.  On Mary's laptop
+use mary_setup_seizure.sh; on Jon's use jon_setup_seizure.sh.  The arguments
+are PREFIX and a path to the location of PREFIX_raw.tsv.  If you run this
+script you will then be ready to do the SCAT2 runs (step E5) in
+nforest, nsavannah, or both, depending on which types of elephants were found
+in your seizure.
+
+4)  Validate the microsat data by running verifymsats.py with the following
+arguments:
+--number of msats (currently 16)
+--REFELE_[DBno]_raw.csv
+--PREFIX_raw.tsv
+
+This program checks for samples with more than 2 previously unknown alleles.
+This can indicate that the microsats have gotten out of order; if it fires,
+carefully check your input seizure data.  NOTE:  it only checks the seizure data,
+and assumes the reference data are correct.
+
+5)  Run prep_scat_data.py with an argument of PREFIX. This will read
 PREFIX_raw.tsv and write PREFIX_unknowns.txt.  This program marks the new data 
 as region -1, and corrects msats where only one allele is missing to 
 mark both as missing.  It also suppresses individuals with less
