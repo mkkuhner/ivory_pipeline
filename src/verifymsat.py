@@ -68,8 +68,12 @@ for line in seizlines[1:]:
 retval = 0
 if len(abberant) > 0:
   print("The following samples had alleles not found in the reference data")
+  print("MatchID\tLocus\tAllele")
   for sid in abberant:
-    print(sid,abberant[sid]) 
+    outline = sid 
+    for entry in abberant[sid]:
+      outline += "\t" + entry[0] + "\t" + entry[1]
+    print(outline)
     if len(abberant[sid]) > 2:
       retval = 1
 
