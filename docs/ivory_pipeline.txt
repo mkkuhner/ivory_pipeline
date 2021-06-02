@@ -410,17 +410,16 @@ are not archived on Github for security reasons:  ask Mary for a copy.
 
 5)  Place copies of calculate_LRs.R, LR_functions.R, and 
 setupivoryfammatch.sh, found in the /src directory, in the current 
-directory.  Run setupivoryfammatch.sh.  This will create 
-directories named "subN" for each subregion N and move all needed
-files to that directory.  It also prints a reminder of the Rscript
-command for each directory:  note that these mention "forest" or
-"savannah" explicitly.  This script assumes that subregions 0 and 1 
-are forest and all others are savannah, and will need to be revised 
-if that changes.
+directory.  Run setupivoryfammatch.sh.  This creates directories named 
+"subN" for each subregion N for which seizure samples were found, and 
+moves all needed files to that directory.  It also writes a script 
+"runrscript.sh" into each directory.
 
-6)  In each subregion directory, run the familial matching program
-using the Rscript command suggested by the output of step 5,
-which will be of the form:
+This script assumes that subregions 0 and 1 are forest and all others 
+are savannah, and will need to be revised if that changes.
+
+6)  In each subregion directory, source runrscript.sh (no arguments).
+This will contain a run command of the form:
 
 Rscript calculate_LRs.R [species] refN_fammatch.csv oldN.txt newN.txt
 

@@ -6,20 +6,18 @@
 
 for i in 0 1 2 3 4 5
 do
-  if test -f "new$i"; then
+  if test -f "new${i}.txt"; then
     rm -rf sub$i
     mkdir sub$i
     cp ../calculate_LRs.R ../LR_functions.R sub$i
-    mv new${i}.txt sub$i
-    mv old${i}.txt sub$i
-    mv ref${i}_fammatch.csv sub$i
-    cd sub$i
+    cp new${i}.txt sub$i
+    cp old${i}.txt sub$i
+    cp ref${i}_fammatch.csv sub$i
     species='forest'
     if [ $i -gt 1 ]
     then
       species='savannah'
     fi
-    echo "Rscript calculate_LRs.R ${species} ref${i}_fammatch.csv old${i}.txt new${i}.txt" > runrscript.sh
-    cd .. 
+    echo "Rscript calculate_LRs.R ${species} ref${i}_fammatch.csv old${i}.txt new${i}.txt" > sub${i}/runrscript.sh
   fi
 done
