@@ -16,6 +16,15 @@ cp -r $2/auxillary_files/* $1
 cp refdata/* $1
 cp $3/$1_raw.tsv $1
 cd $1
+
+python3 verifymsat.py 16 REFELE_4.3_raw.csv $1_raw.tsv
+if [ $? -ne 0] 
+then
+  echo "TERMINATING:  sample(s) with too many unfamiliar alleles detected."
+  echo "Likely problem:  microsatellites out of order in file."
+  exit(1)
+fi
+
 python prep_scat_data.py $1
 python make_eb_input.py REFELE_4.3_known_structure.txt_f REFELE_4.3_known.txt $1 dropoutrates_savannahfirst.txt
 source /gscratch/wasser/mkkuhner/.bashrc

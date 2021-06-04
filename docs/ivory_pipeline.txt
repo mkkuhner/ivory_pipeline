@@ -8,8 +8,7 @@ Code and reference data for this pipeline are in the private GitHub
 repository https://github.com/mkkuhner/ivory_pipeline.  Within that
 repository, programs and scripts are in the src directory,
 additional files needed to run the scripts are in the auxillary_files
-directory, reference data are in the data directory, and documentation 
-files are in the docs directory.
+directory, and documentation files are in the docs directory.
 
 WARNING:  Never check anything into the GitHub repository which is
 law enforcement sensitive or otherwise high security.  
@@ -76,10 +75,11 @@ new seizure is.)
 ***B)  Obtaining the reference data.
 
 If you already have SCAT-style formatted reference data and the 
-corresponding Structure results, you can stip this step.
+corresponding Structure results, you can skip this step.
 
 These files would be called:
 
+REFELE_[DBno]_raw.txt                  (raw reference data)
 REFELE_[DBno]_known.txt                (formatted reference data)
 REFELE_[DBno]_known_structure.txt_f    (Structure results)
 
@@ -101,7 +101,29 @@ can be done with LibreOffice by saving the file as .csv but setting the
 delimiter to tab rather than comma, and then changing the name of the
 resulting file.  Name this file PREFIX_raw.tsv.
 
-4)  Run prep_scat_data.py with an argument of PREFIX. This will read
+**OPTIONAL**
+
+Steps C4 through E4 can be run with a shell script.  On Mary's laptop
+use mary_setup_seizure.sh; on Jon's use jon_setup_seizure.sh.  The arguments
+are PREFIX and a path to the location of PREFIX_raw.tsv.  If you run this
+script you will then be ready to do the SCAT2 runs (step E5) in
+nforest, nsavannah, or both, depending on which types of elephants were found
+in your seizure.
+
+**
+
+4)  Validate the microsat data by running verifymsats.py with the following
+arguments:
+--number of msats (currently 16)
+--REFELE_[DBno]_raw.csv
+--PREFIX_raw.tsv
+
+This program checks for samples with more than 2 previously unknown alleles.
+This can indicate that the microsats have gotten out of order; if it fires,
+carefully check your input seizure data.  NOTE:  it only checks the seizure data,
+and assumes the reference data are correct.
+
+5)  Run prep_scat_data.py with an argument of PREFIX. This will read
 PREFIX_raw.tsv and write PREFIX_unknowns.txt.  This program marks the new data 
 as region -1, and corrects msats where only one allele is missing to 
 mark both as missing.  It also suppresses individuals with less
@@ -252,6 +274,17 @@ times.  It likely will take hours or days to run.
 Do not do this step unless there were at least 2 samples in the species
 under consideration:  running VORONOI on one sample is not useful.
 
+** OPTIONAL **
+
+The script mary_finish_seizure.sh will run steps F1 through G3.  Its arguments
+are PREFIX, the path to a VORONOI executable, and "forest" or "savannah"; it
+should be run in /nforest or /nsavannah (or both if both exist).  
+
+The equivalent script jon_finish_seizure.sh only does steps F1 through G1,
+as G2 does not run on Jon's laptop due to reliance on Basemap.
+
+**
+
 1)  Obtain or prepare a masterfile consisting of 9 lines as follows (there
 is an example, called "masterfile", in the auxillary_files directory) and
 place it in the species-specific directory.
@@ -337,7 +370,7 @@ Rerunning the whole thing is needed if large changes have been made to
 the reference data, the subregion definitions have changed, or the set
 of previous seizures to be used has changed.
 
-1)  Obtain the file seizure_metadata_[DBno].txt (this is not kept
+1)  Obtain the file seizure_metadata_[DBno].tsv (this is not kept
 on the Github site; ask Mary Kuhner for a copy).  Make a COPY of this
 file and run update_metadata.py on the copy (this program changes its
 input file in place!)  The three arguments are the metadata (copy) file,
@@ -347,26 +380,24 @@ the bottom of the file) before overwriting the original.  If you have
 changed [DBno] be sure to change the name of this file.  Return the
 modified file to Mary for archiving.
 
-2)  Create a SCAT output directory.  Run SCAT2 using the following
+2)  In your main PREFIX directory (not nforest/nsavannah), create a SCAT 
+output directory "outdir".  Run SCAT2 using the following
 command line:
 
-./SCAT2 -Z -H2 PREFIX_conjoint_nohybrids.txt regionfile outputdir 16
+./SCAT2 -Z -H2 PREFIX_conjoint_nohybrids.txt regionfile outdir 16
 
 This will compute subregion probabilities for all reference and seizure
 samples.  The seizure samples will be classified into subregions based
 on these probabilities:  the reference samples will instead be classified
 based on their subregion in the regionfile, but must be included here
-to establish the subregional allele frequencies.
+to establish the subregional allele frequencies.  It runs in minutes.
 
-3)  Obtain the "oldN.txt" files covering all previous seizures.  These
-are not archived on Github for security reasons:  ask Mary for a copy.
-
-4)  Obtain make_fammatch_incremental.py from the ivory_pipeline /src
+3)  Obtain make_fammatch_incremental.py from the ivory_pipeline /src
 directory.  Check to make sure it has the correct value for the
 nsub variable (number of subregions, currently 6).  Run this
 program with three arguments:
 
-Output_hybrid file from the Scat output directory created in step 1
+outdir/Output_hybrid file created in step 2
 PREFIX_conjoint_nohybrids.txt
 regionfile
 
@@ -374,20 +405,21 @@ This will write two files per subregion:  refsN_fammatch.csv and
 newN.txt, where N is the subregion number.  No files will be written
 for a subregion which has no samples from the new seizure.
 
+4)  Obtain the "oldN.txt" files covering all previous seizures.  These
+are not archived on Github for security reasons:  ask Mary for a copy.
+
 5)  Place copies of calculate_LRs.R, LR_functions.R, and 
 setupivoryfammatch.sh, found in the /src directory, in the current 
-directory.  Run setupivoryfammatch.sh.  This will create 
-directories named "subN" for each subregion N and move all needed
-files to that directory.  It also prints a reminder of the Rscript
-command for each directory:  note that these mention "forest" or
-"savannah" explicitly and cannot error-check if the correct one
-is given.  The script assumes that subregions 0 and 1 are forest
-and all others are savannah, and will need to be revised if that
-changes.
+directory.  Run setupivoryfammatch.sh.  This creates directories named 
+"subN" for each subregion N for which seizure samples were found, and 
+moves all needed files to that directory.  It also writes a script 
+"runrscript.sh" into each directory.
 
-6)  In each subregion directory, run the familial matching program
-using the Rscript command suggested by the output of step 5,
-which will be of the form:
+This script assumes that subregions 0 and 1 are forest and all others 
+are savannah, and will need to be revised if that changes.
+
+6)  In each subregion directory, source runrscript.sh (no arguments).
+This will contain a run command of the form:
 
 Rscript calculate_LRs.R [species] refN_fammatch.csv oldN.txt newN.txt
 

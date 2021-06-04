@@ -10,6 +10,8 @@
 # ivory samples are assigned to subregion by scat.  Reference samples
 # are assigned to subregion based on their park--NOT by scat.
 
+# No files are written for subregions with no seizure samples assigned.
+
 # BE SURE TO SET "nsub" APPROPRIATELY (number of subregions)!
 
 nsub = 6
@@ -70,6 +72,7 @@ for line in open(genofile,"r"):
 header = "FH67,FH71,FH19,FH129,FH60,FH127,FH126,FH153,FH94,FH48,FH40,FH39,FH103,FH102,S03,S04\n"
 
 for subreg in range(0,nsub):
+  if len(seizure[subreg]) == 0:  continue  # nothing to be done for this one
   outfile = open("ref"+str(subreg)+"_fammatch.csv","w")
   outfile.write(header)
   for line in reference[subreg]:
@@ -84,6 +87,7 @@ for subreg in range(0,nsub):
 header = "Match ID,FH67,FH67,FH71,FH71,FH19,FH19,FH129,FH129,FH60,FH60,FH127,FH127,FH126,FH126,FH153,FH153,FH94,FH94,FH48,FH48,FH40,FH40,FH39,FH39,FH103,FH103,FH102,FH102,S03,S03,S04,S04\n"
 
 for subreg in range(0,nsub):
+  if len(seizure[subreg]) == 0:  continue  # nothing to be done for this one
   outfile_new = open("new"+str(subreg)+".txt","w")
   outfile_new.write(header)
   for line1, line2 in zip(seizure[subreg][0::2],seizure[subreg][1::2]):
