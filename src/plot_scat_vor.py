@@ -1,5 +1,8 @@
 import sys
-from mpl_toolkits.basemap import Basemap as bmap
+#from mpl_toolkits.basemap import Basemap as bmap
+import cartopy
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -21,7 +24,7 @@ def pull_voronoi(vfile,gridsize):
   return rawgrid
 
 def pull_scat(sfiles,gridsize,latmin,latmax,longmin,longmax):
-  gridcounts = [[0 for x in xrange(gridsize)] for x in xrange(gridsize)]
+  gridcounts = [[0 for x in range(0,gridsize)] for x in range(0,gridsize)]
   lats = []
   longs = []
   for file in sfiles:
@@ -45,8 +48,8 @@ def get_maximum(vgrid):
   bestx = -99
   besty = -99
   bestval = -99.0
-  for x in xrange(len(vgrid)):
-    for y in xrange(len(vgrid[0])):
+  for x in range(0,len(vgrid)):
+    for y in range(0,len(vgrid[0])):
       if vgrid[x][y] > bestval:
         bestval = vgrid[x][y]
         bestx = x
@@ -54,22 +57,35 @@ def get_maximum(vgrid):
   assert bestx != -99
   return [bestx,besty]
 
-def makemap_for_summaries(latmin,latmax,longmin,longmax):
-  m = bmap(projection='merc',epsg='4326',llcrnrlat=latmin,llcrnrlon=longmin,urcrnrlat=latmax,urcrnrlon=longmax)
-  m.drawcoastlines(linewidth=0.4,color="black")
-  m.drawmeridians(np.arange(-50.0,70.0,20.0),labels=[False,False,False,True],dashes=[2,2])
-  #m.drawmapboundary(fill_color="lightblue")
-  m.drawcountries(linewidth=0.4, linestyle="solid", color="blue")
-  m.drawparallels(np.arange(-50.0,70.0,20.0),labels=[True,False,False,False],dashes=[2,2])
+def makemap_for_summaries(proj,latmin,latmax,longmin,longmax):
+  m = plt.axes(projection=proj)
+  m.set_extent([longmin,longmax,latmin,latmax], crs=proj)
+  m.coastlines(resolution="50m", linewidth=0.4, color="black")
+  gl = m.gridlines(crs=crs_lonlat,xlocs=np.arange(-50,70,20),ylocs=np.arange(-50,70,20),draw_labels=True)
+  gl.top_labels = None 
+  m.add_feature(cfeature.BORDERS, linewidth=0.4, linestyle="solid", color="blue")
+  m.add_feature(cfeature.LAND, color="tan")
   return m
 
-def makemap_for_heatmaps(latmin,latmax,longmin,longmax):
-  m = bmap(projection='merc',epsg='4326',llcrnrlat=latmin,llcrnrlon=longmin,urcrnrlat=latmax,urcrnrlon=longmax)
-  m.drawcoastlines(linewidth=0.4,color="white")
-  m.drawmeridians(np.arange(-50.0,70.0,20.0),labels=[False,False,False,True],dashes=[2,2])
-  #m.drawmapboundary(fill_color="lightblue")
-  m.drawcountries(linewidth=0.4, linestyle="solid", color="lightblue")
-  m.drawparallels(np.arange(-50.0,70.0,20.0),labels=[True,False,False,False],dashes=[2,2])
+def makemap_for_heatmaps(proj,latmin,latmax,longmin,longmax):
+  m = plt.axes(projection=proj)
+  m.set_extent([longmin,longmax,latmin,latmax], crs=proj)
+  m.coastlines(resolution="50m", linewidth=0.4, color="white")
+  gl = m.gridlines(crs=crs_lonlat,xlocs=np.arange(-50,70,20),ylocs=np.arange(-50,70,20),draw_labels=True, linestyle="--")
+  gl.top_labels = None 
+  gl.xlines = False
+  gl.ylines = False
+  m.add_feature(cfeature.BORDERS, linewidth=0.4, linestyle="solid", color="white")
+  m.add_feature(cfeature.LAND, color="tan")
+  return m
+
+#def makemap_for_heatmaps(latmin,latmax,longmin,longmax):
+#  m = bmap(projection='merc',epsg='4326',llcrnrlat=latmin,llcrnrlon=longmin,urcrnrlat=latmax,urcrnrlon=longmax)
+#  m.drawcoastlines(linewidth=0.4,color="white")
+#  m.drawmeridians(np.arange(-50.0,70.0,20.0),labels=[False,False,False,True],dashes=[2,2])
+#  #m.drawmapboundary(fill_color="lightblue")
+#  m.drawcountries(linewidth=0.4, linestyle="solid", color="lightblue")
+#  m.drawparallels(np.arange(-50.0,70.0,20.0),labels=[True,False,False,False],dashes=[2,2])
   return m
 
 ########################################################################
@@ -150,6 +166,8 @@ pointfile = open(reportdir + "/" + prefix + "_point_estimates.tsv","w")
 hdr = "SID\tVoronoi\tSCAT_median\tSCAT_bestsquare\n"
 pointfile.write(hdr)
 
+crs_lonlat = ccrs.PlateCarree()
+
 for vfile, sfiles, sid in zip(v_infiles,s_infiles,sids):
   pointline = sid
   # voronoi data
@@ -163,13 +181,17 @@ for vfile, sfiles, sid in zip(v_infiles,s_infiles,sids):
   best_vory.append(vory+longmin+0.5)
   pointline += "\t" + str(vorx+latmin+0.5) + "," + str(vory+longmin+0.5) 
 
-  m = makemap_for_heatmaps(latmin,latmax,longmin,longmax)
-  x,y = m(*np.meshgrid(longs,lats))
+  m = makemap_for_heatmaps(crs_lonlat,latmin,latmax,longmin,longmax)
+#  x,y = m(*np.meshgrid(longs,lats))
+  x,y = np.meshgrid(longs,lats)
   m.pcolormesh(x,y,vgrid,shading="flat",cmap=plt.cm.hot)
-  m.colorbar(location="right")
+  sm = plt.cm.ScalarMappable(cmap=plt.cm.hot)
+  sm._A = []
+  cb = plt.colorbar(sm)
+  cb.set_ticks([])
 
   plt.title("Voronoi " + sid);
-  plt.savefig(reportdir + "/" + sid + "_voronoi.jpg")
+  plt.savefig(reportdir + "/" + sid + "_voronoi.png")
   #plt.show()
   plt.close()
 
@@ -177,7 +199,7 @@ for vfile, sfiles, sid in zip(v_infiles,s_infiles,sids):
   plt.figure(figno) 
   figno += 1
   sgrid,medlat,medlong = pull_scat(sfiles,gridsize,latmin,latmax,longmin,longmax)
-  m = makemap_for_heatmaps(latmin,latmax,longmin,longmax)
+  m = makemap_for_heatmaps(crs_lonlat,latmin,latmax,longmin,longmax)
 
   # get best point for summary graph
   scatx,scaty = get_maximum(sgrid)
@@ -190,12 +212,17 @@ for vfile, sfiles, sid in zip(v_infiles,s_infiles,sids):
   pointline += "\n"
   pointfile.write(pointline)
 
-  x,y = m(*np.meshgrid(longs,lats))
-  m.pcolormesh(longs,lats,sgrid,latlon=True,shading="flat",cmap=plt.cm.hot)
-  m.colorbar(location="right")
+#  x,y = m(*np.meshgrid(longs,lats))
+  x,y = np.meshgrid(longs,lats)
+#  m.pcolormesh(longs,lats,sgrid,latlon=True,shading="flat",cmap=plt.cm.hot)
+  m.pcolormesh(longs,lats,sgrid,shading="flat",cmap=plt.cm.hot)
+  sm = plt.cm.ScalarMappable(cmap=plt.cm.hot)
+  sm._A = []
+  cb = plt.colorbar(sm)
+  cb.set_ticks([])
 
   plt.title("Scat " + sid)
-  plt.savefig(reportdir + "/" + sid + "_scat.jpg")
+  plt.savefig(reportdir + "/" + sid + "_scat.png")
   #plt.show()
   plt.close()
 
@@ -206,33 +233,36 @@ pointfile.close()
 # voronoi summary
 figno += 1
 plt.figure(figno)
-m = makemap_for_summaries(latmin,latmax,longmin,longmax)
-m.fillcontinents(color='tan')
-for vx,vy in zip(best_vorx,best_vory):
-  x,y = m(vx,vy)
-  m.plot(y,x,"r+")
+m = makemap_for_summaries(crs_lonlat,latmin,latmax,longmin,longmax)
+#m.fillcontinents(color='tan')
+#for vx,vy in zip(best_vorx,best_vory):
+#  x,y = m(vx,vy)
+for x,y in zip(best_vorx,best_vory):
+  m.plot(y,x,"r+",transform=crs_lonlat)
 plt.title("Voronoi summary")
-plt.savefig(reportdir+"/voronoi_summary.jpg")
+plt.savefig(reportdir+"/voronoi_summary.png")
 
 # scat summary by squares
 figno += 1
 plt.figure(figno)
-m = makemap_for_summaries(latmin,latmax,longmin,longmax)
-m.fillcontinents(color='tan')
-for sx,sy in zip(best_scatx,best_scaty):
-  x,y = m(sx,sy)
-  m.plot(y,x,"r+")
+m = makemap_for_summaries(crs_lonlat,latmin,latmax,longmin,longmax)
+#m.fillcontinents(color='tan')
+#for sx,sy in zip(best_scatx,best_scaty):
+#  x,y = m(sx,sy)
+for x,y in zip(best_scatx,best_scaty):
+  m.plot(y,x,"r+",transform=crs_lonlat)
 plt.title("Scat summary:  most occupied grid square")
-plt.savefig(reportdir+"/scat_summary_squares.jpg")
+plt.savefig(reportdir+"/scat_summary_squares.png")
 
 # scat summary by medians
 figno += 1
 plt.figure(figno)
-m = makemap_for_summaries(latmin,latmax,longmin,longmax)
-m.fillcontinents(color='tan')
-for sx,sy in zip(med_scatx,med_scaty):
-  x,y = m(sx,sy)
-  m.plot(y,x,"r+")
+m = makemap_for_summaries(crs_lonlat,latmin,latmax,longmin,longmax)
+#m.fillcontinents(color='tan')
+#for sx,sy in zip(med_scatx,med_scaty):
+#  x,y = m(sx,sy)
+for x,y in zip(med_scatx,med_scaty):
+  m.plot(y,x,"r+",transform=crs_lonlat)
 plt.title("Scat summary:  median lat/long")
-plt.savefig(reportdir+"/scat_summary_medians.jpg")
+plt.savefig(reportdir+"/scat_summary_medians.png")
 
