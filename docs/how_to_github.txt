@@ -1,0 +1,34 @@
+To pull the repository from github:
+
+(be sure git is running)
+
+git clone https://github.com/username/name_of_repo
+
+To put your changes into it:
+
+git add    -- add the changes, takes filename as argument
+git commit -- commit the changes
+git push -- push to github; may fail if not fresh
+
+To pull your changes from it:
+
+git pull  -- does both fetch and merge
+
+To check out a branch:
+
+clone the whole repository with git clone, then set your working
+branch with:
+
+git checkout <branchname>
+
+See what branch you're on:
+
+git branch -a
+
+To make a new branch in a Github repo:
+
+click the branch selector
+type in name of new branch
+click create new branch
+be sure to check out the branch specifically in your
+  on-laptop repo!

@@ -459,7 +459,7 @@ will use both obsLRs.[species].2.0.filtered.txt and this file.
 4_remove_seizures.py, but this pipeline does not use it.  It is also
 present in src if you find a use for it.)
 
-1)  Obtain or create a seizure_modifications file.  This file contains
+2)  Obtain or create a seizure_modifications file.  This file contains
 information on any seizures to be excluded from analysis or merged
 together.  A copy of the current version, seizure_modifications_nature,
 is in the auxillary_files directory.  It reflects the seizure changes
@@ -483,7 +483,6 @@ similarly, you may be able to rename old seizures.  You certainly
 cannot reject fewer old seizures or merge old seizures with each other 
 or with the new ones.
 
-
 3)  Obtain results of previous familial matching.  They will take the form of 
 files named obsLRs_[species]_N.txt, where N is the subregion number.  These are
 archived by Mary.  Place them in the directory which contains your subregional
@@ -492,6 +491,8 @@ directories sub0, sub1 etc.
 Obtain a file of false-positive results from simulated data, called fprates.tsv;
 a copy is in auxillary_files.  If the subregioning scheme is changed, these will
 need to be regenerated.
+
+TO DO:  document simulation pipeline used to make these false-positive rates.
 
 Obtain a copy of the canonical list of direct (exact) matches, called dms.tsv.
 This is not kept on Github; ask Mary for a copy.  This file is used because we 
