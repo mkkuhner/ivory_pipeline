@@ -79,15 +79,6 @@ def makemap_for_heatmaps(proj,latmin,latmax,longmin,longmax):
   m.add_feature(cfeature.LAND, color="tan")
   return m
 
-#def makemap_for_heatmaps(latmin,latmax,longmin,longmax):
-#  m = bmap(projection='merc',epsg='4326',llcrnrlat=latmin,llcrnrlon=longmin,urcrnrlat=latmax,urcrnrlon=longmax)
-#  m.drawcoastlines(linewidth=0.4,color="white")
-#  m.drawmeridians(np.arange(-50.0,70.0,20.0),labels=[False,False,False,True],dashes=[2,2])
-#  #m.drawmapboundary(fill_color="lightblue")
-#  m.drawcountries(linewidth=0.4, linestyle="solid", color="lightblue")
-#  m.drawparallels(np.arange(-50.0,70.0,20.0),labels=[True,False,False,False],dashes=[2,2])
-  return m
-
 ########################################################################
 # main program
 if len(sys.argv) != 2 and len(sys.argv) != 3:
@@ -182,9 +173,8 @@ for vfile, sfiles, sid in zip(v_infiles,s_infiles,sids):
   pointline += "\t" + str(vorx+latmin+0.5) + "," + str(vory+longmin+0.5) 
 
   m = makemap_for_heatmaps(crs_lonlat,latmin,latmax,longmin,longmax)
-#  x,y = m(*np.meshgrid(longs,lats))
   x,y = np.meshgrid(longs,lats)
-  m.pcolormesh(x,y,vgrid,shading="flat",cmap=plt.cm.hot)
+  m.pcolormesh(x,y,vgrid,shading="flat",cmap=plt.cm.hot,transform=crs_lonlat)
   sm = plt.cm.ScalarMappable(cmap=plt.cm.hot)
   sm._A = []
   cb = plt.colorbar(sm)
@@ -212,10 +202,8 @@ for vfile, sfiles, sid in zip(v_infiles,s_infiles,sids):
   pointline += "\n"
   pointfile.write(pointline)
 
-#  x,y = m(*np.meshgrid(longs,lats))
   x,y = np.meshgrid(longs,lats)
-#  m.pcolormesh(longs,lats,sgrid,latlon=True,shading="flat",cmap=plt.cm.hot)
-  m.pcolormesh(longs,lats,sgrid,shading="flat",cmap=plt.cm.hot)
+  m.pcolormesh(longs,lats,sgrid,shading="flat",cmap=plt.cm.hot,transform=crs_lonlat)
   sm = plt.cm.ScalarMappable(cmap=plt.cm.hot)
   sm._A = []
   cb = plt.colorbar(sm)
@@ -234,9 +222,6 @@ pointfile.close()
 figno += 1
 plt.figure(figno)
 m = makemap_for_summaries(crs_lonlat,latmin,latmax,longmin,longmax)
-#m.fillcontinents(color='tan')
-#for vx,vy in zip(best_vorx,best_vory):
-#  x,y = m(vx,vy)
 for x,y in zip(best_vorx,best_vory):
   m.plot(y,x,"r+",transform=crs_lonlat)
 plt.title("Voronoi summary")
@@ -246,9 +231,6 @@ plt.savefig(reportdir+"/voronoi_summary.png")
 figno += 1
 plt.figure(figno)
 m = makemap_for_summaries(crs_lonlat,latmin,latmax,longmin,longmax)
-#m.fillcontinents(color='tan')
-#for sx,sy in zip(best_scatx,best_scaty):
-#  x,y = m(sx,sy)
 for x,y in zip(best_scatx,best_scaty):
   m.plot(y,x,"r+",transform=crs_lonlat)
 plt.title("Scat summary:  most occupied grid square")
@@ -258,9 +240,6 @@ plt.savefig(reportdir+"/scat_summary_squares.png")
 figno += 1
 plt.figure(figno)
 m = makemap_for_summaries(crs_lonlat,latmin,latmax,longmin,longmax)
-#m.fillcontinents(color='tan')
-#for sx,sy in zip(med_scatx,med_scaty):
-#  x,y = m(sx,sy)
 for x,y in zip(med_scatx,med_scaty):
   m.plot(y,x,"r+",transform=crs_lonlat)
 plt.title("Scat summary:  median lat/long")
