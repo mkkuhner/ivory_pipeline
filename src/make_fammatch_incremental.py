@@ -1,30 +1,65 @@
-# take the results of a scat2 -H2 run, on joint savannah and forest (but
-# not hybrid) data, and the scat file from which these were made.
-# create all needed files for a fammatch run for each subregion.
-# this includes a reference file and new_ sample files.  We assume that
-# old_ sample files have been provided; this version of the program
-# is meant for incrementally running new seizure(s) against previously
-# archived old seizures.  Don't forget to add your new results to the
-# archive!
+# This program takes the results of a SCAT2 -H2 run on joint savannah
+# and forest (no hybrids) data, and an archive of old fammatch inputs.
+# It creates subregion directories for all subregions in which samples
+# were found, pulls old inputs from the archive, and sets up for fammatch
+# runs (but does not run them).
 
-# ivory samples are assigned to subregion by scat.  Reference samples
-# are assigned to subregion based on their park--NOT by scat.
+# It updates the archive with files from this seizure.  The archive must
+# exist and contain a subdirectory for each subregion, but need not contain
+# any data, in which case a single-seizure fammatch will be set up. 
 
-# No files are written for subregions with no seizure samples assigned.
+# If no prior samples were in a subregion, and this seizure contributes
+# exactly one sample, the sample will be archived as usual but fammatch
+# cannot be run.  This will be signaled by creation of a file
+# named ONLY_ONE_SAMPLE in the subregion run directory.
 
 # BE SURE TO SET "nsub" APPROPRIATELY (number of subregions)!
+# Also, if you change which subregions are forest versus savannah, you
+# will need to check both this program and all downstream programs.
+# They all assume that sub0 and sub1 are forest and all others are savannah.
 
 nsub = 6
 
-import sys
+#############################
+# functions
 
-if len(sys.argv) != 4:
-  print("USAGE:  make_fammatch_incremental Output_hybrid scatinput.txt regionfile.txt")
+def read_infile(infilename):
+  outlines = []
+  for line in open(infilename,"r"):
+    if line.startswith("Match"):
+      header = line
+      continue
+    outlines.append(line)
+  return [header, outlines]
+
+def write_fammatch(filename,header,body):
+  outfile = open(filename,"w")
+  outfile.write(header)
+  outfile.writelines(body)
+  outfile.close()
+
+#############################
+# main program
+
+import sys
+import os
+from os import path
+from os import listdir
+
+if len(sys.argv) != 5:
+  print("USAGE:  make_fammatch_incremental prefix scatdir famarchive regionfile.txt")
   exit(-1)
 
-hybfile = sys.argv[1]
-genofile = sys.argv[2]
-regionfile = sys.argv[3]
+prefix = sys.argv[1]
+scatdir = sys.argv[2]
+if not scatdir.endswith("/"):
+  scatdir += "/"
+archivedir = sys.argv[3]
+if not archivedir.endswith("/"):
+  archivedir += "/"
+regionfile = sys.argv[4]
+hybfile = scatdir + "Output_hybrid"
+genofile = "../" + prefix + "_conjoint_nohybrids.txt"
 
 # read subregion assignments from scat
 id_subreg = {}
@@ -66,42 +101,101 @@ for line in open(genofile,"r"):
     subreg = int(subreg)
     reference[subreg].append(line)
 
-# write reference files
-# "long" format -- 2 lines per sample, no ID, with headers
+# write fammatch input files
 
-header = "FH67,FH71,FH19,FH129,FH60,FH127,FH126,FH153,FH94,FH48,FH40,FH39,FH103,FH102,S03,S04\n"
+header = "Match ID,FH67,FH67,FH71,FH71,FH19,FH19,FH129,FH129,FH60,FH60,FH127,FH127,FH126,FH126,FH153,FH153,FH94,FH94,FH48,FH48,FH40,FH40,FH39,FH39,FH103,FH103,FH102,FH102,S03,S03,S04,S04\n"
+
+refheader = "FH67,FH71,FH19,FH129,FH60,FH127,FH126,FH153,FH94,FH48,FH40,FH39,FH103,FH102,S03,S04\n"
 
 for subreg in range(0,nsub):
   if len(seizure[subreg]) == 0:  continue  # nothing to be done for this one
-  outfile = open("ref"+str(subreg)+"_fammatch.csv","w")
-  outfile.write(header)
+
+  # make the subregional directories
+  subregid = str(subreg)
+  subdir = "sub" + subregid
+  os.mkdir(subdir)
+  subdir += "/"
+
+  # write reference files
+  # "long" format -- 2 lines per sample, no ID, with headers
+  outfile = open(subdir+"ref"+str(subreg)+"_fammatch.csv","w")
+  outfile.write(refheader)
   for line in reference[subreg]:
     data = line[2:]
     outline = ",".join(data) + "\n"
     outfile.write(outline)
   outfile.close()
 
-# write ivory files
-# "wide" format -- 1 line per sample, doubled header with Match ID
-
-header = "Match ID,FH67,FH67,FH71,FH71,FH19,FH19,FH129,FH129,FH60,FH60,FH127,FH127,FH126,FH126,FH153,FH153,FH94,FH94,FH48,FH48,FH40,FH40,FH39,FH39,FH103,FH103,FH102,FH102,S03,S03,S04,S04\n"
-
-for subreg in range(0,nsub):
-  if len(seizure[subreg]) == 0:  continue  # nothing to be done for this one
-  outfile_new = open("new"+str(subreg)+".txt","w")
-  outfile_new.write(header)
-  for line1, line2 in zip(seizure[subreg][0::2],seizure[subreg][1::2]):
+  # collect lines for new file
+  # "wide" format -- 1 line per sample, doubled header with Match ID
+  newlines = []
+  for line1, line2 in zip(seizure[subreg][0::2], seizure[subreg][1::2]):
     data1 = line1[2:]
     data2 = line2[2:]
     id = line1[0]
     if not line2[0] == id:
-      print (line1[0],line2[0])
+      print ("unpaired entry",line1[0],line2[0])
       exit()
-    outline = id 
+    outline = id
     for d1,d2 in zip(data1,data2):
       outline += "," + d1
       outline += "," + d2
     outline += "\n"
-    outfile_new.write(outline)
-  outfile_new.close()
+    newlines.append(outline)
 
+  # archive the new file 
+  archfilename = archivedir + prefix + "_" + subregid + ".txt"
+  write_fammatch(archfilename,header,newlines)
+
+  # construct working new and old files
+  # two possibilities:  old files for this subregion do or do not exist in archive
+  # if they exist, we make the working old file by catenation and use new file as-is
+  # if they do not exist, we make the working old file as the first entry from the new file
+  # and the working new file as the remainder
+  # in either case we have to archive the whole new file (including the first entry)
+
+  # SPECIAL CASE:  there is exactly one entry in the new file, and no entries in old
+  # then we do not make old and new files (though we still archive) and we write a
+  # signal file ONLY_ONE_SAMPLE instead.
+
+  # obtain old files from archive
+  oldfiles = []
+  for filename in listdir(archivedir):
+    # only use the right kind of files
+    if not filename.endswith(subregid + ".txt"):  continue
+    # don't use files for this seizure
+    if filename.startswith(prefix):  continue
+    oldfiles.append(filename)
+
+  oldfilename = subdir + "old" + subregid + ".txt"
+  newfilename = subdir + "new" + subregid + ".txt"
+
+  # case 1:  no old files for this subregion
+  # we will make an old file using first line of new file, and new file containing the rest
+  if len(oldfiles) == 0:
+    if len(newlines) > 1:
+      # usual case
+      oldlines = newlines[0]
+      newlines = newlines[1:]
+      write_fammatch(oldfilename,header,oldlines)
+      write_fammatch(newfilename,header,newlines)
+    else:
+      # special case:  only one new sample, can't run fammatch
+      sigfile = open(subdir + "ONLY_ONE_SAMPLE","w")
+      outline = "We found only one sample in this subregion and there were no prior samples."
+      sigfile.write(outline)
+      outline = "Sample has been archived, but fammatch cannot be run on one sample."
+      sigfile.write(outline)
+      sigfile.close()
+    continue
+
+  # case 2:  old files exist
+  write_fammatch(newfilename,header,newlines)
+  oldlines = []
+  for oldpart in oldfiles:
+    print("Adding",oldpart)
+    header, outlines = read_infile(oldpart)
+    oldlines += outlines
+  write_fammatch(oldfilename,header,oldlines)
+
+print("Ready to run familial matching")

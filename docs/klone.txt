@@ -1,0 +1,82 @@
+Instructions for using the UW klone.hyak cluster.  Documentation can be found at
+https://hyak.uw.edu but much of it is out of date and refers to the older Mox
+cluster, which is not quite the same.
+
+To log onto Klone:
+
+(1) turn on husky onnet by going to https://huskyonnet-ns.uw.edu
+(will require 2FA)
+
+(2) ssh mkkuhner@klone.hyak.uw.edu
+
+(3) cd /gscratch/wasser/mkkuhner  (or use alias 'home')
+
+
+To compile SCAT2 on Klone:
+
+Based on https://wiki.cac.washington.edu/display/hyakusers/Hyak+Compiling+HDF5+Serial
+but with modifications for Klone.  I am NOT sure this is fully legit--it works but
+may be abusing the head node--but can't find better directions.
+
+(1) Get the code onto your /gscratch user directory and cd to its directory.
+
+(2) Check the Makefile:  the line with a -L path to lapack should be commented in
+and the alternative line without the path commented out.
+
+(3) module load gcc/10.2.0 (needed for Fortran calls in LAPACK library for SCAT2)
+
+(5) Type "make". 
+
+(6)  Put the executable where you want it.  While Mox had a system SCAT2 which could
+conflict with the newly built one, I don't think Klone does.
+
+To run programs on Klone:
+
+(1)  navigate to directory with a run script
+
+(2)  sbatch runscript.sh
+
+(3) To check on it:
+squeue -p wasser
+
+The job will send email to mkkuhner@uw.edu when finished.
+
+(4) To kill a job (jobid can be obtained from squeue):
+scancel jobid 
+
+(5) Sample run scripts:
+
+Watch out for older copies of the run script.  Only use ones which use a grid-style mapfile,
+not ones with -d or -D options.
+
+It may be necessary to increase time entry if running more than 100 elephants.
+
+This version of the script starts all 9 SCAT2 runs at once, via the "array" command
+and use of SLURM_ARRAY_TASK_ID to give them different ids.  Jon has a version which
+starts just one, if desired.
+
+sample run script (this one is for forest, change mapfile for savannah).
+
+***
+
+#!/bin/bash
+
+#SBATCH --job-name=forest_0.05                              # give a unique name
+#SBATCH --account=wasser
+#SBATCH --partition=wasser
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --mem=4G
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=mkkuhner@uw.edu
+#SBATCH -o CIVscat.%j.out
+#SBATCH -e CIVscat.%j.err
+#SBATCH --chdir=/gscratch/wasser/mkkuhner/hybtest/forest_0.05  # cd to directory with data
+#SBATCH --array=1-9
+
+pwd; hostname; date;
+
+RANDOM=$((BASHPID+$(date '+N')))
+
+SCAT2 -A 1 606 -Z -S $RANDOM  -g mapfile_161220_forest.txt forest_0.05.txt ../scat_reference_files/regionfile.v38b.txt ./$SLURM_ARRAY_TASK_ID 16 10 16 10
