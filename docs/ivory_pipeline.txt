@@ -37,8 +37,8 @@ and as it is deprecated, it may not be available for much longer.
 2)  The term [date] refers to a date in format YYYY_MM_DD (e.g.
 2021_01_30.
 
-3)  The term [DBno] refers to the numeric ID of a release of the Master Elephant Genotypes
-file.
+3)  The term [DBno] refers to the numeric ID of a release of the Master Elephant 
+Genotypes file.
 
 ***A)  Obtaining all needed files
 
@@ -104,11 +104,10 @@ resulting file.  Name this file PREFIX_raw.tsv.
 **OPTIONAL**
 
 Steps C4 through E4 can be run with a shell script.  On Mary's laptop
-use mary_setup_seizure.sh; on Jon's use jon_setup_seizure.sh.  The arguments
+use mary_setup_scat.sh; on Jon's use jon_setup_seizure.sh.  The arguments
 are PREFIX and a path to the location of PREFIX_raw.tsv.  If you run this
 script you will then be ready to do the SCAT2 runs (step E5) in
-nforest, nsavannah, or both, depending on which types of elephants were found
-in your seizure.
+nforest, nsavannah, or both, depending on the contents of your seizure.
 
 **
 
@@ -239,13 +238,14 @@ VORONOI run files:  voronoi_runfile_[species].sh
 SCAT-format data files:  PREFIX_[species].txt for each species present,
   and PREFIX_conjoint_nohybrids.txt for familial matching
 
-3)  Create a directory for each species-specific SCAT2 analysis.  All 
-subsequent steps will have to be done for both directories, if you have both
-species in your seizure.  (We typically name these directories "nforest"
-and "nsavannah" but this is not required.)  Copy the corresponding SCAT 
-input files (PREFIX_[species].txt) into these directories.  Also copy 
-in the corresponding Voronoi runfiles (voronoi_runfile_[species].sh).
-However, leave the SCAT run files where they are.
+3)  Create a directory for each species-specific SCAT2 analysis:
+the forest directory should be named "nforest" and the savannah directory
+"nsavannah".  All subsequent steps will have to be done for both directories, 
+if you have both species in your seizure. 
+
+Copy the corresponding SCAT input files (PREFIX_[species].txt) into these 
+directories.  Also copy in the corresponding Voronoi runfiles 
+(voronoi_runfile_[species].sh).  However, leave the SCAT run files where they are.
 
 Place a SCAT2 executable in this species-specific SCAT2 directory.  We 
 recommend a clean optimized build from source.  
@@ -266,7 +266,7 @@ directory number) and an /outputs directory to hold the results.
 
 5)  Open a window for each numbered directory and run the runX.sh file (using
 "source" as they are not executable files).  This should run SCAT2 nine
-times.  It likely will take hours or days to run.
+times.  It may take hours or days to run.
 
 
 ***F)  Running VORONOI
@@ -274,14 +274,21 @@ times.  It likely will take hours or days to run.
 Do not do this step unless there were at least 2 samples in the species
 under consideration:  running VORONOI on one sample is not useful.
 
+TO DO:  the script will run this even with one sample.
+
 ** OPTIONAL **
 
-The script mary_finish_seizure.sh will run steps F1 through G3.  Its arguments
-are PREFIX, the path to a VORONOI executable, and "forest" or "savannah"; it
-should be run in /nforest or /nsavannah (or both if both exist).  
+The script mary_run_voronoi.sh will run steps F1 through G3.  It should be
+run in the parent directory; it will do both nforest and nsavannah if both
+exist (this may take a while).  Its arguments are PREFIX and the path to
+a VORONOI executable.
 
 The equivalent script jon_finish_seizure.sh only does steps F1 through G1,
-as G2 does not run on Jon's laptop due to reliance on Basemap.
+as G2 does not run on Jon's laptop due to reliance on Basemap.  It is meant
+to be run in nsavannah or nforest (twice, if both exist) and takes arguments
+PREFIX, the path to a VORONOI executable, and "forest" or "savannah".
+
+TO DO:  harmonize these scripts.
 
 **
 
@@ -345,12 +352,10 @@ If you need SCAT2 graphics without VORONOI graphics, for example because
 there was only 1 sample for this species, they can be gotten with
 plot_scat.py with the same arguments.
 
-NOTE:  Neither plot program for step 3 will run in Python3 as they
-use Basemap.  They will not run on Jon's laptop at all.  They are
-likely to stop working at all in the near future as Basemap is
-being retired.
+NOTE:  These programs have been converted from Basemap to Cartopy
+as Basemap did not work on Jon's laptop and is out of support.
 
-TO DO:  Convert to Cartopy library.
+TO DO:  write a note on how to install Cartopy:  it's tricky.
 
 3)  OPTIONAL but recommended:  In the directory where you ran VORONOI,
 run cleanup_voronoi.py with no arguments.  This deletes duplicate copies
@@ -362,13 +367,13 @@ scat2voronoi.py.
 
 ***H)  Run familial matching
 
-This document explains how to do familial matching of a new seizure
+This document explains how to do familial matching of a new seizure when
 all previous seizures have already been run and archived.  If
-you need to do familial matching on the entire data set, see documentation
-file familial_pipeline.txt, and be aware that it will take 3+ days.
-Rerunning the whole thing is needed if large changes have been made to
-the reference data, the subregion definitions have changed, or the set
-of previous seizures to be used has changed.
+you need to do familial matching on the entire data set at once, see 
+documentation file familial_pipeline.txt, and be aware that it will 
+take 3+ days.  Rerunning the whole thing is needed if large changes 
+have been made to the reference data, the subregion definitions have 
+changed, or the set of previous seizures to be used has changed.
 
 1)  Obtain the file seizure_metadata_[DBno].tsv (this is not kept
 on the Github site; ask Mary Kuhner for a copy).  Make a COPY of this
@@ -380,11 +385,12 @@ the bottom of the file) before overwriting the original.  If you have
 changed [DBno] be sure to change the name of this file.  Return the
 modified file to Mary for archiving.
 
-2)  In your main PREFIX directory (not nforest/nsavannah), create a SCAT 
-output directory "outdir".  Run SCAT2 using the following
+2)  Make a directory "fammatch" in your main PREFIX directory (not
+nforest/nsavannah).  Make a subdirectory "outdir" within it for
+SCAT output.  Run SCAT2 in "fammatch" using the following
 command line:
 
-./SCAT2 -Z -H2 PREFIX_conjoint_nohybrids.txt regionfile outdir 16
+./SCAT2 -Z -H2 ../PREFIX_conjoint_nohybrids.txt ../regionfile outdir 16
 
 This will compute subregion probabilities for all reference and seizure
 samples.  The seizure samples will be classified into subregions based
@@ -395,28 +401,33 @@ to establish the subregional allele frequencies.  It runs in minutes.
 3)  Obtain make_fammatch_incremental.py from the ivory_pipeline /src
 directory.  Check to make sure it has the correct value for the
 nsub variable (number of subregions, currently 6).  Run this
-program with three arguments:
+program with four arguments:
 
-outdir/Output_hybrid file created in step 2
-PREFIX_conjoint_nohybrids.txt
+PREFIX
+outdir
+path to familial matching input archive (currently ~/data/fammatch_input
+   on Mary's laptop)
 regionfile
 
-This will write two files per subregion:  refsN_fammatch.csv and 
-newN.txt, where N is the subregion number.  No files will be written
-for a subregion which has no samples from the new seizure.
+This will create subdirectories for each subregion that has samples
+in the seizure.  It will also add the samples from the new seizure to
+the archive for further use.  (Therefore, if you are running on a 
+copy of the archive, you will need to update the original.  This can
+be done by finding all files in the archive that begin with PREFIX
+and adding them to the canonical archive, in the proper subdirectories.)  
 
-4)  Obtain the "oldN.txt" files covering all previous seizures.  These
-are not archived on Github for security reasons:  ask Mary for a copy.
+One unusual case can occur:  If there is exactly one
+sample for a particular subregion in this seizure, and no samples for
+the subregion in the archives, familial matching cannot be run.  This
+will be signaled by the presence of a file ONLY_ONE_SAMPLE in the
+subdirectory for that subregion (and absence of some of the run files).
+The sample will be archived as usual.
 
-5)  Place copies of calculate_LRs.R, LR_functions.R, and 
-setupivoryfammatch.sh, found in the /src directory, in the current 
-directory.  Run setupivoryfammatch.sh.  This creates directories named 
-"subN" for each subregion N for which seizure samples were found, and 
-moves all needed files to that directory.  It also writes a script 
-"runrscript.sh" into each directory.
+This program also writes run files for familial matching into each
+subregional directory, called "runrscript.sh".
 
-This script assumes that subregions 0 and 1 are forest and all others 
-are savannah, and will need to be revised if that changes.
+5)  Place copies of calculate_LRs.R and LR_functions.R in each
+subdirectory.
 
 6)  In each subregion directory, source runrscript.sh (no arguments).
 This will contain a run command of the form:
@@ -424,7 +435,8 @@ This will contain a run command of the form:
 Rscript calculate_LRs.R [species] refN_fammatch.csv oldN.txt newN.txt
 
 Runtime depends on the size of the seizure but usually not more than
-a few hours.  You can run all of them simultaneously.
+a few hours and often much less.  You can run all of them simultaneously, 
+which is why this is not done by a script.
 
 
 ***I)  Postprocess familial matching

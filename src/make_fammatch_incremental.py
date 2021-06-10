@@ -13,6 +13,9 @@
 # cannot be run.  This will be signaled by creation of a file
 # named ONLY_ONE_SAMPLE in the subregion run directory.
 
+# This program also writes run scripts to the subregional directories,
+# where needed.
+
 # BE SURE TO SET "nsub" APPROPRIATELY (number of subregions)!
 # Also, if you change which subregions are forest versus savannah, you
 # will need to check both this program and all downstream programs.
@@ -36,6 +39,22 @@ def write_fammatch(filename,header,body):
   outfile = open(filename,"w")
   outfile.write(header)
   outfile.writelines(body)
+  outfile.close()
+
+def write_run_script(subreg):
+  # takes a NUMERIC subregion, derives the other forms
+  subregid = str(subreg)
+  subdir = "sub" + subregid
+  outfile = open(subdir+"/"+"runrscript.sh","w")
+  if subreg == 0 or subreg == 1:
+    species = "forest"
+  else:
+    species = "savannah"
+  refname = "refs" + subregid + "_fammatch.csv"
+  oldname = "old" + subregid + ".txt"
+  newname = "new" + subregid + ".txt"
+  outline = "Rscript calculate_LRs.R " + species + " " + refname + " " + oldname + " " + newname + "\n"
+  outfile.write(outline)
   outfile.close()
 
 #############################
@@ -179,6 +198,7 @@ for subreg in range(0,nsub):
       newlines = newlines[1:]
       write_fammatch(oldfilename,header,oldlines)
       write_fammatch(newfilename,header,newlines)
+      write_run_script(subreg)
     else:
       # special case:  only one new sample, can't run fammatch
       sigfile = open(subdir + "ONLY_ONE_SAMPLE","w")
@@ -197,5 +217,6 @@ for subreg in range(0,nsub):
     header, outlines = read_infile(oldpart)
     oldlines += outlines
   write_fammatch(oldfilename,header,oldlines)
+  write_run_script(subreg)
 
 print("Ready to run familial matching")
