@@ -2,6 +2,8 @@
 # them, and make 1 or 2 species specific files for SCAT, as well as
 # a conjoint hybrid-free file for familial matching.
 
+# also creates run files (cluster or laptop style) for SCAT.
+
 # program formerly known as make_species_files.py
 
 ### functions
@@ -19,11 +21,18 @@ def make_species_scatfile(species,prefix,unknowns,specieslines):
     outfile.write(line)
   outfile.close()
 
+def truncate_path(mypath,prefix):
+  mypath = mypath.split("/")
+  mypath = prefix + "/" + mypath[-1]
+  return mypath
+
 def make_runfiles(clusterrun,species,prefix,numunknown,mapfile,regionfile):
   # make Scat run file
   if clusterrun:
-    runlines = open("cluster_master_scat.sh","r").readlines()
+    runlines = open("../cluster_master_scat.sh","r").readlines()
     runline = runlines[-1]
+    mapfile = truncate_path(mapfile,prefix)
+    regionfile = truncate_path(regionfile,prefix)
   else:
     runlines = open("master_scat_runfile.sh","r").readlines()
     assert len(runlines) == 1
@@ -37,7 +46,7 @@ def make_runfiles(clusterrun,species,prefix,numunknown,mapfile,regionfile):
   runline = runline.replace("REGIONFILE",regionfile)
   runfile = open("runfile_" + species + ".sh","w")
   if clusterrun:
-    runfile.write(runlines[0:-1])
+    runfile.writelines(runlines[0:-1])
   runfile.write(runline)
   runfile.close()
   # make Voronoi run file
