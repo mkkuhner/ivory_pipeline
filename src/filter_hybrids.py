@@ -28,11 +28,14 @@ def truncate_path(mypath,prefix):
 
 def make_runfiles(clusterrun,species,prefix,numunknown,mapfile,regionfile):
   # make Scat run file
+  datafile = prefix + "_" + species + ".txt"
   if clusterrun:
+    cluster_path = "/gscratch/wasser/mkkuhner/seizureruns/" 
     runlines = open("../cluster_master_scat.sh","r").readlines()
     runline = runlines[-1]
-    mapfile = truncate_path(mapfile,prefix)
-    regionfile = truncate_path(regionfile,prefix)
+    mapfile = cluster_path + truncate_path(mapfile,prefix)
+    regionfile = cluster_path + truncate_path(regionfile,prefix)
+    datafile = cluster_path + truncate_path(datafile,prefix)
   else:
     runlines = open("master_scat_runfile.sh","r").readlines()
     assert len(runlines) == 1
@@ -41,8 +44,7 @@ def make_runfiles(clusterrun,species,prefix,numunknown,mapfile,regionfile):
   # we do NOT replace SEED; that will be done downstream, as each
   # separate Scat run needs its own seed.
   runline = runline.replace("MAPFILE",mapfile)
-  outfilename = prefix + "_" + species + ".txt"
-  runline = runline.replace("DATAFILE","../"+outfilename)
+  runline = runline.replace("DATAFILE",datafile)
   runline = runline.replace("REGIONFILE",regionfile)
   runfile = open("runfile_" + species + ".sh","w")
   if clusterrun:

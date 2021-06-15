@@ -15,4 +15,4 @@
 
 pwd; hostname; date;
 
-../scat3.0 -A 1 NUMIND -Z -S SEED -g MAPFILE DATAFILE REGIONFILE outputs 16 100 20 100
+/gscratch/wasser/mkkuhner/scat/SCAT2 -A 1 NUMIND -Z -S SEED -g MAPFILE DATAFILE REGIONFILE outputs 16 100 20 100

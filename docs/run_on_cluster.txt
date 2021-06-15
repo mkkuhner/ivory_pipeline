@@ -1,0 +1,34 @@
+Revised instructions to run on the Klone cluster (klone.hyak.uw.edu)
+
+Loggin in:
+You do not need to use the VPN (HuskyOnNet) for this.
+
+ssh mkkuhner@klone.hyak.uw.edu (will ask for two-factor auth)
+
+cd /gscratch/wasser/mkkuhner  (or use alias 'home')
+
+Run a job:
+navigate to directory with a run script
+module load gcc/10.2.0
+sbatch runscript.sh
+
+[The "module load" is essential here, not just for compiles, or you will
+get errors referencing the Fortran libraries.]
+
+Check on a job:
+squeue -p compute
+
+[Substitute the name of the partition you used for "compute" if you used
+a different one.]
+
+Kill a job (jobid can be obtained from squeue):
+scancel jobid 
+
+Compile programs:
+
+See file compile_on_cluster.
+
+Sample run scripts:
+
+See file cluster_master_runfile.sh in ivory_pipeline/src.  Note that the
+version given there runs *one* SCAT run, not a full set of 9.

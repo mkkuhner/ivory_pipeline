@@ -8,25 +8,37 @@ rootdir = sys.argv[1]
 masterfile = sys.argv[2]
 randseed = int(sys.argv[3])
 
-# set up the directories
 import os
-#command = "mkdir " + rootdir
-#os.system(command)
 for i in range(1,numruns+1):
+  # set up the directories
   mydir = str(i)
   command = "mkdir " + rootdir + "/" + mydir
   os.system(command)
   command = "mkdir " + rootdir + "/" + mydir + "/outputs" 
   os.system(command)
+
+  # make run files
   myrunfile = "run" + str(i)
   command = "cp " + masterfile + " " + rootdir + "/" + mydir + "/" + myrunfile
   os.system(command)
+
+  # edit run files for cluster run
   runfilepath = rootdir + "/" + mydir + "/" + myrunfile
+
+  # random number seed
   command = 'perl -p -i -e "s/SEED/' + str(randseed) + '/;" ' + runfilepath
   os.system(command)
-  command = 'perl -p -i -e "s#UNAME#' + rootdir + str(i) + '#;" ' + runfilepath
+
+  # unique job name:  root directory plus run number
+  jobname = rootdir + "_" + mydir
+  command = 'perl -p -i -e "s#UNAME#' + jobname + '#;" ' + runfilepath
   os.system(command)
-  command = 'perl -p -i -e "s#LOCALPATH#' + rootdir + "/" + mydir + '#;" ' + runfilepath
+
+  # local path
+  localpath = "/gscratch/wasser/mkkuhner/seizureruns/" + rootdir + "/" + mydir
+  command = 'perl -p -i -e "s#LOCALPATH#' + localpath  + '#;" ' + runfilepath
   os.system(command)
+
+  # 
   randseed += 1
 print("Finished creating directories")
