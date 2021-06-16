@@ -13,7 +13,9 @@ module load gcc/10.2.0
 sbatch runscript.sh
 
 [The "module load" is essential here, not just for compiles, or you will
-get errors referencing the Fortran libraries.]
+get errors referencing the Fortran libraries.  However, this command is
+now embedded in our standard SCAT run script, so need not be typed
+separately.]
 
 Check on a job:
 squeue -p compute
@@ -24,11 +26,41 @@ a different one.]
 Kill a job (jobid can be obtained from squeue):
 scancel jobid 
 
-Compile programs:
-
-See file compile_on_cluster.
-
 Sample run scripts:
 
 See file cluster_master_runfile.sh in ivory_pipeline/src.  Note that the
 version given there runs *one* SCAT run, not a full set of 9.
+
+Older scripts for Mox will not run.
+
+Compile programs:
+
+Based on 
+https://wiki.cac.washington.edu/display/hyakusers/Hyak+Compiling+HDF5+Serial
+but with substantial modification.  These instructions are currently tested
+only for SCAT.
+
+(0)  You will need a compiled LAPACK library for SCAT.  The library
+is currently in /gscratch/wasser/mkkuhner/scat/ and can be built with
+"cmake" (I could not get "Make" to work).  You will need the same module
+load as in step #3.  If you compile it elsewhere, you will then need to modify 
+the SCAT Makefile to point to it.
+
+(1) Get the code onto your /gscratch user directory.
+
+(2)  For SCAT, be sure you have the cluster version Makefile (comment in the
+line with a path to -llapack and comment out the alternative).
+
+(3) For SCAT, module load gcc/10.2.0 (needed for Fortran calls in LAPACK 
+library).
+
+(4)  Make the code (usually configure comes first, but we have none).
+On the older cluster they did not like us to do this on the head
+node, and wanted us to spawn an interactive session instead, but I
+do not have instructions that work for that on Klone.  In any case
+our compiles are pretty fast.
+
+Note that you will also need the module load command to run the resulting
+executable.
+
+
