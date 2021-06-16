@@ -1,12 +1,13 @@
 import sys
-if len(sys.argv) != 4:
-  print("USAGE:  python setupscatruns.py rootdir masterscript randseed")
+if len(sys.argv) != 5:
+  print("USAGE:  python setupscatruns.py prefix rootdir masterscript randseed")
   exit()
 
 numruns = 9
-rootdir = sys.argv[1]
-masterfile = sys.argv[2]
-randseed = int(sys.argv[3])
+prefix = sys.argv[1]
+rootdir = sys.argv[2]
+masterfile = sys.argv[3]
+randseed = int(sys.argv[4])
 
 import os
 for i in range(1,numruns+1):
@@ -18,7 +19,7 @@ for i in range(1,numruns+1):
   os.system(command)
 
   # make run files
-  myrunfile = "run" + str(i)
+  myrunfile = "run" + str(i) + ".sh"
   command = "cp " + masterfile + " " + rootdir + "/" + mydir + "/" + myrunfile
   os.system(command)
 
@@ -29,13 +30,13 @@ for i in range(1,numruns+1):
   command = 'perl -p -i -e "s/SEED/' + str(randseed) + '/;" ' + runfilepath
   os.system(command)
 
-  # unique job name:  root directory plus run number
-  jobname = rootdir + "_" + mydir
+  # unique job name:  prefix + root directory + run number
+  jobname = prefix + "_" + rootdir + "_" + mydir
   command = 'perl -p -i -e "s#UNAME#' + jobname + '#;" ' + runfilepath
   os.system(command)
 
   # local path
-  localpath = "/gscratch/wasser/mkkuhner/seizureruns/" + rootdir + "/" + mydir
+  localpath = "/gscratch/wasser/mkkuhner/seizureruns/" + prefix + "/" + rootdir + "/" + mydir
   command = 'perl -p -i -e "s#LOCALPATH#' + localpath  + '#;" ' + runfilepath
   os.system(command)
 

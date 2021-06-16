@@ -6,7 +6,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem=4G
-#SBATCH --time=720:00:00
+#SBATCH --time=100:00:00
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=mkkuhner@uw.edu
 #SBATCH -o scat.%j.out
