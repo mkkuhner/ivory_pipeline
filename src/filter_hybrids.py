@@ -8,16 +8,18 @@
 
 ### functions
 
-def make_species_scatfile(species,prefix,unknowns,specieslines):
+def make_species_scatfile(species, prefix, seizelines, reflines):
   outfilename = prefix + "_" + species + ".txt"
   print("Writing", species, "SCAT input file",outfilename)
   print("Contains:")
-  numunknown = unknowns/2
-  numref = (len(specieslines) - unknown_savannah)/2
-  print("\t",numunknown,"location unknown")
+  numseize = len(seizelines) / 2
+  numref = len(reflines) / 2
+  print("\t",numseize,"location unknown")
   print("\t",numref,"reference")
   outfile = open(outfilename,"w")
-  for line in specieslines:
+  for line in seizelines:
+    outfile.write(line)
+  for line in reflines:
     outfile.write(line)
   outfile.close()
 
@@ -26,7 +28,7 @@ def truncate_path(mypath,prefix):
   mypath = prefix + "/" + mypath[-1]
   return mypath
 
-def make_runfiles(clusterrun,species,prefix,numunknown,mapfile,regionfile):
+def make_runfiles(clusterrun,species,prefix,seizelines,mapfile,regionfile):
   # make Scat run file
   datafile = prefix + "_" + species + ".txt"
   if clusterrun:
@@ -40,7 +42,8 @@ def make_runfiles(clusterrun,species,prefix,numunknown,mapfile,regionfile):
     runlines = open("master_scat_runfile.sh","r").readlines()
     assert len(runlines) == 1
     runline = runlines[0]
-  runline = runline.replace("NUMIND",str(numunknown))
+  numind = len(seizelines) / 2
+  runline = runline.replace("NUMIND",str(numind))
   # we do NOT replace SEED; that will be done downstream, as each
   # separate Scat run needs its own seed.
   runline = runline.replace("MAPFILE",mapfile)
@@ -117,50 +120,52 @@ for line in open(ebfile,"r"):
     speciesdict[id] = "F"
 
 # read scat-style input containing both seizure and ref
-savannahlines = []
-forestlines = []
-unknownlines = []
-knownlines = []
-unknown_savannah = 0
-unknown_forest = 0
+sav_seizure = []
+sav_ref = []
+for_seizure = []
+for_ref = []
 for line in open(datafile,"r"):
   nline = line.rstrip().split()
   id = nline[0]
   region = nline[1]
   msats = nline[2:]
+  # hybrids
   if speciesdict[id] == "H":
     continue    # discarding hybrids
+  # savannah
   if speciesdict[id] == "S":
-    savannahlines.append(line)
-    if region == "-1":   # found a region-unknown savannah individual
-      unknown_savannah += 1
-      unknownlines.append(line)
+    if region == "-1":
+      sav_seizure.append(line)
     else:
-      knownlines.append(line)
+      sav_ref.append(line)
+  # forest
   else:
-    forestlines.append(line)
-    if region == "-1":   # found a region-unknown forest individual
-      unknown_forest += 1
-      unknownlines.append(line)
+    assert speciesdict[id] == "F"
+    if region == "-1":
+      for_seizure.append(line)
     else:
-      knownlines.append(line)
+      for_ref.append(line)
 
 # write conjoint file for familial matching
 outfile = open(prefix + "_conjoint_nohybrids.txt","w")
 unknowns = []
 knowns = []
-for line in unknownlines:
+for line in sav_seizure:
   outfile.write(line)
-for line in knownlines:
+for line in for_seizure:
+  outfile.write(line)
+for line in sav_ref:
+  outfile.write(line)
+for line in for_ref:
   outfile.write(line)
 outfile.close()
 
 # write species-specific files for SCAT/VORONOI pipeline
 
-if unknown_savannah > 0:
-  make_species_scatfile("savannah",prefix,unknown_savannah,savannahlines)
-  make_runfiles(clusterrun,"savannah",prefix,unknown_savannah,savannahmap,regionfile)
+if len(sav_seizure) > 0:
+  make_species_scatfile("savannah",prefix,sav_seizure,sav_ref)
+  make_runfiles(clusterrun,"savannah",prefix,sav_seizure,savannahmap,regionfile)
 
-if unknown_forest > 0:
-  make_species_scatfile("forest",prefix,unknown_forest,forestlines)
-  make_runfiles(clusterrun,"forest",prefix,unknown_forest,forestmap,regionfile)
+if len(for_seizure) > 0:
+  make_species_scatfile("forest",prefix,for_seizure,for_ref)
+  make_runfiles(clusterrun,"forest",prefix,for_seizure,forestmap,regionfile)

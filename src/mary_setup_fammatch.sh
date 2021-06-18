@@ -1,5 +1,10 @@
+# Set up (but do not run) familial matching R scripts
 
-# run familial matching R scripts
+# This script is meant to be run in the directory named PREFIX (parent of nforest and
+# nsavannah); it will create a new directory "fammatch".
+
+# argument $1 is PREFIX
+
 mkdir fammatch
 cd fammatch
 mkdir outdir 
