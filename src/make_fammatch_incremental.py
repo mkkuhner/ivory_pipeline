@@ -85,8 +85,8 @@ def read_subregion_metadata(metafile):
   return subdict
 
 def dirpath(dirname):
-  if not dirname.endswith("/")
-  dirname += "/"
+  if not dirname.endswith("/"):
+    dirname += "/"
   return dirname
 
 #############################
@@ -228,7 +228,7 @@ for subreg in range(0,nsub):
       write_fammatch(oldfilename,header,prevlines)
       write_fammatch(newfilename,header,currlines)
       write_run_script(subreg, subdict)
-      write_reference(subdir,subregid,refdata):
+      write_reference(subdir,subregid,refdata)
     else:
       # special case:  only one new sample, can't run fammatch
       sigfile = open(subdir + "ONLY_ONE_SAMPLE","w")
@@ -249,6 +249,6 @@ for subreg in range(0,nsub):
     prevlines += outlines
   write_fammatch(oldfilename,header,prevlines)
   write_run_script(subreg, subdict)
-  write_reference(subdir,subregid,refdata):
+  write_reference(subdir,subregid,refdata)
 
 print("Ready to run familial matching")
