@@ -8,10 +8,17 @@
 
 ### functions
 
+def is_even(number):
+  if a % 2 != 0:
+    return False
+  return True
+
 def make_species_scatfile(species, prefix, seizelines, reflines):
   outfilename = prefix + "_" + species + ".txt"
   print("Writing", species, "SCAT input file",outfilename)
   print("Contains:")
+  assert is_even(len(seizelines))
+  assert is_even(len(reflines))
   numseize = len(seizelines) / 2
   numref = len(reflines) / 2
   print("\t",numseize,"location unknown")
@@ -42,6 +49,7 @@ def make_runfiles(clusterrun,species,prefix,seizelines,mapfile,regionfile):
     runlines = open("master_scat_runfile.sh","r").readlines()
     assert len(runlines) == 1
     runline = runlines[0]
+  assert is_even(len(seizelines))
   numind = len(seizelines) / 2
   runline = runline.replace("NUMIND",str(numind))
   # we do NOT replace SEED; that will be done downstream, as each
