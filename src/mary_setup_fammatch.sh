@@ -8,8 +8,9 @@
 mkdir fammatch
 cd fammatch
 mkdir outdir 
-../../../SCAT2 -Z -H2 ../../${1}_conjoint_nohybrids.txt ../../../regionfile.v38b.txt outdir 16
-python3 ../../../make_fammatch_incremental.py $1 outdir ~/data/fammatch_inputs ../../../regionfile.v38b.txt
+echo "WARNING SCAT IS SKIPPED!"
+# ../../SCAT2 -Z -H2 ../${1}_conjoint_nohybrids.txt ../../regionfile.v38b.txt outdir 16
+python3 ../../make_fammatch_incremental.py $1 outdir ~/data/fammatch_inputs ../../regionfile.v38b.txt
 for i in 0 1 2 3 4 5
 do
   if [ -d "sub${i}" ]
@@ -19,9 +20,10 @@ do
     then
       echo "Only one sample ever seen in this subregion -- skipping"
     else
-      cp ../../../calculate_LRs.R sub${i}/
-      cp ../../../LR_functions.R sub${i}/
+      cp ../../calculate_LRs.R sub${i}/
+      cp ../../LR_functions.R sub${i}/
     fi
   fi
 done
-echo "Ready to run familial matching (runrscript.sh) in each subregional directory"
+cd ..
+echo "Ready to run familial matching (runrscript.sh) in each fammatch/subX directory"

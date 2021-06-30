@@ -68,7 +68,7 @@ def write_run_script(subreg, subdict):
   subdir = "sub" + subregid
   outfile = open(subdir+"/"+"runrscript.sh","w")
   species = subdict[subreg]
-  refname = "refs" + subregid + "_fammatch.csv"
+  refname = "ref" + subregid + "_fammatch.csv"
   oldname = "old" + subregid + ".txt"
   newname = "new" + subregid + ".txt"
   outline = "Rscript calculate_LRs.R " + species + " " + refname + " " + oldname + " " + newname + "\n"
@@ -105,6 +105,7 @@ if len(sys.argv) != 5:
 prefix = sys.argv[1]
 scatdir = dirpath(sys.argv[2])
 archivedir = dirpath(sys.argv[3])
+if not archivedir.endswith("/"):  archivedir += "/"
 regionfile = sys.argv[4]
 hybfile = scatdir + "Output_hybrid"
 genofile = "../" + prefix + "_conjoint_nohybrids.txt"
@@ -207,7 +208,7 @@ for subreg in range(0,nsub):
   
   # obtain previous seizures from archive
   oldfiles = []
-  for filename in listdir(archivedir/subdir):
+  for filename in listdir(archivedir + subdir):
     # only use the right kind of files
     if not filename.endswith(subregid + ".txt"):  continue
     # don't use files for this seizure
@@ -228,7 +229,7 @@ for subreg in range(0,nsub):
       write_fammatch(oldfilename,header,prevlines)
       write_fammatch(newfilename,header,currlines)
       write_run_script(subreg, subdict)
-      write_reference(subdir,subregid,refdata)
+      write_reference(subdir,subregid,reference[subreg])
     else:
       # special case:  only one new sample, can't run fammatch
       sigfile = open(subdir + "ONLY_ONE_SAMPLE","w")
@@ -249,6 +250,6 @@ for subreg in range(0,nsub):
     prevlines += outlines
   write_fammatch(oldfilename,header,prevlines)
   write_run_script(subreg, subdict)
-  write_reference(subdir,subregid,refdata)
+  write_reference(subdir,subregid,reference[subreg])
 
 print("Ready to run familial matching")
