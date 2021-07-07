@@ -9,7 +9,7 @@
 ### functions
 
 def is_even(number):
-  if a % 2 != 0:
+  if number % 2 != 0:
     return False
   return True
 
@@ -49,6 +49,7 @@ def make_runfiles(clusterrun,species,prefix,seizelines,mapfile,regionfile):
     runlines = open("master_scat_runfile.sh","r").readlines()
     assert len(runlines) == 1
     runline = runlines[0]
+    datafile = "../../" + datafile
   assert is_even(len(seizelines))
   numind = len(seizelines) / 2
   runline = runline.replace("NUMIND",str(numind))

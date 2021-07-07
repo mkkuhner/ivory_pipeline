@@ -3,11 +3,22 @@
 # $1 is both the prefix name of the seizure to be run and
 #    the new directory that will be created to run the seizure analysis in
 # $2 is the path to the source of raw seizure data files
+# $3 is either "laptop" or "cluster", depending if you want to
+#    run SCAT on a laptop or on the Klone cluster.
 #
-# plus a directory "refdata" containing:
+# Assumes that directory .. contains:
 #   REFELE_[Dbno]_known.txt, REFELE_[Dbno]_known_structure.txt_f
 #   regionfile_[vno].txt
+# as well as needed programs and scripts
 
+if [ "$3" != "cluster" ];
+then
+  if [ "$3" != "laptop" ];
+  then
+    echo "Must specify either cluster or laptop as third argument"
+    exit 1 
+  fi
+fi
 
 mkdir $1
 cp $2/$1_raw.tsv $1
@@ -26,14 +37,26 @@ Rscript ebscript.R
 cp ../mapfile* .
 cp ../regionfile.v38b.txt .
 cp ../master*runfile.sh .
-python3 ../filter_hybrids.py $1 mapfile_161220 regionfile.v38b.txt REFELE_4.3 F
+
+# make either cluster-type or laptop-type run files
+if [ "$3" == "laptop" ];
+then
+  python3 ../filter_hybrids.py $1 mapfile_161220 regionfile.v38b.txt REFELE_4.3 F
+else
+  python3 ../filter_hybrids.py $1 mapfile_161220 regionfile.v38b.txt REFELE_4.3 T
+fi
+
 
 if test -f "runfile_forest.sh"; then
   mkdir nforest
   cp $1_forest.txt nforest
   cp voronoi_runfile_forest.sh nforest
   cp ../SCAT2 nforest
-  python3 ../setupscatruns.py nforest runfile_forest.sh 1001
+  if [ "$3" == "laptop" ]; then
+    python3 ../setupscatruns.py nforest runfile_forest.sh 1001
+  else
+    python3 ../cluster_setupscatruns.py prefix nforest runfile_forest.sh 1001
+  fi
   echo "nforest created"
 fi
 if test -f "runfile_savannah.sh"; then
@@ -41,7 +64,11 @@ if test -f "runfile_savannah.sh"; then
   cp $1_savannah.txt nsavannah
   cp voronoi_runfile_savannah.sh nsavannah
   cp ../SCAT2 nsavannah
-  python3 ../setupscatruns.py nsavannah runfile_savannah.sh 2001
+  if [ "$3" == "laptop" ]; then
+    python3 ../setupscatruns.py nsavannah runfile_savannah.sh 2001
+  else
+    python3 ../cluster_setupscatruns.py prefix nsavannah runfile_savannah.sh 2001
+  fi
   echo "nsavannah created"
 fi
 

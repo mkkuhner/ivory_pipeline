@@ -18,7 +18,7 @@ for i in range(1,numruns+1):
   os.system(command)
   command = "mkdir " + rootdir + "/" + mydir + "/outputs" 
   os.system(command)
-  myrunfile = "run" + str(i)
+  myrunfile = "run" + str(i) + ".sh"
   command = "cp " + masterfile + " " + rootdir + "/" + mydir + "/" + myrunfile
   os.system(command)
   runfilepath = rootdir + "/" + mydir + "/" + myrunfile
