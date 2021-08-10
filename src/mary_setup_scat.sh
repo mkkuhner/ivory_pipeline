@@ -30,6 +30,12 @@ then
   echo "Likely problem:  microsatellites out of order in file."
   exit 1 
 fi
+python3 ../detect_duplicates $1/$1_raw.tsv
+if [ $? -ne 0 ]
+  echo "TERMINATING:  duplicate genotypes in input file"
+  echo "Likely problem:  undetected exact matches"
+  exit 1
+fi
 python3 ../prep_scat_data.py $1
 cp ../*.R .
 python3 ../make_eb_input.py ../REFELE_4.3_known_structure.txt_f ../REFELE_4.3_known.txt $1 ../dropoutrates_savannahfirst.txt
