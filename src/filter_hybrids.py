@@ -156,18 +156,18 @@ for line in open(datafile,"r"):
       for_ref.append(line)
 
 # write conjoint file for familial matching
-outfile = open(prefix + "_conjoint_nohybrids.txt","w")
-unknowns = []
-knowns = []
-for line in sav_seizure:
-  outfile.write(line)
-for line in for_seizure:
-  outfile.write(line)
-for line in sav_ref:
-  outfile.write(line)
-for line in for_ref:
-  outfile.write(line)
-outfile.close()
+#outfile = open(prefix + "_conjoint_nohybrids.txt","w")
+#unknowns = []
+#knowns = []
+#for line in sav_seizure:
+#  outfile.write(line)
+#for line in for_seizure:
+#  outfile.write(line)
+#for line in sav_ref:
+#  outfile.write(line)
+#for line in for_ref:
+#  outfile.write(line)
+#outfile.close()
 
 # write species-specific files for SCAT/VORONOI pipeline
 
