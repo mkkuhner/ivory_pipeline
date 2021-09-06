@@ -4,17 +4,41 @@
 # takes PREFIX (the name of the seizure to be analyzed) as its argument.
 # It will create a new directory PREFIX/fammatch for its work and will spawn
 # jobs to run familial matching in each of the subN directories as needed.
-# WARNING:  it can and will terminate before those jobs finish!  You will need
+
+# WARNING:  it will terminate before those jobs finish!  You will need
 # to make sure they have finished before doing anything downstream of them.
 # (That's why this script stops where it does....)
 
+#### CHANGE THESE LINES FOR SPECIFIC MACHINE
+
+# ivory pipeline main directory (not /src)
+pipedir="/home/mkkuhner/scat/ivory_pipeline"
+
+# reference data
+datadir="/home/mkkuhner/data"
+
+# SCAT /src
+scatdir="/home/mkkuhner/scat/scat-master/src"
+
+# VORONOI /src
+vordir="/home/mkkuhner/scat/voronoi-master/src"
+
+####
+
 cd $1
+rm -rf fammatch
 mkdir fammatch
 cd fammatch
-mkdir outdir 
-#echo "WARNING:  NOT RUNNING SCAT!"
-../../SCAT2 -Z -H2 ../${1}_conjoint_nohybrids.txt ../../regionfile.v38b.txt outdir 16
-python3 ../../make_fammatch_incremental.py $1 outdir ~/data/fammatch_inputs ../../regionfile.v38b.txt
+for s in forest savannah
+do 
+  if [ -d ../n${s} ]
+  then
+    mkdir outdir_${s}
+    echo "running in ${1} for ${s}"
+    ${scatdir}/SCAT2 -Z -H2 ../${1}_${s}.txt ${datadir}/zones_39_${s}.txt outdir_${s} 16
+  fi
+done
+python3 ${pipedir}/src/make_fammatch_incremental.py $1 outdir ${datadir}/fammatch_inputs ${datadir}/zones_39
 for i in 0 1 2 3 4 5
 do
   if [ -d "sub${i}" ]
@@ -24,8 +48,8 @@ do
     then
       echo "Only one sample ever seen in this subregion -- skipping"
     else
-      cp ../../calculate_LRs.R sub${i}/
-      cp ../../LR_functions.R sub${i}/
+      cp ${pipedir}/src/calculate_LRs.R sub${i}/
+      cp ${pipedir}/src/LR_functions.R sub${i}/
       cd sub${i}
       source runrscript.sh &
       cd ..
