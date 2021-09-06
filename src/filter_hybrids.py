@@ -1,6 +1,5 @@
 # take a set of EBhybrids results and the infile that produced
-# them, and make 1 or 2 species specific files for SCAT, as well as
-# a conjoint hybrid-free file for familial matching.
+# them, and make 1 or 2 species specific files for SCAT
 
 # also creates run files (cluster or laptop style) for SCAT.
 
@@ -86,11 +85,12 @@ print("NOTE:  this program assumes that Species 1 is savannah")
 print("and is using a hybrid cutoff of >", cutoff)
 
 if len(sys.argv) != 6:
-  print("USAGE:  filter_hybrids.py prefix mapprefix regionfile refprefix clusterrun")
+  print("USAGE:  filter_hybrids.py prefix mapprefix zoneprefix refprefix clusterrun")
   print("  datafile should contain both unknown and all known refs")
   print("  and must be the file the EBhybrid results came from!")
   print("  refprefix is which reference file the ref data came from")
   print("  frex. REFELE_21 for data that came from REFELE_21_known.txt")
+  print("  zoneprefix is the beginning of zonefile name, i.e. zones_43")
   print("  if clusterrun == T then this will be assumed to be a run on the biology")
   print("     computing cluster, otherwise not")
   exit()
@@ -101,7 +101,9 @@ ebfile = prefix+"_hybt.txt"
 mapprefix = sys.argv[2]
 savannahmap = os.path.abspath(mapprefix+"_savannah.txt")
 forestmap = os.path.abspath(mapprefix+"_forest.txt")
-regionfile = os.path.abspath(sys.argv[3])
+zoneprefix = os.path.abspath(sys.argv[3])
+zone_savannah = zoneprefix + "_savannah.txt"
+zone_forest = zoneprefix + "_forest.txt"
 
 clusterrun = False
 if sys.argv[5] == "T":
@@ -155,26 +157,12 @@ for line in open(datafile,"r"):
     else:
       for_ref.append(line)
 
-# write conjoint file for familial matching
-#outfile = open(prefix + "_conjoint_nohybrids.txt","w")
-#unknowns = []
-#knowns = []
-#for line in sav_seizure:
-#  outfile.write(line)
-#for line in for_seizure:
-#  outfile.write(line)
-#for line in sav_ref:
-#  outfile.write(line)
-#for line in for_ref:
-#  outfile.write(line)
-#outfile.close()
-
 # write species-specific files for SCAT/VORONOI pipeline
 
 if len(sav_seizure) > 0:
   make_species_scatfile("savannah",prefix,sav_seizure,sav_ref)
-  make_runfiles(clusterrun,"savannah",prefix,sav_seizure,savannahmap,regionfile)
+  make_runfiles(clusterrun,"savannah",prefix,sav_seizure,savannahmap,zone_savannah)
 
 if len(for_seizure) > 0:
   make_species_scatfile("forest",prefix,for_seizure,for_ref)
-  make_runfiles(clusterrun,"forest",prefix,for_seizure,forestmap,regionfile)
+  make_runfiles(clusterrun,"forest",prefix,for_seizure,forestmap,zone_forest)
