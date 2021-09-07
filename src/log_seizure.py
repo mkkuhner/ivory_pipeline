@@ -18,8 +18,8 @@ def get_github_code(mydir):
 
 ### main program
 import sys
-if len(sys.argv) != 7:
-  print("USAGE:  log_seizure.py prefix ivorydir datadir scatdir vordir seizedatadir")
+if len(sys.argv) != 6:
+  print("USAGE:  log_seizure.py prefix ivorydir datadir scatdir vordir")
   exit()
 
 prefix = sys.argv[1]
@@ -28,7 +28,6 @@ ivorydir = os.path.abspath(sys.argv[2])
 datadir = os.path.abspath(sys.argv[3])
 scatdir = os.path.abspath(sys.argv[4])
 vordir = os.path.abspath(sys.argv[5])
-seizedir = os.path.abspath(sys.argv[6])
 
 outfile = open(seizuredir + "/" + prefix + "_logfile.txt","w")
 
@@ -62,9 +61,6 @@ outfile.write(outline)
 
 # working directories
 outline = "Reference data directory: " + datadir + "\n"
-outfile.write(outline)
-
-outline = "Seizure data directory: " + seizedir + "\n"
 outfile.write(outline)
 
 outfile.close()

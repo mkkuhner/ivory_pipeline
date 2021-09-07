@@ -39,6 +39,10 @@ then
   fi
 fi
 
+### logging
+
+python3 ${pipedir}/src/log_seizure.py $1 ${pipedir} ${datadir} ${scatdir} ${vordir} 
+
 ### validations
 
 mkdir $1
