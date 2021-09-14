@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # $1 prefix for seizure being analyzed
-# $2 path to a voronoi executable
 
 # this is run in the parent directory of nforest and nsavannah
 
@@ -26,7 +25,9 @@ if [ -d nforest ]
 then
   cd nforest
   python3 ${pipedir}/src/scat2voronoi.py ${pipedir}/auxillary_files/masterfile
-  cp $2 .
+  rm -f VORONOI
+  rm -f mapfile_161220_forest.txt 
+  cp ${vordir}/VORONOI .
   cp ${datadir}/mapfile_161220_forest.txt .
   source voronoi_runfile_forest.sh
   python3 ${pipedir}/src/prep_reports.py $1 voronoiin.txt
@@ -40,8 +41,10 @@ fi
 if [ -d nsavannah ]
 then
   cd nsavannah
-  python3 ${pipedir}/src/scat2voronoi.py ../../masterfile
-  cp $2 .
+  python3 ${pipedir}/src/scat2voronoi.py ${pipedir}/auxillary_files/masterfile
+  rm -f VORONOI
+  rm -f mapfile_161220_savannah.txt 
+  cp ${vordir}/VORONOI .
   cp ${datadir}/mapfile_161220_savannah.txt .
   source voronoi_runfile_savannah.sh
   python3 ${pipedir}/src/prep_reports.py $1 voronoiin.txt
