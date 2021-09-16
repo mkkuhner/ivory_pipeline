@@ -53,8 +53,8 @@ python make_eb_input PREFIX_structure_output.txt_f PREFIX
 
 This will write an EBhybrids run script as well as REFERENCE_ancestryprobs.txt.
 
-3)  Execute the EBhybrids run script EBscript.R (using Rscript).  This will
-write PREFIX_HPs.csv and .txt, and PREFIX_hybt.csv and .txt.
+3)  Execute the EBhybrids run script ebscript.R (using Rscript).  This will
+write PREFIX_HPs.csv and .txt, and PREFIX_hybt.csv and .txt.  It is fast.
 
 4)  Run remove_hybrids_from_reference.py with PREFIX as its argument.
 This will write PREFIX_nohybrids.txt, which contains all forest and savannah
