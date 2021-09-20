@@ -23,7 +23,13 @@ with open(sys.argv[2], newline="") as csvfile:
       if row[0] != "Match ID":
         print("ERROR. Expected a header starting with 'Match ID', found:",row[0],"in",sys.argv[2])
         exit()
-      for pos in range(4,4+nmarkers*2,2):
+      # figure out where the msats are; the number of columns cannot be relied
+      # on between database releases
+      firstmarker = row.index("FH67")
+      lastmarker = row.index("S04") + 1
+      print("firstmarker",firstmarker,"is",row[firstmarker])
+      print("lastmarker",lastmarker,"is",row[lastmarker])
+      for pos in range(firstmarker,lastmarker+1,2):
         if row[pos] != row[pos+1]:
           print("ERROR. marker",row[pos],"does not match",row[pos+1],"in",sys.argv[2] )
           exit()
@@ -33,7 +39,7 @@ with open(sys.argv[2], newline="") as csvfile:
       readhdr = False
       continue
 
-    for pos in range(4,4+nmarkers*2):
+    for pos in range(firstmarker,lastmarker+1):
       refalleles[pos2name[pos]].append(row[pos])
 
 # now read in the seizure data 
