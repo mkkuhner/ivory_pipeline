@@ -50,6 +50,7 @@ def make_runfiles(clusterrun,species,prefix,seizelines,mapfile,regionfile):
     runline = runlines[0]
     datafile = "../../" + datafile
   assert is_even(len(seizelines))
+  runline = runline.replace("SCAT",scatexe)
   numind = len(seizelines) / 2
   runline = runline.replace("NUMIND",str(numind))
   # we do NOT replace SEED; that will be done downstream, as each
@@ -85,12 +86,13 @@ print("NOTE:  this program assumes that Species 1 is savannah")
 print("and is using a hybrid cutoff of >", cutoff)
 
 if len(sys.argv) != 6:
-  print("USAGE:  filter_hybrids.py prefix mapprefix zoneprefix refprefix clusterrun")
+  print("USAGE:  filter_hybrids.py prefix mapprefix zoneprefix scatexe clusterrun")
   print("  datafile should contain both unknown and all known refs")
   print("  and must be the file the EBhybrid results came from!")
   print("  refprefix is which reference file the ref data came from")
   print("  frex. REFELE_21 for data that came from REFELE_21_known.txt")
   print("  zoneprefix is the beginning of zonefile name, i.e. zones_43")
+  print("  scatexe is the desired SCAT executable")
   print("  if clusterrun == T then this will be assumed to be a run on the biology")
   print("     computing cluster, otherwise not")
   exit()
@@ -104,6 +106,7 @@ forestmap = os.path.abspath(mapprefix+"_forest.txt")
 zoneprefix = os.path.abspath(sys.argv[3])
 zone_savannah = zoneprefix + "_savannah.txt"
 zone_forest = zoneprefix + "_forest.txt"
+scatexe = sys.argv[4]
 
 clusterrun = False
 if sys.argv[5] == "T":
