@@ -1,5 +1,7 @@
+# This version uses the new-style VORONOI output (VORONOI should
+# be run with -k or -N)
+
 import sys
-#from mpl_toolkits.basemap import Basemap as bmap
 import cartopy
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -9,21 +11,37 @@ import os
 import math
 import statistics
 
-# constants
-
 ########################################################################
 # functions
-def pull_voronoi(vfile,gridsize):
-  rawgrid = []
-  for line in open(vfile,"r"):
-    line = line.rstrip().split()
-    rawrow = [float(x) for x in line]
-    assert len(rawrow) == gridsize
-    rawgrid.append(rawrow)
-  assert len(rawgrid) == gridsize
-  return rawgrid
 
-def pull_scat(sfiles,gridsize,latmin,latmax,longmin,longmax):
+def latlong_to_grid(mylat,mylong,minlat,maxlat,minlong,maxlong):
+  assert minlat <= mylat <= maxlat
+  assert minlong <= mylong <= maxlong
+  gridlat = int(math.floor(mylat) - minlat)
+  gridlong = int(math.floor(mylong) - minlong)
+  return gridlat,gridlong
+
+# this routine collects VORONOI results for *all* samples
+def read_voronoi(printprobs,minlat,maxlat,minlong,maxlong):
+  vordict = {}
+  for line in open(printprobs,"r"):
+    line = line.rstrip().split()
+    if line[0].startswith("#"):  #header line of an elephant
+      sid = line[0][1:]
+      assert sid not in vordict
+      vordict[sid] = [[0.0 for x in range(0,dim)] for x in range(0,dim)]
+    else:
+      mylat = float(line[0])
+      mylong = float(line[1])
+      myprob = float(line[2])
+      # convert to grid coordinates
+      gridlat, gridlong = latlong_to_grid(mylat,mylong,minlat,maxlat,minlong,maxlong)
+      vordict[sid][gridlat][gridlong] = myprob
+  return vordict
+
+# this routine collects SCAT results for *one* sample 
+def read_scat(sfiles,gridsize,minlat,maxlat,minlong,maxlong):
+  # this code accumulates over all 9 SCAT files for one sample
   gridcounts = [[0 for x in range(0,gridsize)] for x in range(0,gridsize)]
   lats = []
   longs = []
@@ -33,10 +51,7 @@ def pull_scat(sfiles,gridsize,latmin,latmax,longmin,longmax):
       line = line.rstrip().split()
       mylat = float(line[0])
       mylong = float(line[1])
-      assert latmin <= mylat <= latmax
-      assert longmin <= mylong <= longmax
-      gridlat = int(math.floor(mylat) - latmin)
-      gridlong = int(math.floor(mylong) - longmin)
+      gridlat, gridlong = latlong_to_grid(mylat,mylong,minlat,maxlat,minlong,maxlong)
       gridcounts[gridlat][gridlong] += 1
       lats.append(mylat)
       longs.append(mylong)
@@ -44,6 +59,7 @@ def pull_scat(sfiles,gridsize,latmin,latmax,longmin,longmax):
   medlong = statistics.median(longs)
   return gridcounts,medlat,medlong
 
+# find biggest entry in a 2D grid
 def get_maximum(vgrid):
   bestx = -99
   besty = -99
@@ -57,21 +73,23 @@ def get_maximum(vgrid):
   assert bestx != -99
   return [bestx,besty]
 
-def makemap_for_summaries(proj,latmin,latmax,longmin,longmax):
+# use this map for plotting point estimates
+def makemap_for_summaries(proj,minlat,maxlat,minlong,maxlong):
   m = plt.axes(projection=proj)
-  m.set_extent([longmin,longmax,latmin,latmax], crs=proj)
+  m.set_extent([minlong,maxlong,minlat,maxlat], crs=proj)
   m.coastlines(resolution="50m", linewidth=0.4, color="black")
-  gl = m.gridlines(crs=crs_lonlat,xlocs=np.arange(-50,70,20),ylocs=np.arange(-50,70,20),draw_labels=True)
+  gl = m.gridlines(crs=crs_lonlat,xlocs=np.arange(-50,70,10),ylocs=np.arange(-50,70,10),draw_labels=True)
   gl.top_labels = None 
   m.add_feature(cfeature.BORDERS, linewidth=0.4, linestyle="solid", color="blue")
   m.add_feature(cfeature.LAND, color="tan")
   return m
 
-def makemap_for_heatmaps(proj,latmin,latmax,longmin,longmax):
+# use this map for heatmaps
+def makemap_for_heatmaps(proj,minlat,maxlat,minlong,maxlong):
   m = plt.axes(projection=proj)
-  m.set_extent([longmin,longmax,latmin,latmax], crs=proj)
+  m.set_extent([minlong,maxlong,minlat,maxlat], crs=proj)
   m.coastlines(resolution="50m", linewidth=0.4, color="white")
-  gl = m.gridlines(crs=crs_lonlat,xlocs=np.arange(-50,70,20),ylocs=np.arange(-50,70,20),draw_labels=True, linestyle="--")
+  gl = m.gridlines(crs=crs_lonlat,xlocs=np.arange(-50,70,10),ylocs=np.arange(-50,70,10),draw_labels=True, linestyle="--")
   gl.top_labels = None 
   gl.xlines = False
   gl.ylines = False
@@ -79,72 +97,77 @@ def makemap_for_heatmaps(proj,latmin,latmax,longmin,longmax):
   m.add_feature(cfeature.LAND, color="tan")
   return m
 
+# read the PREFIX_mapinfo file
+def read_mapinfo(mapfile):
+  # read prefix_mapinfo for grid dimensions
+  mapinfolines = open(mapfile,"r").readlines()
+  if len(mapinfolines) != 4:
+    print("Error: file",prefix+"_mapinfo","was",len(mapinfolines),"lines long",)
+    print("should have been 4.")
+    exit(-1)
+  ll = mapinfolines[0].rstrip().split(",")
+  lllat = int(ll[0].split()[-1])
+  lllong = int(ll[1])
+  ur = mapinfolines[1].rstrip().split(",")
+  urlat = int(ur[0].split()[-1])
+  urlong = int(ur[1])
+  nsdim = int(mapinfolines[2].rstrip().split(":")[1].split()[0])
+  ewdim = int(mapinfolines[3].rstrip().split(":")[1].split()[0])
+  if (nsdim != ewdim):
+    print("FAILURE: grid not square,",sys.argv[0],"assumes a square grid")
+    exit(-1)
+  dim = nsdim
+  return [lllat,lllong,urlat,urlong,dim]
+
+
 ########################################################################
 # main program
-if len(sys.argv) != 2 and len(sys.argv) != 3:
-  print("USAGE:  python2 plot_voronoi_Africa.py prefix sid")
-  print("Assumes that Voronoi individual elephant results are in prefix_reports/")
-  print("and scat results are here, along with needed samplemaps")
-  print("If no sid is given, plots everything in that directory")
-  print("Note that this program uses 'basemap' and only runs in python2")
-  exit(-1)
 
-# read Voronoi data
+if len(sys.argv) != 2 and len(sys.argv) != 3:
+  print("USAGE:  python plot_voronoi_Africa.py prefix sid")
+  print("If no sid is given, plots everything")
+  exit(-1)
 
 prefix = sys.argv[1]
 reportdir = prefix + "_reports"
-
-v_infiles = []
-sids = []
-if len(sys.argv) == 2:
-  for root, dirs, files in os.walk(reportdir):
-    for file in files:
-      if file.endswith("_voronoi.txt"):
-        v_infiles.append(reportdir + "/" + file)
-        sid = file[0:-12]
-        sids.append(sid)
+if len(sys.argv) == 3:
+  wanted_sid = sys.argv[2]
 else:
-  sid = sys.argv[2]
-  infilename = reportdir + "/" + sid + "_voronoi.txt"
-  v_infiles.append(infilename)
-  sids.append(sid)
+  wanted_sid = None
 
-# read corresponding Scat data
-taglist = ["r","s","t","u","v","w","x","y","z"]
-smap = {}
-for line in open("samplemap.r","r"):
-  if line.startswith("Accept"):  continue
-  fileno,mysid = line.rstrip().split()
-  if mysid in sids:
-    smap[mysid] = fileno
+# establish map
+minlat,minlong,maxlat,maxlong,dim = read_mapinfo(prefix + "_mapinfo")
+
+# read Voronoi data
+printprobs = prefix + "_printprobs"
+vordict = read_voronoi(printprobs,minlat,maxlat,minlong,maxlong)
+
+# if we only want one SID, eliminate the others
+if wanted_sid is not None:
+  newvordict = {}
+  newvordict[wanted_sid] = vordict[wanted_sid]
+  vordict = newvordict
+
+# this list is all SIDs in the VORONOI data, unless a specific
+# SID is wanted, in which case it contains only that one
+wantednames = list(vordict.keys())
+
+# read SCAT data
+dirnames = [str(x) + "/outputs" for x in range(1,10)]
+scatgrids = {}
+scatmedians = {}
+for sid in wantednames:
+  scatfiles = []
+  for dir in dirnames:
+    scatfiles.append(dir + "/" + sid)
+  gridcounts,medlat,medlong = read_scat(scatfiles,dim,minlat,maxlat,minlong,maxlong)
+  scatgrids[sid] = gridcounts
+  scatmedians[sid] = [medlat,medlong]
   
-s_infiles = []
-for sid in sids:
-  fileno = smap[sid]
-  specfiles = []
-  for tag in taglist:
-    specfiles.append(fileno + tag)
-  s_infiles.append(specfiles)
- 
-# read map info to align grid correctly
-maplines = open(prefix+"_mapinfo","r").readlines()
-nsgrid = int(maplines[2].rstrip().split()[-2])
-ewgrid = int(maplines[3].rstrip().split()[-2])
-assert nsgrid == ewgrid   # map must currently be square
-gridsize = nsgrid
-latmin, longmin = maplines[0].rstrip().split()[-2:]
-latmin = int(latmin[:-1])  # remove comma
-longmin = int(longmin)
-latmax, longmax = maplines[1].rstrip().split()[-2:]
-latmax = int(latmax[:-1])  # remove comma
-longmax = int(longmax)
-print("gridsize",gridsize)
-print("latmin",latmin,"latmax",latmax)
-print("longmin",longmin,"longmax",longmax)
+# prepare reports and graphs
 
-figno = 1
-longs = [x for x in range(longmin,longmax+1)]
-lats = [x for x in range(latmin,latmax+1)]
+longs = [x for x in range(minlong,maxlong+1)]
+lats = [x for x in range(minlat,maxlat+1)]
 
 best_vorx = []
 best_vory = []
@@ -153,26 +176,34 @@ best_scaty = []
 med_scatx = []
 med_scaty = []
 
+# set up file for point estimate reporting
 pointfile = open(reportdir + "/" + prefix + "_point_estimates.tsv","w")
 hdr = "SID\tVoronoi\tSCAT_median\tSCAT_bestsquare\n"
 pointfile.write(hdr)
 
-crs_lonlat = ccrs.PlateCarree()
+# plot heatmaps
 
-for vfile, sfiles, sid in zip(v_infiles,s_infiles,sids):
-  pointline = sid
+figno = 1
+crs_lonlat = ccrs.PlateCarree()
+for sid in wantednames:
+  pointline = sid  
+  shortsid = sid
+  if len(shortsid) > 15:
+    shortsid = shortsid[:15] + "..."
+
   # voronoi data
   plt.figure(figno)
   figno += 1
-  vgrid = pull_voronoi(vfile,gridsize)
+  vgrid = vordict[sid]
 
   # get best point for summary graph
   vorx,vory = get_maximum(vgrid)
-  best_vorx.append(vorx+latmin+0.5)
-  best_vory.append(vory+longmin+0.5)
-  pointline += "\t" + str(vorx+latmin+0.5) + "," + str(vory+longmin+0.5) 
+  best_vorx.append(vorx+minlat+0.5)
+  best_vory.append(vory+minlong+0.5)
+  pointline += "\t" + str(vorx+minlat+0.5) + "," + str(vory+minlong+0.5) 
 
-  m = makemap_for_heatmaps(crs_lonlat,latmin,latmax,longmin,longmax)
+  # make individual sample heatmaps
+  m = makemap_for_heatmaps(crs_lonlat,minlat,maxlat,minlong,maxlong)
   x,y = np.meshgrid(longs,lats)
   m.pcolormesh(x,y,vgrid,shading="flat",cmap=plt.cm.hot,transform=crs_lonlat)
   sm = plt.cm.ScalarMappable(cmap=plt.cm.hot)
@@ -180,7 +211,7 @@ for vfile, sfiles, sid in zip(v_infiles,s_infiles,sids):
   cb = plt.colorbar(sm)
   cb.set_ticks([])
 
-  plt.title("Voronoi " + sid);
+  plt.title("Voronoi " + shortsid);
   plt.savefig(reportdir + "/" + sid + "_voronoi.png")
   #plt.show()
   plt.close()
@@ -188,17 +219,18 @@ for vfile, sfiles, sid in zip(v_infiles,s_infiles,sids):
   # scat data
   plt.figure(figno) 
   figno += 1
-  sgrid,medlat,medlong = pull_scat(sfiles,gridsize,latmin,latmax,longmin,longmax)
-  m = makemap_for_heatmaps(crs_lonlat,latmin,latmax,longmin,longmax)
+  sgrid = scatgrids[sid]
+  medlat,medlong = scatmedians[sid]
+  m = makemap_for_heatmaps(crs_lonlat,minlat,maxlat,minlong,maxlong)
 
   # get best point for summary graph
   scatx,scaty = get_maximum(sgrid)
-  best_scatx.append(scatx+latmin+0.5)
-  best_scaty.append(scaty+longmin+0.5)
+  best_scatx.append(scatx+minlat+0.5)
+  best_scaty.append(scaty+minlong+0.5)
   med_scatx.append(medlat)
   med_scaty.append(medlong)
   pointline += "\t" + str(medlat) + "," + str(medlong) 
-  pointline += "\t" + str(scatx+latmin+0.5) + "," + str(scaty+longmin+0.5) 
+  pointline += "\t" + str(scatx+minlat+0.5) + "," + str(scaty+minlong+0.5) 
   pointline += "\n"
   pointfile.write(pointline)
 
@@ -209,9 +241,8 @@ for vfile, sfiles, sid in zip(v_infiles,s_infiles,sids):
   cb = plt.colorbar(sm)
   cb.set_ticks([])
 
-  plt.title("Scat " + sid)
+  plt.title("Scat " + shortsid)
   plt.savefig(reportdir + "/" + sid + "_scat.png")
-  #plt.show()
   plt.close()
 
 pointfile.close()
@@ -221,7 +252,7 @@ pointfile.close()
 # voronoi summary
 figno += 1
 plt.figure(figno)
-m = makemap_for_summaries(crs_lonlat,latmin,latmax,longmin,longmax)
+m = makemap_for_summaries(crs_lonlat,minlat,maxlat,minlong,maxlong)
 for x,y in zip(best_vorx,best_vory):
   m.plot(y,x,"r+",transform=crs_lonlat)
 plt.title("Voronoi summary")
@@ -230,7 +261,7 @@ plt.savefig(reportdir+"/voronoi_summary.png")
 # scat summary by squares
 figno += 1
 plt.figure(figno)
-m = makemap_for_summaries(crs_lonlat,latmin,latmax,longmin,longmax)
+m = makemap_for_summaries(crs_lonlat,minlat,maxlat,minlong,maxlong)
 for x,y in zip(best_scatx,best_scaty):
   m.plot(y,x,"r+",transform=crs_lonlat)
 plt.title("Scat summary:  most occupied grid square")
@@ -239,7 +270,7 @@ plt.savefig(reportdir+"/scat_summary_squares.png")
 # scat summary by medians
 figno += 1
 plt.figure(figno)
-m = makemap_for_summaries(crs_lonlat,latmin,latmax,longmin,longmax)
+m = makemap_for_summaries(crs_lonlat,minlat,maxlat,minlong,maxlong)
 for x,y in zip(med_scatx,med_scaty):
   m.plot(y,x,"r+",transform=crs_lonlat)
 plt.title("Scat summary:  median lat/long")

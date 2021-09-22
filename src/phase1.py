@@ -134,8 +134,6 @@ for species in specieslist:
 
 command = ["cp",ivory_dir + "aux/master_scat_runfile.sh","."]
 run_and_report(command,"Could not copy in master scat runfile")
-command = ["cp",ivory_dir + "aux/master_voronoi_runfile.sh","."]
-run_and_report(command,"Could not copy in master voronoi runfile")
 
 # run filter_hybrids
 

@@ -63,15 +63,6 @@ def make_runfiles(clusterrun,species,prefix,seizelines,mapfile,regionfile):
     runfile.writelines(runlines[0:-1])
   runfile.write(runline)
   runfile.close()
-  # make Voronoi run file
-  runlines = open("master_voronoi_runfile.sh","r").readlines()
-  assert len(runlines) == 1
-  runline = runlines[0]
-  runline = runline.replace("MAPFILE",mapfile)
-  runline = runline.replace("PREFIX",prefix)
-  runfile = open("voronoi_runfile_" + species + ".sh","w")
-  runfile.write(runline)
-  runfile.close()
 
 
 ###############################################################################
