@@ -1,14 +1,16 @@
-Protocol for analyzing new elephant ivory seizure data
+Pipeline for analyzing new elephant ivory seizure data
 
 This pipeline is specific for African elephants with the 16
 microsatellite data set.  It will need modification to accomodate
-other species or types of data.
+other species or types of data.  (In particular, the step using
+EBhybrids requires exactly two species:  a substitute will be
+needed for pangolins if they prove to have hybrids.)
 
 Code and reference data for this pipeline are in the private GitHub
 repository https://github.com/mkkuhner/ivory_pipeline.  Within that
-repository, programs and scripts are in the src directory,
-additional files needed to run the scripts are in the auxillary_files
-directory, and documentation files are in the docs directory.
+repository, programs and scripts are in the /src directory,
+additional files needed to run the scripts are in the /aux
+directory, and documentation files are in the /docs directory.
 
 WARNING:  Never check anything into the GitHub repository which is
 law enforcement sensitive or otherwise high security.  
@@ -24,7 +26,7 @@ Structure -- https://web.stanford.edu/group/pritchardlab/structure_software/rele
 
 Currently the ivorydata/src directory does not include Structure, SCAT or
 VORONOI, but does include copies of EBhybrids and Familial Matching.
-
+If these programs are updated, replace these copies!
 
 ***General Rules
 
@@ -37,18 +39,26 @@ VORONOI, but does include copies of EBhybrids and Familial Matching.
 4)  The term [DBno] refers to the numeric ID of a release of the Master Elephant 
 Genotypes file.
 
+***Automated Scripts
+
+This document covers running the pipeline step by step, by hand.  To run 
+it using automated scripts, see document ivory_scripts.txt.
+
+
 ***A)  Obtaining all needed files
 
 1)  If you do not have up-to-date installations of the following programs:
 
-SCAT2
+SCAT
 VORONOI
 EBhybrids
 Familial Matching
 Structure
 
 obtain and install them now.  Detailed instructions are in document 
-installing_software.txt in the ivory_pipeline directory.
+installing_software.txt in the ivory_pipeline directory.  I have assumed
+that the SCAT and VORONOI executables are named SCAT and VORONOI;
+adjust appropriately if they are not. 
 
 2)  Obtain the needed data files.  Files with elephant genotypes, reference or 
 seizure, are not kept in the online repositories for security reasons.  Yves 
@@ -69,7 +79,7 @@ data file containing its genotypes; this will generally be an .xlsx file
 but its name is arbitrary.  (Also ask them what the official name of the 
 new seizure is.)
 
-***B)  Obtaining the reference data.
+***B)  Obtain the reference data.
 
 If you already have SCAT-style formatted reference data and the 
 corresponding Structure results, you can skip this step.
@@ -83,7 +93,7 @@ REFELE_[DBno]_known_structure.txt_f    (Structure results)
 If you do not have these files, steps to prepare them are in 
 /docs/reference_pipeline.txt.
 
-***C)  Preprocessing the data for analysis
+***C)  Preprocess the data for analysis
 
 1)  Pick a PREFIX (ideally the official name of the seizure) that will 
 tag all runs for this case.
@@ -98,18 +108,43 @@ can be done with LibreOffice by saving the file as .csv but setting the
 delimiter to tab rather than comma, and then changing the name of the
 resulting file.  Name this file PREFIX_raw.tsv.
 
-**OPTIONAL**
+**** Automated pipeline for C4-E4 ****
 
-Steps C4 through E4 can be run with a shell script.  On Mary's laptop
-use mary_setup_scat.sh; on Jon's use jon_setup_seizure.sh.  The arguments
-are PREFIX, a path to the location of PREFIX_raw.tsv, and either "laptop" or
-"cluster" depending on where you plan to run it.  If you run this
-script you will then be ready to do the SCAT2 runs (step E5) in
-nforest, nsavannah, or both, depending on the contents of your seizure.
+Steps C4 through E4 can be run by the Python program "phase1.py".
+It takes PREFIX as its first argument and either "laptop" or
+"cluster" as its second, depending on where you plan to run 
+SCAT.  Note that phase1.py itself is not meant to be run on the 
+cluster; to use it with the cluster, you would run phase1.py on
+your machine, transfer the SCAT directories to the cluster,
+and run them there.  Setting the "cluster" flag writes runfiles
+that will work with SLURM.
 
-**
+In order to use phase1.py you will need to create a file named
+ivory_paths.tsv in the parent directory of all your seizures.  There 
+is a prototype of this file in the ivory_pipeline /aux directory.  
+This file gives paths and filenames for resources needed by phase1.py 
+(and later phases).  It allows the pipeline to be easily run on 
+different machines with different file structures, and forces
+usage of a consistent set of files (avoiding, for example, running 
+half the pipeline with database REFELE_4.3 and half with REFELE_4.4).
 
-4)  Validate the microsat data by running verifymsats.py with the following
+There are three kinds of entries in ivory_paths.txt.  Entries ending
+in "_dir" should give the full path to the needed directory, ending
+in "/".  Entries ending in "_executable" should give the full
+path and name of the executable.  Entries ending in "_prefix"
+should give, first, the directory in which files of this type are
+to be found, and second, the prefix of those files.  For example,
+if you are describing the two map files "mapfile_161220_savannah.txt"
+and "mapfile_161220_forest.txt", the prefix is "mapfile_161220".
+The file is tab-delimited.
+
+After running phase1.py you are ready to start SCAT runs (step E5)
+in nforest, nsavannah, or both, depending on what was found in your
+seizure.
+
+****
+
+4)  Validate the microsat data by running verifymsat.py with the following
 arguments:
 --number of msats (currently 16)
 --REFELE_[DBno]_raw.csv
@@ -120,15 +155,20 @@ This can indicate that the microsats have gotten out of order; if it fires,
 carefully check your input seizure data.  NOTE:  it only checks the seizure 
 data, and assumes the reference data are correct.
 
+If you have carefully checked and believe your data are correct (perhaps
+your seizure is from a poorly sampled area and has lots of novel alleles), 
+you can continue with the next program in the pipeline.
+
 5)  Check for exact matches in input data by running detect_duplicates
 with the argument of PREFIX_raw.tsv.  If this fires, there are two or
-more samples in the input with identical genotypes (at non-missing loci).
-This wastes effort in SCAT and is actively misleading in VORONOI and
+more samples in the input with identical genotypes at non-missing loci.
+These are very likely to be the same animal.  Inclusion of duplicate 
+samples  wastes effort in SCAT and is actively misleading in VORONOI and
 familial matching:  such duplicates should be culled before contining
 (and reported to Yves, the database manager).
 
-5)  Run prep_scat_data.py with an argument of PREFIX. This will read
-PREFIX_raw.tsv and write PREFIX_unknowns.txt.  This program marks the new data 
+5)  Run prep_scat_data.py with an argument of PREFIX. This reads
+PREFIX_raw.tsv and writes PREFIX_unknowns.txt.  This program marks the new data 
 as region -1, and corrects msats where only one allele is missing to 
 mark both as missing.  It also suppresses individuals with less
 than 10 successfully typed microsatellites.  (These have often been
@@ -156,12 +196,19 @@ use are in the /src directory:
 infermarkerspecnullalleleprob.R
 infernullalleleprobanderrorprob.R
 
-2)  Run make_eb_input.py.  Argument 1 is the Structure output file.  Argument 2
-is REFELE_[DBno]_known.txt, the region-known reference data file.
-Argument 3 is PREFIX.  Argument 4 is dropoutrates_savannahfirst.txt.
-The script also assumes that file ebscript_template.R is present in its 
-directory:  this file can be found in the auxillary_files directory of
-the ivory_pipeline repository.  
+2)  Copy the following files into the seizure directory:
+ivory_pipeline/aux/ebscript_template.R
+ivory_pipeline/src/inferencefunctions.R
+ivory_pipeline/src/calcfreqs.R
+ivory_pipeline/src/likelihoodfunctionsandem.R
+
+(they don't work unless they are all together in one directory)
+
+3)  Run make_eb_input.py with the following arguments.  
+-- Structure output file (REFELE_[DBno]_known_structure.txt_f)
+-- Reference data (REFELE_[DBno]_known.txt)
+-- PREFIX
+-- dropoutrates_sacannahfirst.txt
 
 There are three outputs.  
 
@@ -175,39 +222,45 @@ individuals (both species).
 ebscript.R is the EBhybrids run script modified to point at these files.
 Note that if this file exists, it will be overwritten.
 
-3)  Run ebscript.R (command is "Rscript ebscript.R").  This will run
+4)  Run ebscript.R (command is "Rscript ebscript.R").  This will run
 EBhybrids and write four files:  PREFIX_hybt.csv and .txt, and PREFIX_HPs.csv
 and .txt.  The hybt files give the probability that the sample is either pure
 species or any of 4 hybrid types.  The HPs files give only the probability that
 it is a hybrid.  Information is identical between .csv and .txt.
 
+Please note that EBhybrids estimates the probability that a sample is
+a hybrid, NOT the proportion of its genome that comes from a given species.
 
-***E) Running SCAT2
 
-We do not recommend using the built-in species ranges in SCAT2 or
+***E) Running SCAT
+
+We do not recommend using the built-in species ranges in SCAT or
 the old-style boundary file 316forestboundary.txt.   The programs will
 run, but the resulting boundaries are very poor (they include ocean and
-exclude valid habitat).
+exclude valid habitat).  Use up-to-date mapfiles instead.
 
-1)  Obtain the following files and place in current directory:
+1)  Make sure you have the following files:
 
--- Map files of choice; either the "full" map files mapfile_161220_[species].txt
-or the IUCN map files iucn_161220_[species].txt.  These are found in the
-auxillary_files directory.
+-- Map files of choice: either the "full" map files mapfile_[MAPNO]_[species].txt
+or the IUCN map files iucn_[MAPNO]_[species].txt.  These are found in the
+/aux subdirectory.
 
--- Zone files.  The current versions are zones_39_savannah.txt and
-zones_39_forest.txt.  They are not on Github; if you need a copy, ask
-Mary Kuhner.  The zone file (formerly called regionfile) gives the 
-mapping between input zone name, number, sector, and latitude/longitude.  
+-- Zone files:  zones_[ZONENO]_savannah.txt and zones_[ZONENO]_forest.txt.  
+These are not on Github; if you need a copy, ask Mary Kuhner.  The zone 
+files (formerly called regionfile) give the mapping between input zone 
+name, number, sector, and latitude/longitude.  For input zones with both
+forest and savannah individuals, forest individuals use the sector given
+in the _forest file and savannah use the sector given in the _savannah file.
+
 If new input zones have been added to the reference data, you will need 
-to update these files and create new versions.
+to update these files and assign a new version number.
 
--- Prototype SCAT2 and VORONOI run files master_scat_runfile.sh and
+-- Prototype SCAT and VORONOI run files master_scat_runfile.sh and
 master_voronoi_runfile.sh.  These are found in the auxillary_files
 directory; they are templates for creating run commands for your
-SCAT2 and VORONOI runs.
+SCAT and VORONOI runs.
 
-OPTIONAL:  If you want a different SCAT2 run length than our standard one, 
+OPTIONAL:  If you want a different SCAT run length than our standard one, 
 edit the master_scat_runfile.sh file.  The last three numbers (currently 
 100 20 100) control the length of the run:  the first is number of sampled 
 iterations, the second is steps between samplings, and the third is burnin.
@@ -217,14 +270,17 @@ to change the steps between samplings.  Runtime will increase linearly with
 this (if you double steps between samplings, runtime will approximately 
 double).
 
+TO DO:  VORONOI can now handle different numbers of iterations; allow
+the pipeline to use this capability.
+
 2)  Run filter_hybrids.py with the following arguments:
 
 -- PREFIX of the run
 -- Map prefix, for example mapfile_161220 or iucn_161220 (the part of
 the mapfile name before the species name).
--- Zone file prefix, for example zones_43 (the part of the zone file name
+-- Zone file prefix, for example zones_40 (the part of the zone file name
 before the species name).
--- Reference data prefix REFELE_[DBno]
+-- The path to the SCAT executable including its file name
 -- T if the SCAT runs will be done on the cluster, F otherwise
 
 The filter_hybrids.py program will print its hardwired hybrid cutoff to
@@ -233,27 +289,26 @@ screen.  Make sure this cutoff is what you want.
 This program uses PREFIX_hybt.txt to sort the samples into, maximally, a 
 forest and a savannah SCAT input file, called PREFIX_[species].txt;
 if there are no unknown individuals from a species, that file will not be 
-written.  It discards individuals called as hybrids. 
+written.  It silently discards individuals called as hybrids. 
 
 Outputs:
 
-SCAT run files:  runfile_[species].sh 
-VORONOI run files:  voronoi_runfile_[species].sh
 SCAT-format data files:  PREFIX_[species].txt 
+SCAT run files:  runfile_[species].sh 
 
-3)  Create a directory for each species-specific SCAT2 analysis:
+3)  Create a directory for each species-specific SCAT analysis:
 the forest directory should be named "nforest" and the savannah directory
 "nsavannah".  All subsequent steps will have to be done for both directories, 
 if you have both species in your seizure. 
 
 Copy the corresponding SCAT input files (PREFIX_[species].txt) into these 
-directories.  Also copy in the corresponding Voronoi runfiles 
-(voronoi_runfile_[species].sh).  However, leave the SCAT run files where they are.
+directories. However, leave the SCAT run files where they are.
 
-Place a SCAT2 executable in this species-specific SCAT2 directory.  We 
+Place a SCAT executable in this species-specific SCAT directory.  We 
 recommend a clean optimized build from source.  
 
-4)  Run setupscatruns.py with the following arguments (twice, if you
+4)  If you plan to run SCAT on a non-cluster machine, run
+setupscatruns.py with the following arguments (twice, if you
 have both forest and savannah individuals):
 
 -- name of the species-specific run directory
@@ -263,111 +318,103 @@ have both forest and savannah individuals):
 This seed will be used for the first directory and incremented by 1 for each
 subsequent directory.
 
+If instead you plan to run SCAT on the cluster using SLURM,
+run cluster_setupscatruns.py (again, twice if both species are 
+present) with arguments:
+
+-- PREFIX
+-- name of the species-specfic run directory
+-- name of the mater scat run script (runfile_[species].sh)
+-- random number seed (positive integer)
+
 This will create 9 subdirectories named 1-9 under your named directory, each 
-of which contains a SCAT2 run command file (called runX.sh where X is the 
+of which contains a SCAT run command file (called runX.sh where X is the 
 directory number) and an /outputs directory to hold the results.
 
-5)  Open a window for each numbered directory and run the runX.sh file (using
-"source" as they are not executable files).  This should run SCAT2 nine
-times.  It may take hours or days to run.
+5)  To run on your own machine, open a window for each numbered directory and 
+execute the runX.sh file (using "source" as they are not executable files).  
+This should run SCAT nine times.  It may take hours or days to run.
+
+To run on the cluster, consult cluster documentation.
+
+TO DO:  document running on the cluster.
 
 
 ***F)  Running VORONOI
 
 Do not do this step unless there were at least 2 samples in the species
 under consideration:  running VORONOI on one sample is not useful.
+You will need to execute steps F and G once for each species present
+in the seizure.
 
 TO DO:  the script will run this even with one sample.  It seems harmless
 but there is a risk that the resulting VORONOI outputs will be used for
-something.
+something.  This should be blocked.
 
-** OPTIONAL **
+**** Automated pipeline for F-G ****
 
-The script mary_run_voronoi.sh will run steps F1 through G3.  It should be
-run in the parent directory; it will do both nforest and nsavannah if both
-exist (this may take a while).  Its arguments are PREFIX and the path to
-a VORONOI executable.
+The script phase2.py will run steps F and G.  It should be run
+in the parent directory of all seizures, and expects to find
+ivory_paths.tsv in that directory (see instructions for the phase1.py
+step for instructions on ivory_paths.tsv).  It takes PREFIX as its
+argument.
 
-The equivalent script jon_finish_seizure.sh only does steps F1 through G1,
-as G2 does not run on Jon's laptop due to reliance on Basemap.  It is meant
-to be run in nsavannah or nforest (twice, if both exist) and takes arguments
-PREFIX, the path to a VORONOI executable, and "forest" or "savannah".
-
-TO DO:  harmonize these scripts.
-
-**
+****
 
 1)  Obtain or prepare a masterfile consisting of 9 lines as follows (there
-is an example, called "masterfile", in the auxillary_files directory) and
-place it in the species-specific directory.
+is an example, called "masterfile", in the auxillary_files directory):
 
 1/outputs
 2/outputs 
 ...
 
+2)  In the species-specific directory, run setupvoronoi.py with
+arguments PREFIX and species name (savannah or forest).  This sets
+up for a new-style VORONOI run in which SCAT results are read directly
+from the directories that contain them, rather than being recoded and
+copied into the working directory.  (We STRONGLY discourage use of
+the old format, which leads all too easily to getting confused about
+which sample is which as they are not named.)
+
 2)  In the species-specific directory, run scat2voronoi.py
-with the argument being the masterfile from step 1.  This writes multiple
-files:
+with the argument being the masterfile from step 1.  This will
+write two files:
 
-a)  A large number of files with names of the form nnnc where nnn are
-digits and c is a character between r and z.  These are single elephant
-SCAT result files:  001r is the result for the first elephant in directory
-1.  If something goes wrong in subsequent steps, the first thing to check
-is whether all of these files are present (often one letter of the
-alphabet is missing, which likely indicates that one of the SCAT2 runs
-has failed).
+a)  A file named PREFIX_names.txt which gives the names of all
+unknown-location (seizure) samples for this species.
 
-b)  Files named samplemap.r through samplemap.z which relate the nnn numbers
-to elephant IDs.  In practice we only use samplemap.r; they should all be
-identical.
+b)  A run file named voronoi_runfile_[species].sh.
 
-c)  A file voronoiin.txt which instructs VORONOI on which samples (by
-nnn identifier) it should run.
-
-3)  Pull a VORONOI executable:  I recommend a clean optimized build from
+3)  Pull a VORONOI executable:  we recommend a clean optimized build from
 source.
 
-4)  Run VORONOI by source-ing the run command file present in the
-species-specific directory (this file was written by make_species_files.py). 
-It should take no more than 10-15 minutes for most data.
+4)  Run VORONOI:
+
+source voronoi_runfile_[species].sh
+
+It should take no more than 30 minutes for most data.
 
 
 ***G)  Post-processing
 
+1)  Run plot_scat_vor.py (found in ivory_pipeline/src) in the directory 
+where you ran VORONOI.  It takes 1 or 2 arguments.  If there is only 1 
+it is PREFIX, and all samples will be run.  If there are 2, they are 
+PREFIX and SID, and only the sample with that SID will be run. 
 
-1)  Run prep_reports.py in the directory where you ran VORONOI.  Its
-first argument is PREFIX and the second is the voronoiin.txt file you
-used for the run.  It also uses the VORONOI output files PREFIX_indprobs and
-PREFIX_mapinfo, and the samplemap.r file; it expects these files to be
-present in the directory where it is being run (they are not arguments).  
-It writes individual VORONOI grid files to a directory named PREFIX_reports.
+This writes several types of files into directory PREFIX_reports:
 
-2)  Run plot_scat_vor.py in the directory where you ran VORONOI.  It
-takes 1 or 2 arguments.  If there is only 1 it is PREFIX, and all samples
-will be run.  If there are 2, they are PREFIX and SID, and only the
-sample with that SID will be run.  This fills up PREFIX_reports with
-graphics of the SCAT2 and VORONOI surfaces for each sample, plus three
-summary files:  
+-- heatmaps of the SCAT and VORONOI results for individual samples
+-- scat_summary_medians.jpg (SCAT results as median latitude/longitude)
+-- scat_summary_squares.jpg (SCAT results as grid square of highest count)
+-- voronoi_sumary.jpg (VORONOI results as grid square of highest posterior)
+-- PREFIX_point_estimates.tsv (best estimates for each sample)
 
-scat_summary_medians.jpg (SCAT2 results as median latitude/longitude)
-scat_summary_squares.jpg (SCAT2 results as grid square of highest count)
-voronoi_sumary.jpg (VORONOI results as grid square of highest posterior)
-
-If you need SCAT2 graphics without VORONOI graphics, for example because
-there was only 1 sample for this species, they can be gotten with
-plot_scat.py with the same arguments.
-
-NOTE:  These programs have been converted from Basemap to Cartopy
-as Basemap did not work on Jon's laptop and is out of support.
+To do:  make this program work if there are no VORONOI results, for
+example because there was only 1 sample.  plot_scat.py used to do 
+this but would need extensive rewriting; better to make plot_scat_vor.py do it.
 
 TO DO:  write a note on how to install Cartopy:  it's tricky.
-
-3)  OPTIONAL but recommended:  In the directory where you ran VORONOI,
-run cleanup_voronoi.py with no arguments.  This deletes duplicate copies
-of the SCAT2 output files, placed in this directory for use by VORONOI,
-and saves a lot of space.  (These files are named 001r, 001s, etc.)  If 
-you find that you need those files back, they can be safely recreated by 
-rerunning scat2voronoi.py.
 
 
 ***H)  Run familial matching
@@ -380,7 +427,8 @@ take 3+ days.  Rerunning the whole thing is needed if large changes
 have been made to the reference data, the sector definitions have 
 changed, or the set of previous seizures to be used has changed.
 
-WARNING: Step H2 uses files from previous seizures.  Do not run step H2 on more than one seizure at a time!  (Other steps are okay.)
+WARNING: Step H2 uses files from previous seizures.  Do not run step H2 on more 
+than one seizure at a time!  (Other steps are okay.)
 
 ** OPTIONAL **
 
@@ -399,10 +447,10 @@ for this seizure.
 nforest/nsavannah).  Make two subdirectories within it for SCAT sector
 assignment runs:  "outdir_forest" and "outdir_savannah".
 
-For each species present in your seizure you will need to do a SCAT2
+For each species present in your seizure you will need to do a SCAT
 run here:
 
-./SCAT2 -Z -H2 ../PREFIX_[species]_plus_ref.txt ../zones_species.txt outdir_[species] 16
+./SCAT -Z -H2 ../PREFIX_[species]_plus_ref.txt ../zones_species.txt outdir_[species] 16
 
 This will compute sector (previously called "subregion") probabilities for all 
 reference and seizure samples.  The seizure samples will be classified into 
