@@ -133,7 +133,16 @@ nsec = len(secdict)
 seizure = [[] for x in range(0,nsec)]
 reference = [[] for x in range(0,nsec)]
 
+# do we actually have input files available?
+if not path.exists(hybfile["forest"]) and not path.exists(hybfile["savannah"]):
+  print("Failed to find any SCAT sector results!")
+  print("Looking in:")
+  print(hybfile["forest"])
+  print(hybfile["savannah"])
+  exit(-1)
+
 for species in specieslist:
+  print("Trying",species)
   if not path.exists(hybfile[species]):
     continue   # no samples for this species, it can be ignored
 
@@ -185,7 +194,8 @@ for sector in range(0,nsec):
   # make the sector directory
   sectorid = str(sector)
   secdir = "sub" + sectorid
-  os.mkdir(secdir)
+  if not os.path.isdir(secdir):
+    os.mkdir(secdir)
   secdir += "/"
 
   # collect lines for this seizure's samples
@@ -261,7 +271,6 @@ for sector in range(0,nsec):
     write_fammatch(newfilename,header,currlines)
     prevlines = []
     for oldpart in oldfiles:
-      print("Adding",oldpart)
       header, outlines = read_infile(oldpart)
       prevlines += outlines
     write_fammatch(oldfilename,header,prevlines)
