@@ -8,13 +8,17 @@
 # it recurses from where it starts down all possible subdirectories, so the
 # first triple returned is where you started, the second is into a subdirectory, etc.
 
-import sys, os
+import os
 nsubs = 6
 outfiles = {}
 header = "s1\ts2\tDM_LR\tPO_LR\tFS_LR\tHS_LR\tnloci\n"
 
+# create global fammatch directory if it does not already exist
+if not os.path.isdir("fammatch"):
+  os.mkdir("fammatch")
+
 for n in range(0,nsubs):
-  outfilename = "obsLRs." + str(n) + ".txt"
+  outfilename = "fammatch/obsLRs." + str(n) + ".txt"
   outfile = open(outfilename,"w")
   outfile.write(header)
   outfiles[n] = outfile
@@ -30,6 +34,7 @@ for root,dirs,files in os.walk("."):
 
   for file in files:
     if file == "obsLRs.forest.txt" or file == "obsLRs.savannah.txt":
+      print("Found LR file",file)
       for line in open(root+"/"+file,"r"):
         if line.startswith("s1"):  continue   # skip header
         outfiles[sub].write(line)
