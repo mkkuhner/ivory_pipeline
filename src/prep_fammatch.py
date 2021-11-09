@@ -43,6 +43,7 @@ for species in specieslist:
   # identify wanted sectors based on species
   if species == "forest":
     sectors_wanted = [0,1]
+    displacement = 0
   else:
     sectors_wanted = [2,3,4,5]
     # how far over do they start?
@@ -121,13 +122,18 @@ seizurename = prefix.split("_")
 seizurename = ", ".join(seizurename)
 
 # write elephant lists
+found_elephants = False
 for sector in range(0,nsec):
   if len(names[sector]) == 0:  continue
+  found_elephants = True
   outfile = open(famdir + "names_"+str(sector)+".tsv","w")
   for id in names[sector][0::2]:   
     outline = id + "\t" + seizurename + "\n"
     outfile.write(outline)
   outfile.close()
+if not found_elephants:
+  print("No usable elephants found for seizure " + prefix)
+  exit(-1)
   
 # write ivory files
 # "wide" format -- 1 line per sample, doubled header with Match ID
