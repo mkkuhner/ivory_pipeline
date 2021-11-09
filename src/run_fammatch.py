@@ -48,7 +48,8 @@ def read_sector_metadata(metafilename):
 # main program
 
 import os, sys
-from datetime import date
+#from datetime import date
+from datetime import datetime
 
 if len(sys.argv) != 4:
   print("USAGE:  run_fammatch.py prefix fammatch_archive pipeline_dir")
@@ -72,7 +73,8 @@ inputs_archive = archivedir + "/old_inputs"
 # to run Rscripts before saving our fammatch results
 results_archive = os.path.abspath(archivedir + "/old_results")
 ref_archive = archivedir + "/reference"
-today = str(date.today())
+#today = str(date.today())
+today = str(datetime.today()).replace(" ","_")
 backupdir = archivedir + "/backups/" + today 
 
 
@@ -138,7 +140,7 @@ for sector in range(0,nsec):
     # read old_names file
     # it has the form archive/old_names/old_names_0.tsv
     for line in open(oldnamefile,"r"):
-      myline = line.rstrip().split("/t")
+      myline = line.rstrip().split("\t")
       name = myline[0]
       seize = myline[1]
       myoldnames.add(name)
@@ -151,7 +153,7 @@ for sector in range(0,nsec):
   for line in newnamelines:
     name = line.rstrip().split("\t")[0]
     if name in old_names[sector]:
-      print("New elephant ",newname," in sector ",secname," has already been seen")
+      print("New elephant ",name," in sector ",secname," has already been seen")
       exit(-1)
     new_names[sector].append(name)
     new_namelines[sector].append(line)
