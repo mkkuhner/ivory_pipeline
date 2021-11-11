@@ -23,6 +23,8 @@ def readivorypath():
   return ivorypaths
 
 def run_and_report(command,errormsg):
+  #print("command is ",command)
+  #print("running in ",os.getcwd())
   #process = Popen(command, stdout=PIPE,stderr=PIPE)
   process = Popen(command)
   stdout, stderr = process.communicate()
@@ -47,6 +49,12 @@ if len(sys.argv) != 2:
   exit(-1)
 
 prefix = sys.argv[1]
+formalseizurename = prefix.replace("_", ", ")
+print("Seizure will be called",formalseizurename)
+
+# memorize what directory we were run in (should be root
+# diretory of all seizures
+startdir = os.getcwd()
 
 # read paths file
 pathdir = readivorypath()
@@ -55,6 +63,8 @@ zones_path, zones_prefix = pathdir["zones_prefix"]
 scat_exec = pathdir["scat_executable"][0]
 fam_dir = pathdir["fammatch_archive_dir"][0]
 meta_path, meta_prefix = pathdir["metadata_prefix"]
+mod_path, mod_prefix = pathdir["seizure_modifications_prefix"]
+ref_path, ref_prefix = pathdir["reference_prefix"]
 
 # create fammatch directory 
 os.chdir(prefix)
@@ -63,6 +73,16 @@ if os.path.isdir("fammatch"):
 else:
   command = "mkdir fammatch"
   os.system(command)
+
+# update seizure metadata IN PLACE
+seizure_metafile = meta_path + meta_prefix + ".tsv"
+if not os.path.isfile(seizure_metafile):
+  print("FAILURE:  unable to locate seizure metadata file ",seizure_metafile)
+  print("Location of this file must be given in ivory_paths.tsv")
+  exit(-1)
+prog = ivory_dir + "src/update_metadata.py"
+command = ["python3",prog,seizure_metafile,prefix,formalseizurename]
+run_and_report(command,"Unable to update seizure metadata")
 
 # for each species present:
 outprefix = "outdir"
@@ -84,36 +104,20 @@ for species in ["forest","savannah"]:
   command = [scat_exec,"-Z","-H2",datafile,zonefile,outdirname,"16"]
   run_and_report(command,"Unable to run SCAT to determine sectors")
 
-# run make_fammatch_incremental
+# run prep_fammatch.py
+os.chdir(startdir)     # return to root directory of all seizures
 sector_metafile = fam_dir + "sector_metadata.txt"
-progname = ivory_dir + "src/make_fammatch_incremental.py"
+progname = ivory_dir + "src/prep_fammatch.py"
 command = ["python3",progname]
-command += [prefix, outprefix, fam_dir, zones_path + zones_prefix]
+command += [prefix, zones_prefix, zones_path]
 run_and_report(command,"Failure in" + progname)
 
-# count the sectors, just in case
-lines = open(sector_metafile,"r").readlines()
-numsectors = len(lines)
-
-# for each sector:
-for sec in range(0,numsectors):
-  secname = "sub" + str(sec)
-  # diagnose if sector is needed
-  if not os.path.isdir(secname):  continue   # no data for this sector
-  os.chdir(secname)
-  if os.path.isfile("ONLY_ONE_SAMPLE"):
-    print("Skipping",secname,"because only one sample")
-    continue
-  else:
-    print("Processing",secname)
-
-  # copy in fammatch code
-  safecopy(ivory_dir + "src/calculate_LRs.R",".")
-  safecopy(ivory_dir + "src/LR_functions.R",".")
-
-  # run fammatch
-  command = ["/bin/bash","runrscript.sh"]
-  run_and_report(command,"Unable to run familial matching R program")
+# run run_fammatch.py
+progname = ivory_dir + "src/run_fammatch.py"
+command = ["python3",progname]
+command += [prefix,fam_dir,ivory_dir]
+run_and_report(command,"Failure in" + progname)
+print("Ran through fammatch runs")
 
 for species in species_present:
   # run 1_add_seizures.py
@@ -129,4 +133,36 @@ for species in species_present:
   command = ["python3",prog2,"--input_file",lrfile,"--cutoff","2.0"]
   run_and_report(command,"Failure to run" + prog2 + "for species" + species)
   
-print("Fammatch runs completed.  Results are in sub_* subdirectories")
+#print("Fammatch runs completed.  Results are in sub_* subdirectories")
+
+# correction and network analysis
+
+# set up global fammatch directory
+os.chdir(startdir)   # back to root directory of all seizures
+if not os.path.isdir("fammatch"):
+  os.mkdir("fammatch")
+os.chdir("fammatch")
+
+# identify and pull in obsLR files (see consolidate_fammatch.py)
+prog = ivory_dir + "src/consolidate_fammatch.py"
+command = ["python3",prog]
+run_and_report(command,"Failure to run " + prog)
+
+# collect auxiliary data files
+modfile = mod_path + mod_prefix
+fpfile = ivory_dir + "aux/fprates.tsv"
+dmfile = ref_path + "dms.tsv"
+
+# make network data with create_network_input.py (needs revision)
+# revision points:
+# hardcoded directory names
+# seizure name munging (don't!)
+prog = ivory_dir + "src/create_network_input.py"
+LR_cutoff = "2.0"
+minloci = "13"
+command = ["python3",prog,metafile,dmfile,modfile,fpfile,LR_cutoff, minloci]
+run_and_report(command,"Failure to run " + prog)
+
+# make network with infer_louvain_network.py or new_network.py
+
+

@@ -71,8 +71,7 @@ for species in specieslist:
 
     print("About to run VORONOI:  be patient with this step")
     command = ["/bin/bash","voronoi_runfile_" + species + ".sh"]
-    # DEBUG!
-    #run_and_report(command,"Could not run VORONOI")
+    run_and_report(command,"Could not run VORONOI")
 
     reportdir = prefix + "_reports"
     if not os.path.isdir(reportdir):

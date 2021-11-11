@@ -80,3 +80,8 @@ outfilename = "voronoi_runfile_" + species + ".sh"
 outfile = open(outfilename,"w")
 outfile.write(runline)
 outfile.close()
+
+# copy map info from SCAT into directory
+mapinfofile = prefix + "_mapinfo"
+if not os.path.isfile(mapinfofile):
+  rawmapinfo = "1/outputs/Output_mapinfo"
