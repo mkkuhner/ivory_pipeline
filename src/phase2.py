@@ -23,7 +23,7 @@ def readivorypath():
   return ivorypaths
 
 def run_and_report(command,errormsg):
-  process = Popen(command, stdout=PIPE)
+  process = Popen(command)
   exit_code = process.wait()
   if exit_code != 0:
     print("\nFAILURE: " + errormsg + "\n")
@@ -55,11 +55,9 @@ os.chdir(seizuredir)
 specieslist = ["forest","savannah"]
 
 # if nforest/nsavannah exists:
-#   no longer running scat2voronoi or copying in mapfiles!
 #   run voronoi
 #   run prep_reports
 #   run plot_scat_vor
-#   no longer running cleanup_voronoi!
 
 for species in specieslist:
   dirname = "n" + species

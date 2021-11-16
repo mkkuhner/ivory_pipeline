@@ -1,5 +1,6 @@
 # take a seizure from raw file to being ready to run SCAT
 # does not actually do scat runs
+# This should be run in the parent directory of all seizures
 
 import sys
 import os
@@ -22,7 +23,7 @@ def readivorypath():
   return ivorypaths
 
 def run_and_report(command,errormsg):
-  process = Popen(command, stdout=PIPE)
+  process = Popen(command)
   exit_code = process.wait()
   if exit_code != 0:
     print("FAILURE: " + errormsg)
@@ -75,7 +76,7 @@ run_and_report(command,"Could not locate raw data file " + rawdata)
 
 # log_seizure.py
 # this program creates a logfile recording run parameters
-command = ["python3", ivory_dir+"src/log_seizure.py",prefix,reference_path + reference_prefix,scat_exec,voronoi_exec]
+command = ["python3", ivory_dir+"src/log_seizure.py",prefix,ivory_dir,reference_path + reference_prefix,scat_exec,voronoi_exec]
 run_and_report(command,"Failed to log the run")
 
 # cd to newly created directory

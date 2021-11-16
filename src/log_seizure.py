@@ -20,7 +20,7 @@ def get_github_code(mydir):
 import sys
 if len(sys.argv) != 6:
   print("USAGE:  log_seizure.py prefix ivorydir datadir scatdir vordir")
-  exit()
+  exit(-1)
 
 prefix = sys.argv[1]
 seizuredir = os.path.abspath(prefix)
@@ -60,7 +60,7 @@ outline = "VORONOI directory: " + vordir + "\n\n"
 outfile.write(outline)
 
 # working directories
-outline = "Reference data directory: " + datadir + "\n"
+outline = "Reference data: " + datadir + "\n"
 outfile.write(outline)
 
 outfile.close()

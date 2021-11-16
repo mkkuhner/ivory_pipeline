@@ -129,12 +129,7 @@ for sector in range(0,nsec):
   oldnamefile = names_archive + "/old_names_" + secname + ".tsv"
   newnamefile = seizuredir + "/names_" + secname + ".tsv"
 
-  print("About to try running sector ",secname)
-  print("file name is ",newnamefile)
-  if not os.path.isfile(newnamefile):
-    print("but it doesn't exist")
   if not os.path.isfile(newnamefile):  continue    # nothing to add
-  print("Will run sector ",secname)
 
   myoldnames = set()
 
@@ -203,7 +198,6 @@ for sector in range(0,nsec):
 
   prepfilename = rundir + "prep" + secname + ".csv"
   newlines = []
-  print("Reading prepfile ",prepfilename)
   for line in open(prepfilename,"r"):
     # DEBUG
     if line.startswith("Match"):   # header
@@ -276,8 +270,6 @@ for sector in range(0,nsec):
   # add new sample names to old_names
   if len(new_namelines[sector]) > 0:
     outfile = open(oldnamefile,"w")
-    # DEBUG
-    print("Writing old_names file",oldnamefile)
     for line in old_namelines[sector]:
       outfile.write(line) 
     for line in new_namelines[sector]:
@@ -290,8 +282,6 @@ for sector in range(0,nsec):
     # ***DEBUG*** what to do if this file already exists?
     inputfile = inputs_archive + "/" + prefix + "_inputs_" + secname + ".tsv"
     infile = open(inputfile,"w")
-    # DEBUG
-    print("writing old inputs file ",inputfile)
     for line in newlines:
       infile.write(line)
     infile.close()
