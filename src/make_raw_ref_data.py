@@ -22,7 +22,7 @@ with open(reffile,newline="") as csvfile:
   for line in reader:
     if line[0].startswith("Match"):  
       header = line
-      regionindex = header.index("Region")
+      regionindex = header.index("Input Zone")
       matchindex = header.index("Match ID")
       firstmsat = header.index("FH67")
       lastmsat = firstmsat+32
