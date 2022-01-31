@@ -32,7 +32,7 @@ with open(sys.argv[2], newline="") as csvfile:
       for pos in range(firstmarker,lastmarker+1,2):
         if row[pos] != row[pos+1]:
           print("ERROR. marker",row[pos],"does not match",row[pos+1],"in",sys.argv[2] )
-          exit()
+          exit(-1)
         pos2name[pos] = row[pos]
         pos2name[pos+1] = row[pos]
         refalleles[row[pos]] = ["-999",]
@@ -49,14 +49,14 @@ seizlines = open(sys.argv[3],"r").readlines()
 pline = seizlines[0].rstrip().split("\t")
 if pline[0] != "MatchID":
   print("ERROR. Expected a header starting with 'MatchID', found:",pline[0],"in",sys.argv[3])
-  exit()
+  exit(-1)
 
 spos2name = {}
 for spos in range(1,nmarkers+1):
   name = pline[spos]
   if name not in refalleles.keys():
     print("ERROR, could not find marker",name,"in reference alleles")
-    exit()
+    exit(-1)
   spos2name[spos] = name 
 
 for line in seizlines[1:]:
