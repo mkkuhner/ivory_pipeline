@@ -89,6 +89,7 @@ These files would be called:
 REFELE_[DBno]_raw.txt                  (raw reference data)
 REFELE_[DBno]_known.txt                (formatted reference data)
 REFELE_[DBno]_known_structure.txt_f    (Structure results)
+REFELE_[DBno]_filtered_[species].txt   (hybrid-filtered species reference)
 
 If you do not have these files, steps to prepare them are in 
 /docs/reference_pipeline.txt.
@@ -107,42 +108,6 @@ documentation file master_database_pipeline.txt, which will replace step A3.
 can be done with LibreOffice by saving the file as .csv but setting the 
 delimiter to tab rather than comma, and then changing the name of the
 resulting file.  Name this file PREFIX_raw.tsv.
-
-**** Automated pipeline for C4-E4 ****
-
-Steps C4 through E4 can be run by the Python program "phase1.py".
-It takes PREFIX as its first argument and either "laptop" or
-"cluster" as its second, depending on where you plan to run 
-SCAT.  Note that phase1.py itself is not meant to be run on the 
-cluster; to use it with the cluster, you would run phase1.py on
-your machine, transfer the SCAT directories to the cluster,
-and run them there.  Setting the "cluster" flag writes runfiles
-that will work with SLURM.
-
-In order to use phase1.py you will need to create a file named
-ivory_paths.tsv in the parent directory of all your seizures.  There 
-is a prototype of this file in the ivory_pipeline /aux directory.  
-This file gives paths and filenames for resources needed by phase1.py 
-(and later phases).  It allows the pipeline to be easily run on 
-different machines with different file structures, and forces
-usage of a consistent set of files (avoiding, for example, running 
-half the pipeline with database REFELE_4.3 and half with REFELE_4.4).
-
-There are three kinds of entries in ivory_paths.txt.  Entries ending
-in "_dir" should give the full path to the needed directory, ending
-in "/".  Entries ending in "_executable" should give the full
-path and name of the executable.  Entries ending in "_prefix"
-should give, first, the directory in which files of this type are
-to be found, and second, the prefix of those files.  For example,
-if you are describing the two map files "mapfile_161220_savannah.txt"
-and "mapfile_161220_forest.txt", the prefix is "mapfile_161220".
-The file is tab-delimited.
-
-After running phase1.py you are ready to start SCAT runs (step E5)
-in nforest, nsavannah, or both, depending on what was found in your
-seizure.
-
-****
 
 4)  Validate the microsat data by running verifymsat.py with the following
 arguments:
@@ -163,7 +128,7 @@ you can continue with the next program in the pipeline.
 with the argument of PREFIX_raw.tsv.  If this fires, there are two or
 more samples in the input with identical genotypes at non-missing loci.
 These are very likely to be the same animal.  Inclusion of duplicate 
-samples  wastes effort in SCAT and is actively misleading in VORONOI and
+samples wastes effort in SCAT and is actively misleading in VORONOI and
 familial matching:  such duplicates should be culled before contining
 (and reported to Yves, the database manager).
 
@@ -185,7 +150,7 @@ using; even a single elephant change will invalidate them.  If in
 doubt, rerun.
 
 1)  Obtain the appropriate allelic dropout file.  This is
-currently "dropoutrates_savannahfirst.txt" and is in the auxillary_files 
+currently "dropoutrates_savannahfirst.txt" and is in the /aux 
 directory.  (It is a columns reversed version of the original file from 
 Mondol et al, which was named "Mondoletal_allelicdropoutrates.txt".)
 
@@ -256,7 +221,7 @@ If new input zones have been added to the reference data, you will need
 to update these files and assign a new version number.
 
 -- Prototype SCAT and VORONOI run files master_scat_runfile.sh and
-master_voronoi_runfile.sh.  These are found in the auxillary_files
+master_voronoi_runfile.sh.  These are found in the /aux
 directory; they are templates for creating run commands for your
 SCAT and VORONOI runs.
 
@@ -273,15 +238,26 @@ double).
 TO DO:  VORONOI can now handle different numbers of iterations; allow
 the pipeline to use this capability.
 
-2)  Run filter_hybrids.py with the following arguments:
+2)  Filter out hybrids and construct species-specific files.
+
+The hybrid identification program EBhybrids is stochastic (EM algorithm)
+and elephants who are very close to the hybrid cutoff will randomly be
+called hybrids or not if the program is rerun.  This creates a problem when
+the hybrid-culled reference data sets are being built, as different seizures
+will end up with slightly different reference sets.  This breaks familial
+matching downstream.  We therefore use "canned" reference data, made
+by running filter_hybrids.py with the "T" flag for use_canned_reference.
+If you do not have canned reference data you can make them by running
+filter_hybrids.py with the "F" flag instead; they should then be named
+REFELE_[DBno]_filtered_[species].txt and placed in the data directory.
+This should be done only ONCE per species per database version to avoid
+incoherence.
+
+Run filter_hybrids.py with the following arguments:
 
 -- PREFIX of the run
--- Map prefix, for example mapfile_161220 or iucn_161220 (the part of
-the mapfile name before the species name).
--- Zone file prefix, for example zones_40 (the part of the zone file name
-before the species name).
--- The path to the SCAT executable including its file name
 -- T if the SCAT runs will be done on the cluster, F otherwise
+-- T if the canned reference should be used, F otherwise
 
 The filter_hybrids.py program will print its hardwired hybrid cutoff to
 screen.  Make sure this cutoff is what you want.
@@ -351,18 +327,8 @@ TO DO:  the script will run this even with one sample.  It seems harmless
 but there is a risk that the resulting VORONOI outputs will be used for
 something.  This should be blocked.
 
-**** Automated pipeline for F-G ****
-
-The script phase2.py will run steps F and G.  It should be run
-in the parent directory of all seizures, and expects to find
-ivory_paths.tsv in that directory (see instructions for the phase1.py
-step for instructions on ivory_paths.tsv).  It takes PREFIX as its
-argument.
-
-****
-
 1)  Obtain or prepare a masterfile consisting of 9 lines as follows (there
-is an example, called "masterfile", in the auxillary_files directory):
+is an example, called "masterfile", in the /aux directory):
 
 1/outputs
 2/outputs 
@@ -507,7 +473,22 @@ can run all sectors at the same time (as the script does).
 
 ***I)  Postprocess familial matching
 
-1) OPTIONAL.  To simply view the results of familial matching on your new 
+1)  Obtain the file seizure_metadata_[DBno].tsv (this is not kept
+on the Github site; ask Mary Kuhner for a copy).  Make a COPY of this
+file and run update_metadata.py on the copy (this program changes its
+input file in place!)  The three arguments are the metadata (copy) file,
+PREFIX, and the official name of your new seizure; the program
+expects to be run in directory PREFIX.
+
+Check that the results are sensible (your new seizure should be at
+the bottom of the file) before overwriting the original.  If you have 
+changed [DBno] be sure to change the name of this file.  Return the
+modified file to Mary for archiving.
+
+This step can be run on an already processed seizure to change its name
+in the metadata file.  
+
+2) OPTIONAL.  To simply view the results of familial matching on your new 
 seizure, you can run Charles' Python scripts in each sector directory for
 which you had samples in your seizure.  These are found in the /src directory.
 If no matches are found, there is no point continuing with network analysis.
@@ -517,8 +498,8 @@ large proportion will be false positives.
 python 1_add_seizures.py --input_file obsLRs.[species].txt --seizure_file seizure_metadata.tsv
 
 This writes obsLRs.[species].seizures.txt which is annotated with seizure
-names.  As it does not use seizure_modifications, it will not necessarily get the
-names right.
+names.  As it does not use seizure_modifications, it will not necessarily get 
+the names right.
 
 python 2_filter_results.py --input_file obsLRs.[species].seizures.txt --cutoff 2.0
 
@@ -537,25 +518,13 @@ will use both obsLRs.[species].2.0.filtered.txt and this file.
 4_remove_seizures.py, but this pipeline does not use it.  It is also
 present in src if you find a use for it.)
 
-2)  Obtain the file seizure_metadata_[DBno].tsv (this is not kept
-on the Github site; ask Mary Kuhner for a copy).  Make a COPY of this
-file and run update_metadata.py on the copy (this program changes its
-input file in place!)  The three arguments are the metadata (copy) file,
-the PREFIX_unknowns.txt file, and the official name of your new seizure.
-Check that the results are sensible (your new seizure should be at
-the bottom of the file) before overwriting the original.  If you have 
-changed [DBno] be sure to change the name of this file.  Return the
-modified file to Mary for archiving.
-
-This step is not needed and should not be done if this seizure was previously
-run and you are rerunning it for some reason; it is only for a genuinely
-new seizure (not already in seizure_metadata).
+The remaining steps are for a full, formal familial matching analysis.
 
 3)  Obtain or create a seizure_modifications file.  This file contains
 information on any seizures to be excluded from analysis or merged
 together.  A copy of the current version, seizure_modifications_nature,
-is in the auxillary_files directory.  It reflects the seizure changes
-made for the paper submitted to Nature in May 2021.
+is in the /aux directory.  It reflects the seizure changes
+made for the paper submitted to Nature Human Behavior in May 2021.
 
 This file has two sections.  The first is introduced with REJECT
 on a line by itself and lists seizures to be rejected, one per line.
@@ -581,7 +550,7 @@ archived by Mary.  Place them in the directory which contains your sector
 directories sub0, sub1 etc.
 
 Obtain a file of false-positive results from simulated data, called fprates.tsv;
-a copy is in auxillary_files.  If the sectoring scheme is changed, these will
+a copy is in /aux.  If the sectoring scheme is changed, these will
 need to be regenerated.
 
 TO DO:  document simulation pipeline used to make these false-positive rates.

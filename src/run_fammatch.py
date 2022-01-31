@@ -44,6 +44,11 @@ def read_sector_metadata(metafilename):
     sector2species[pline[0]] = pline[1]
   return sector2species
 
+def make_dir_if_needed(pathname):
+  if not os.path.isdir(pathname):
+    os.mkdir(pathname)
+  return pathname
+
 ##########################################################################
 # main program
 
@@ -67,15 +72,17 @@ seizuredir = prefix + "/fammatch"
 archivedir = sys.argv[2]
 ivorydir = sys.argv[3]
 
-names_archive = archivedir + "/old_names"
-inputs_archive = archivedir + "/old_inputs"
+names_archive = make_dir_if_needed(archivedir + "old_names")
+inputs_archive = make_dir_if_needed(archivedir + "old_inputs")
+results_archive = make_dir_if_needed(archivedir + "old_results")
 # results_archive needs an absolute path because we change directories
 # to run Rscripts before saving our fammatch results
-results_archive = os.path.abspath(archivedir + "/old_results")
-ref_archive = archivedir + "/reference"
+results_archive = os.path.abspath(results_archive)
+ref_archive = make_dir_if_needed(archivedir + "reference")
 today = str(datetime.today()).replace(" ","_")
-backupdir = archivedir + "/backups/" + today 
-rootdir = os.getcwd()
+today = today.replace(":","_")
+upper_backupdir = make_dir_if_needed(archivedir + "backups/")
+backupdir = "upper_backupdir" + today
 
 
 # before starting, back up previous results
@@ -129,7 +136,9 @@ for sector in range(0,nsec):
   oldnamefile = names_archive + "/old_names_" + secname + ".tsv"
   newnamefile = seizuredir + "/names_" + secname + ".tsv"
 
+  print("About to try running sector ",secname)
   if not os.path.isfile(newnamefile):  continue    # nothing to add
+  print("Will run sector ",secname)
 
   myoldnames = set()
 
@@ -154,9 +163,8 @@ for sector in range(0,nsec):
     name = line.rstrip().split("\t")[0]
     if name in old_names[sector]:
       print("WARNING:  New elephant ",name," in sector ",secname," has already been seen")
-    else:
-      new_names[sector].append(name)
-      new_namelines[sector].append(line)
+    new_names[sector].append(name)
+    new_namelines[sector].append(line)
 
   # be sure to remove old (temp) directories if present
   # and be sure to clean up at end, maybe only a single temp directory
@@ -198,13 +206,14 @@ for sector in range(0,nsec):
 
   prepfilename = rundir + "prep" + secname + ".csv"
   newlines = []
+  print("Reading prepfile ",prepfilename)
   for line in open(prepfilename,"r"):
     # DEBUG
     if line.startswith("Match"):   # header
       continue
     sid = line.rstrip().split(",")[0]
-    if sid in new_names[sector]:
-      newlines.append(line)
+    assert sid in new_names[sector]
+    newlines.append(line)
   
   # write "old" and "new" files
   #
@@ -212,21 +221,14 @@ for sector in range(0,nsec):
   # we handle borrowing a new elephant here--the structures always will have new
   # elephants in new structures, only the output varies
 
-  # special case:  we will not write these files nor run fammatch if
-  # there is only one new and no old elephants; but we will still
-  # archive everything (except results, as there won't be any) as normal.
-  # if we don't run fammatch we will write a special file called
-  # ONLY_ONE_SAMPLE in the seizure's fammatch/sector directory to 
-  # indicate this fact.
-
-  onlyonesample = False
+  # special case:  with 1 new elephant and no old elephants, we can't run fammatch at all.
+  # we skip the runs and write an indictor file, but we *do* archive the 1 elephant
+  didnotrun = False
   if len(oldlines) == 0 and len(newlines) == 1:
-    onlyonesample = True
-    onesamplename = rundir + "ONLY_ONE_SAMPLE"
-    onesamplefile = open(onesamplename,"w")
-    outline = "We found only one sample in this sector and no prior samples.\n"
-    onesamplefile.write(outline)
-    outline = "Sample has been archived but familial matching is not runnable.\n"
+    indicatorfile = open(rundir + "ONLY_ONE_SAMPLE","w")
+    indicatorfile.write("Only one new sample and no previous ones, familial matching not run\n")
+    indicatorfile.close()
+    didnotrun = True
   else:
     oldfilename = rundir + "old" + secname + ".csv"
     oldfile = open(oldfilename,"w")
@@ -262,14 +264,15 @@ for sector in range(0,nsec):
     command = ["Rscript","calculate_LRs.R",species,rfile,ofile,nfile]
     print("Calculating familial matches for sector ",sector)
     run_and_report(command,"Unable to execute calculate_LRs.R")
-  # end of processing that is skipped if only one sample!
-
+    # end of if statement in case of not enough elephants to run
 
   # archive files
 
   # add new sample names to old_names
   if len(new_namelines[sector]) > 0:
     outfile = open(oldnamefile,"w")
+    # DEBUG
+    print("Writing old_names file",oldnamefile)
     for line in old_namelines[sector]:
       outfile.write(line) 
     for line in new_namelines[sector]:
@@ -287,12 +290,9 @@ for sector in range(0,nsec):
     infile.close()
 
   # make a new seizure file of old_results
-  # if only one sample, we skip
-  if not onlyonesample:
+  if not didnotrun:
     resultsfile = "obsLRs." + species + ".txt"
     resname = prefix + "_obsLRs_" + secname + ".tsv"
     archive_resultsfile = results_archive + "/" + resname 
     command = ["cp",resultsfile,archive_resultsfile]
     run_and_report(command,"Unable to copy results file " + resultsfile + " to archive") 
-
-  os.chdir(rootdir)  # don't forget to change back!

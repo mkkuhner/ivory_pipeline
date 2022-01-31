@@ -40,8 +40,8 @@ Genotypes file.
 ***Automated scripts vs. running by hand
 
 This document covers the use of automated scripts to run all parts of the
-pipeline except for SCAT (not automated because it may be shifted to the
-cluster).  For directions on running individual programs by hand, see 
+pipeline except for SCAT (not automated because you may wish to run it on
+the cluster).  For directions on running individual programs by hand, see 
 ivory_pipeline.txt.
 
 ***A)  Obtain all needed files
@@ -83,6 +83,7 @@ Needed files:
 REFELE_[DBno]_raw.txt                  (raw reference data)
 REFELE_[DBno]_known.txt                (formatted reference data)
 REFELE_[DBno]_known_structure.txt_f    (Structure results)
+REFELE_[DBno}_filtered_[species].txt   ("canned" reference data)
 
 If you do not have these files, steps to prepare them are in 
 /docs/reference_pipeline.txt.
@@ -118,8 +119,9 @@ seizure_modifications_prefix	path to modifications file	prefix of this file
 map_prefix		path to map files			prefix of these files
 seizure_data_dir	directory where raw seizure data is kept
 structure_executable	path and filename of the Structure executable
+fammatch_archive_dir	path to familial matching input file archive
 
-***C)  Preprocess the data for analysis
+***B)  Preprocess the data for analysis
 
 1)  Pick a PREFIX (ideally the official name of the seizure) that will 
 tag all runs for this case.
@@ -132,9 +134,10 @@ documentation file master_database_pipeline.txt.
 Extract the "Scat input" data from the spreadsheet as a .tsv file; this
 can be done with LibreOffice by saving the file as .csv but setting the 
 delimiter to tab rather than comma, and then changing the name of the
-resulting file.  Name this file PREFIX_raw.tsv.
+resulting file.  Name this file PREFIX_raw.tsv and place it in the directory
+you have indicated (in ivory_paths.tsv) as containing seizure data files.
 
-***D)  Data preparation and SCAT run setup
+***C)  Data preparation and SCAT run setup
 
 The Python program "phase1.py" begins with raw seizure data.  It validates
 the data, classifies it by species, removes hybrids, and prepares the data
@@ -156,7 +159,7 @@ Programs run by phase1.py check for unexpected microsatellite alleles and
 for duplicate samples.  The program will terminate with an error message if
 these are encountered.  For details on these checks, see ivory_pipeline.txt.
 
-***E) Running SCAT
+***D) Running SCAT
 
 1)  Running on your own machine
 
@@ -171,19 +174,19 @@ can all run at once if your machine is sufficiently powerful.
 
 From inside directory number N, use the command "source runN.sh" to run SCAT.
 It may take hours or days to run, depending on the number of samples in your
-seizure.
+seizure.  Do NOT run subsequent scripts (phase2.py, phase3.py) until the
+SCAT runs have all finished.
 
 To run on the cluster, consult cluster documentation.
 
 TO DO:  document running on the cluster.
 
 
-***F)  Running VORONOI
+***E)  Running VORONOI
 
-The script phase2.py sets up and runs VORONOI.  It should be run
-in the parent directory of all seizures, and expects to find
-ivory_paths.tsv in that directory.  It takes PREFIX as its
-argument. 
+The script phase2.py sets up and runs VORONOI.  It should be run in the 
+parent directory of all seizures, and expects to find ivory_paths.tsv in 
+that directory.  It takes PREFIX as its argument. 
 
 This script sets up the VORONOI run, executes it, and creates plots of
 the results.  VORONOI outputs will be found in /nforest and/or /nsavannah.
@@ -201,7 +204,7 @@ the same information as the three summary files, but in textual form.
 TO DO:  write a note on how to install Cartopy:  it's tricky.
 
 
-***H)  Run familial matching
+***F)  Run familial matching
 
 This document explains how to do familial matching of a new seizure when
 all previous seizures have already been run and archived.  If
@@ -211,199 +214,26 @@ take 3+ days.  Rerunning the whole thing is needed if large changes
 have been made to the reference data, the sector definitions have 
 changed, or the set of previous seizures to be used has changed.
 
-The following steps (H1-H4) can be done by the script mary_fammatch.sh on Mary's
-laptop.  It is meant to be run in the parent director of all the seizure 
-directories, and takes PREFIX as its argument.  Note that the script spawns
-jobs for the familial matching runs, and when it says it is finished these
-may still be running.  You may safely run the same program on a *different
-seizure* once it terminates on the current seizure, but you must NOT do 
-postprocessing on the current seizure until all of the jobs terminate.
+This is carried out by the script phase3.py.  It is meant to be run in the
+parent directory of all seizures, and takes PREFIX as its argument.
+Inefficiently, it does the familial matching R script runs one at a time.
+They can all be run at once safely, but downstream code must not execute
+until they have all completed, and I have not figured out how to code that.
 
-Note that running mary_fammatch.sh will destroy the current /fammatch subdirectory
-for this seizure.
+At the end of this program, there will exist a "fammatch" directory in
+seizure directory PREFIX, with up to 6 subdirectories called "subN".
+Each represents results for this seizure in a particular sector (sector N)
+and will be present only if the seizure has samples assigned to that
+sector.
 
-1)  Make a directory "fammatch" in your main PREFIX directory (not
-nforest/nsavannah).  Make two subdirectories within it for SCAT sector
-assignment runs:  "outdir_forest" and "outdir_savannah".
+In each "subN" directory, there will be a file called 
 
-For each species present in your seizure you will need to do a SCAT
-run here:
+obsLRs.[species].seizures.[cutoff].filtered.txt
 
-./SCAT -Z -H2 ../PREFIX_[species]_plus_ref.txt ../zones_species.txt outdir_[species] 16
+which contains matches within the current seizure and between the current seizure and
+all previous ones in the archive.  It prints only matches which reach the specified cutoff,
+currently 2.0.  These results can be used for a quick and dirty evaluation of matches,
+but matches with relatively low logLR scores have a high chance of being false positives,
+especially in savannah.
 
-This will compute sector (previously called "subregion") probabilities for all 
-reference and seizure samples.  The seizure samples will be classified into 
-sectors based on these probabilities:  the reference samples will instead be 
-classified based on their sector in the regionfile, but must be included here
-to establish the sector allele frequencies.  It runs in minutes.
-
-2)  Obtain make_fammatch_incremental.py from the ivory_pipeline /src
-directory.  Check to make sure it has the correct value for the
-nsub variable (number of sectors, currently 6).  Run this
-program for each species for which you have samples, using the following
-arguments:
-
-PREFIX
-outdir_[species]
-path to familial matching input archive (currently ~/data/fammatch_input
-   on Mary's laptop)
-regionfile_[species]
-
-This will create subdirectories for each sector that has samples
-in the seizure.  It will also add the samples from the new seizure to
-the archive for further use.  (Therefore, if you are running on a 
-copy of the archive, you will need to update the original.  This can
-be done by finding all files in the archive that begin with PREFIX
-and adding them to the canonical archive, in the proper subdirectories.)  
-
-One unusual case can occur:  If there is exactly one
-sample for a particular sector in this seizure, and no samples for
-the sector in the archives, familial matching cannot be run.  This
-will be signaled by the presence of a file ONLY_ONE_SAMPLE in the
-subdirectory for that sector (and absence of some of the run files).
-The sample will be archived as usual and will participate in subsequent
-familial matching.
-
-This program also writes run files for familial matching into each
-sector directory, called "runrscript.sh".
-
-Nothing below this point separates the species (as samples have been
-divided into sectors, and the species information is implicit in the
-sector).
-
-3)  Place copies of calculate_LRs.R and LR_functions.R in each
-sector directory.
-
-4)  In each sector directory, source runrscript.sh (no arguments).
-This will contain a run command of the form:
-
-Rscript calculate_LRs.R [species] refN_fammatch.csv oldN.txt newN.txt
-
-Runtime depends on the size of the seizure but usually not more than
-a few hours and often much less.  These runs do not interact so you
-can run all sectors at the same time (as the script does).
-
-
-***I)  Postprocess familial matching
-
-1) OPTIONAL.  To simply view the results of familial matching on your new 
-seizure, you can run Charles' Python scripts in each sector directory for
-which you had samples in your seizure.  These are found in the /src directory.
-If no matches are found, there is no point continuing with network analysis.
-Be careful, however, not to treat matches found this way as conclusive; a
-large proportion will be false positives.
-
-python 1_add_seizures.py --input_file obsLRs.[species].txt --seizure_file seizure_metadata.tsv
-
-This writes obsLRs.[species].seizures.txt which is annotated with seizure
-names.  As it does not use seizure_modifications, it will not necessarily get the
-names right.
-
-python 2_filter_results.py --input_file obsLRs.[species].seizures.txt --cutoff 2.0
-
-Note that if you mistakenly use obsLRs.[species].txt as input, this program will
-appear to work fine, but downstream code will NOT.   It writes
-obsLRs.[species].2.0.filtered.txt, which can be consulted to find all the putative
-significant matches involving your new seizure.
-
-python 3_seizure_analysis.py --filtered_file obsLRs.[species].seizures.2.0.filtered.txt
-
-This will write obsLRs.[species].seizures.2.0.filtered.seizanalysis.txt, which
-summarizes comparisons between seizures.  For interpreting the results you
-will use both obsLRs.[species].2.0.filtered.txt and this file.
-
-(There is a fourth script distributed with the familial matching code,
-4_remove_seizures.py, but this pipeline does not use it.  It is also
-present in src if you find a use for it.)
-
-2)  Obtain the file seizure_metadata_[DBno].tsv (this is not kept
-on the Github site; ask Mary Kuhner for a copy).  Make a COPY of this
-file and run update_metadata.py on the copy (this program changes its
-input file in place!)  The three arguments are the metadata (copy) file,
-the PREFIX_unknowns.txt file, and the official name of your new seizure.
-Check that the results are sensible (your new seizure should be at
-the bottom of the file) before overwriting the original.  If you have 
-changed [DBno] be sure to change the name of this file.  Return the
-modified file to Mary for archiving.
-
-This step is not needed and should not be done if this seizure was previously
-run and you are rerunning it for some reason; it is only for a genuinely
-new seizure (not already in seizure_metadata).
-
-3)  Obtain or create a seizure_modifications file.  This file contains
-information on any seizures to be excluded from analysis or merged
-together.  A copy of the current version, seizure_modifications_nature,
-is in the auxillary_files directory.  It reflects the seizure changes
-made for the paper submitted to Nature in May 2021.
-
-This file has two sections.  The first is introduced with REJECT
-on a line by itself and lists seizures to be rejected, one per line.
-The second is introduced with MERGE on a line by itself and
-introduces tab-separated lists of seizure names.  The first name will
-be used as the name of the merged seizure, and the remainder will be
-merged.  Note that you can use this to rename a seizure by giving
-two entries, the first being the new name and the second the old
-name.
-
-It is likely that if you change this file at all, except as it pertains
-to the new seizure you are running, you will have to rerun the
-entire familial matching analysis as described in familial_pipeline.txt.
-You *may* be able to reject more seizures than were rejected when your
-previous familial matching runs were done, though this is not tested;
-similarly, you may be able to rename old seizures.  You certainly 
-cannot reject fewer old seizures or merge old seizures with each other 
-or with the new ones.
-
-4)  Obtain results of previous familial matching.  They will take the form of 
-files named obsLRs_[species]_N.txt, where N is the sector number.  These are
-archived by Mary.  Place them in the directory which contains your sector
-directories sub0, sub1 etc.
-
-Obtain a file of false-positive results from simulated data, called fprates.tsv;
-a copy is in auxillary_files.  If the sectoring scheme is changed, these will
-need to be regenerated.
-
-TO DO:  document simulation pipeline used to make these false-positive rates.
-
-Obtain a copy of the canonical list of direct (exact) matches, called dms.tsv.
-This is not kept on Github; ask Mary for a copy.  This file is used because we 
-recognize as direct matches some imperfect matches which have been detected by
-allelic-dropout-aware code such as CERVUS, whereas allowing for imperfect
-matches in the familial matching code would make it too slow.
-
-5)  Run consolidate_fammatch.py to merge old and new results.
-
-6)  Run create_network_input.py to calculate weighted matches between seizures.
-Its arguments are:
-
-seizure_metadata.txt
-dmfile.tsv
-seizure_modifications
-log(LR) cutoff (standard is 2.0)
-minimum typed loci in common (standard is 13)
-
-The program also silently reads fprates.tsv, which must be in its run directory;
-and it contains hardcoded path names for the obsLRs files (see line 63 and following)
-which will have to be changed if you use a different directory setup.
-
-It writes seizure_nodes.csv and seizure_edges.csv, which contain the weighted
-matches between each pair of seizures.  It also writes two matrices of counts
-between pairs of seizures, broken out by forest and savannah, into a single
-file named "ryanfile" used by Ryan's graphical software.
-
-If you simply want to know about all weighted matches involving the new seizure,
-grep for its name in seizure_edges.csv.
-
-If this program fails with a KeyError message, there is a sample ID in your
-familial matching results which is not in your seizure_metadata file.  Did
-you forget to update this file?  Is it a sample which was supposed to be
-deleted, but was not?
-
-7)  To infer a Louvain network and make a graphic of it, run the Python program
-infer_louvain_network.py.  Arguments are:
-
-minlink -- connections with weight below this are dropped.  Was 1.0 in paper.
-seizure_modifications
-
-There are fancier versions of this program which pull in forensic data, Ryan's
-data, etc. but this is the basic version.
+The script does not yet recalculate false positive rates.

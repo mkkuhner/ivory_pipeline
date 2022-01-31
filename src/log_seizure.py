@@ -16,6 +16,11 @@ def get_github_code(mydir):
   return(results[0])
   os.chdir(currentdir)
 
+def stripfilename(mypath):
+  parts = mypath.split("/")
+  newpath = "/".join(parts[:-1])
+  return newpath
+
 ### main program
 import sys
 if len(sys.argv) != 6:
@@ -27,7 +32,9 @@ seizuredir = os.path.abspath(prefix)
 ivorydir = os.path.abspath(sys.argv[2])
 datadir = os.path.abspath(sys.argv[3])
 scatdir = os.path.abspath(sys.argv[4])
+scatdir = stripfilename(scatdir)
 vordir = os.path.abspath(sys.argv[5])
+vordir = stripfilename(vordir)
 
 outfile = open(seizuredir + "/" + prefix + "_logfile.txt","w")
 

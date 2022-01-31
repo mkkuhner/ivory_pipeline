@@ -138,15 +138,15 @@ run_and_report(command,"Could not copy in master scat runfile")
 
 # run filter_hybrids
 
-command = ["python3",ivory_dir + "/src/filter_hybrids.py"]
+command = ["python3",ivory_dir + "src/filter_hybrids.py"]
 command.append(prefix)
-command.append(map_prefix)
-command.append(zones_prefix)
-command.append(scat_exec)
 if runtype == "laptop":
   command.append("F")
 else:
   command.append("T")
+# use canned reference rather than the one computed in this cycle:
+# this provides coherence over multiple seizures
+command.append("T")
 run_and_report(command,"Could not filter hybrids")
 
 # as needed:

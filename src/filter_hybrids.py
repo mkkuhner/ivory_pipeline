@@ -7,6 +7,14 @@
 
 ### functions
 
+def readivorypath(ifile):
+  ivorypaths = {}
+  inlines = open(ifile,"r").readlines()
+  for line in inlines:
+    pline = line.rstrip().split("\t")
+    ivorypaths[pline[0]] = pline[1:]
+  return ivorypaths
+
 def is_even(number):
   if number % 2 != 0:
     return False
@@ -50,7 +58,7 @@ def make_runfiles(clusterrun,species,prefix,seizelines,mapfile,regionfile):
     runline = runlines[0]
     datafile = "../../" + datafile
   assert is_even(len(seizelines))
-  runline = runline.replace("SCAT",scatexe)
+  runline = runline.replace("SCAT",scat_exec)
   numind = len(seizelines) / 2
   runline = runline.replace("NUMIND",str(numind))
   # we do NOT replace SEED; that will be done downstream, as each
@@ -76,32 +84,42 @@ cutoff = 0.5
 print("NOTE:  this program assumes that Species 1 is savannah")
 print("and is using a hybrid cutoff of >", cutoff)
 
-if len(sys.argv) != 6:
-  print("USAGE:  filter_hybrids.py prefix mapprefix zoneprefix scatexe clusterrun")
-  print("  datafile should contain both unknown and all known refs")
-  print("  and must be the file the EBhybrid results came from!")
-  print("  refprefix is which reference file the ref data came from")
-  print("  frex. REFELE_21 for data that came from REFELE_21_known.txt")
-  print("  zoneprefix is the beginning of zonefile name, i.e. zones_43")
-  print("  scatexe is the desired SCAT executable")
+if len(sys.argv) != 4:
+  print("USAGE:  filter_hybrids.py prefix clusterrun use_canned_reference")
+  print("  This program uses PREFIX_plus_ref.txt and the corresponding EBhybrids output,")
+  print("    and THOSE MUST MATCH.")
   print("  if clusterrun == T then this will be assumed to be a run on the biology")
   print("     computing cluster, otherwise not")
+  print("  if use_canned_reference == T then precomputed references will be used")
+  print("     rather than the ones from EBhybrid")
   exit()
 
 prefix = sys.argv[1]
 datafile = os.path.abspath(prefix+"_plus_ref.txt")
 ebfile = prefix+"_hybt.txt"
-mapprefix = sys.argv[2]
-savannahmap = os.path.abspath(mapprefix+"_savannah.txt")
-forestmap = os.path.abspath(mapprefix+"_forest.txt")
-zoneprefix = os.path.abspath(sys.argv[3])
-zone_savannah = zoneprefix + "_savannah.txt"
-zone_forest = zoneprefix + "_forest.txt"
-scatexe = sys.argv[4]
+
+ifile = "../ivory_paths.tsv"
+pathdir = readivorypath(ifile)
+ivory_dir = pathdir["ivory_pipeline_dir"][0]
+scat_exec = pathdir["scat_executable"][0]
+reference_path, reference_prefix = pathdir["reference_prefix"]
+zones_path, zones_prefix = pathdir["zones_prefix"]
+zones_savannah = zones_path + zones_prefix + "_savannah.txt"
+zones_forest = zones_path + zones_prefix + "_forest.txt"
+
+map_path, map_prefix = pathdir["map_prefix"]
+savannahmap = map_path + map_prefix+"_savannah.txt"
+forestmap = map_path + map_prefix+"_forest.txt"
+
+seizure_data_dir = pathdir["seizure_data_dir"][0]
+voronoi_exec = pathdir["voronoi_executable"][0]
 
 clusterrun = False
-if sys.argv[5] == "T":
+if sys.argv[2] == "T":
   clusterrun = True
+use_canned_reference = False
+if sys.argv[3] == "T":
+  use_canned_reference = True
 
 savcount = 0
 forcount = 0
@@ -151,12 +169,22 @@ for line in open(datafile,"r"):
     else:
       for_ref.append(line)
 
+# read "canned" reference (we do not use the self-generated one as it varies stochastically
+# and we need all runs to use the same exact reference).
+if use_canned_reference:
+  if len(sav_seizure) > 0:
+    # pull savannah reference
+    sav_ref = open(reference_path + reference_prefix + "_filtered_savannah.txt","r").readlines()
+  if len(for_seizure) > 0:
+    # pull forest reference
+    for_ref = open(reference_path + reference_prefix + "_filtered_forest.txt","r").readlines()
+
 # write species-specific files for SCAT/VORONOI pipeline
 
 if len(sav_seizure) > 0:
   make_species_scatfile("savannah",prefix,sav_seizure,sav_ref)
-  make_runfiles(clusterrun,"savannah",prefix,sav_seizure,savannahmap,zone_savannah)
+  make_runfiles(clusterrun,"savannah",prefix,sav_seizure,savannahmap,zones_savannah)
 
 if len(for_seizure) > 0:
   make_species_scatfile("forest",prefix,for_seizure,for_ref)
-  make_runfiles(clusterrun,"forest",prefix,for_seizure,forestmap,zone_forest)
+  make_runfiles(clusterrun,"forest",prefix,for_seizure,forestmap,zones_forest)
