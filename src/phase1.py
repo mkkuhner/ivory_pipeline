@@ -48,7 +48,7 @@ runtype = sys.argv[2]
 if runtype != "laptop" and runtype != "cluster":
   print("Illegal run type ",runtype," (must be laptop or cluster)")
   exit(-1)
-input_canned = sys.arg[3]
+input_canned = sys.argv[3]
 if input_canned != "new" and input_canned != "canned":
   print("Reference flag must be new or canned")
   exit(-1)
