@@ -51,7 +51,7 @@ if input_canned != "new" and input_canned != "canned":
   exit(-1)
 if input_canned == "new":  canned = False
 else:  canned = True
-pathsfile = sys.argv[4]
+pathsfile = os.path.abspath(sys.argv[4])
 
 
 # make the seizure directory if it doesn't already exist
