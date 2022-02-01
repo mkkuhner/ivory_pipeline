@@ -15,12 +15,9 @@ from subprocess import Popen, PIPE
 ############################################################################
 ## functions
 
-# assumes a file "ivory_paths.tsv" exists in the same directory as the 
-# calling function
-
-def readivorypath():
+def readivorypath(pathsfile):
   ivorypaths = {}
-  inlines = open("ivory_paths.tsv","r").readlines()
+  inlines = open(pathsfile,"r").readlines()
   for line in inlines:
     pline = line.rstrip().split("\t")
     ivorypaths[pline[0]] = pline[1:]
@@ -37,8 +34,8 @@ def run_and_report(command,errormsg):
 ############################################################################
 ## main program
 
-if len(sys.argv) != 4:
-  print("USAGE:  python3 phase1.py PREFIX laptop/cluster new/canned")
+if len(sys.argv) != 5:
+  print("USAGE:  python3 phase1.py PREFIX laptop/cluster new/canned pathsfile.tsv")
   print("new/canned refers to whether species-specific reference files")
   print("need to be made (new) or already exist (canned)")
   exit(-1)
@@ -54,6 +51,7 @@ if input_canned != "new" and input_canned != "canned":
   exit(-1)
 if input_canned == "new":  canned = False
 else:  canned = True
+pathsfile = sys.argv[4]
 
 
 # make the seizure directory if it doesn't already exist
@@ -70,7 +68,7 @@ seizuredir = prefix + "/"
 
 # read ivory_paths.tsv file
 # set up needed variables
-pathdir = readivorypath()
+pathdir = readivorypath(pathsfile)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
 scat_exec = pathdir["scat_executable"][0]
 reference_path, reference_prefix = pathdir["reference_prefix"]
@@ -89,7 +87,7 @@ run_and_report(command,"Could not locate raw data file " + rawdata)
 
 # log_seizure.py
 # this program creates a logfile recording run parameters
-command = ["python3", ivory_dir+"src/log_seizure.py",prefix,ivory_dir,reference_path + reference_prefix,scat_exec,voronoi_exec]
+command = ["python3", ivory_dir+"src/log_seizure.py",prefix,ivory_dir,reference_path + reference_prefix,scat_exec,voronoi_exec,pathfile]
 run_and_report(command,"Failed to log the run")
 
 # cd to newly created directory

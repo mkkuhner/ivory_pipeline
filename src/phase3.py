@@ -14,9 +14,9 @@ from subprocess import Popen, PIPE
 # assumes a file "ivory_paths.tsv" exists in the same directory as the
 # calling function
 
-def readivorypath():
+def readivorypath(pathsfile):
   ivorypaths = {}
-  inlines = open("ivory_paths.tsv","r").readlines()
+  inlines = open(pathsfile,"r").readlines()
   for line in inlines:
     pline = line.rstrip().split("\t")
     ivorypaths[pline[0]] = pline[1:]
@@ -42,13 +42,14 @@ def safecopy(fromfile,tofile):
 ###################################################################
 # main program
 
-if len(sys.argv) != 2:
-  print("USAGE:  python phase3.py PREFIX")
+if len(sys.argv) != 3:
+  print("USAGE:  python phase3.py PREFIX pathsfile.tsv")
   print("This should be run in the parent directory of all seizures")
-  print("and relies on presence of ivory_paths.tsv there")
+  print("and the pathsfile must be the same as used in phase1.py and phase2.py")
   exit(-1)
 
 prefix = sys.argv[1]
+pathsfile = sys.argv[2]
 formalseizurename = prefix.replace("_", ", ")
 print("Seizure will be called",formalseizurename)
 
@@ -57,7 +58,7 @@ print("Seizure will be called",formalseizurename)
 startdir = os.getcwd()
 
 # read paths file
-pathdir = readivorypath()
+pathdir = readivorypath(pathsfile)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
 zones_path, zones_prefix = pathdir["zones_prefix"]
 scat_exec = pathdir["scat_executable"][0]

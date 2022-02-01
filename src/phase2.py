@@ -14,9 +14,9 @@ from subprocess import Popen, PIPE
 # assumes a file "ivory_paths.tsv" exists in the same directory as the 
 # calling function
 
-def readivorypath():
+def readivorypath(pathsfile):
   ivorypaths = {}
-  inlines = open("ivory_paths.tsv","r").readlines()
+  inlines = open(pathsfile,"r").readlines()
   for line in inlines:
     pline = line.rstrip().split("\t")
     ivorypaths[pline[0]] = pline[1:]
@@ -33,16 +33,19 @@ def run_and_report(command,errormsg):
 ############################################################################
 ## main program
 
-if len(sys.argv) != 2:
-  print("USAGE:  python3 phase2.py PREFIX")
+if len(sys.argv) != 3:
+  print("USAGE:  python3 phase2.py PREFIX pathsfile.tsv")
+  print("This should be run in the parent directory of all seizures")
+  print("and the pathsfile must be the same as used in phase1.py and phase3.py")
   exit(-1)
 
 prefix = sys.argv[1]
+pathsfile = sys.argv[2]
 seizuredir = prefix + "/"
 
 # read ivory_paths.tsv file
 # set up needed variables
-pathdir = readivorypath()
+pathdir = readivorypath(pathsfile)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
 scat_exec = pathdir["scat_executable"][0]
 reference_path, reference_prefix = pathdir["reference_prefix"]

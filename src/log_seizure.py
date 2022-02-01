@@ -23,8 +23,8 @@ def stripfilename(mypath):
 
 ### main program
 import sys
-if len(sys.argv) != 6:
-  print("USAGE:  log_seizure.py prefix ivorydir datadir scatdir vordir")
+if len(sys.argv) != 7:
+  print("USAGE:  log_seizure.py prefix ivorydir datadir scatdir vordir pathsfile.tsv")
   exit(-1)
 
 prefix = sys.argv[1]
@@ -35,6 +35,7 @@ scatdir = os.path.abspath(sys.argv[4])
 scatdir = stripfilename(scatdir)
 vordir = os.path.abspath(sys.argv[5])
 vordir = stripfilename(vordir)
+pathsfile = sys.argv[6]
 
 outfile = open(seizuredir + "/" + prefix + "_logfile.txt","w")
 
@@ -68,6 +69,9 @@ outfile.write(outline)
 
 # working directories
 outline = "Reference data: " + datadir + "\n"
+outfile.write(outline)
+
+outline = "Pathsfile used: " + pathsfile + "\n"
 outfile.write(outline)
 
 outfile.close()
