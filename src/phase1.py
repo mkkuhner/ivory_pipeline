@@ -87,7 +87,7 @@ run_and_report(command,"Could not locate raw data file " + rawdata)
 
 # log_seizure.py
 # this program creates a logfile recording run parameters
-command = ["python3", ivory_dir+"src/log_seizure.py",prefix,ivory_dir,reference_path + reference_prefix,scat_exec,voronoi_exec,pathfile]
+command = ["python3", ivory_dir+"src/log_seizure.py",prefix,ivory_dir,reference_path + reference_prefix,scat_exec,voronoi_exec,pathsfile]
 run_and_report(command,"Failed to log the run")
 
 # cd to newly created directory
