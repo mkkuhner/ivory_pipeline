@@ -17,7 +17,7 @@ import sys
 if len(sys.argv) != 2:
   print("USAGE:  prep_scat_data.py PREFIX")
   print("This will read PREFIX_raw.tsv and write PREFIX_unknowns.txt")
-  exit()
+  exit(-1)
 
 prefix = sys.argv[1]
 infilename = prefix+"_raw.tsv"
