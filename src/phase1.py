@@ -2,6 +2,10 @@
 # does not actually do scat runs
 # This should be run in the parent directory of all seizures
 
+# prefer canned reference rather than the one computed in this cycle:
+# this provides coherence over multiple seizures.  Only make reference
+# if you don't have a canned one, and then can it!
+
 import sys
 import os
 import subprocess
@@ -33,8 +37,10 @@ def run_and_report(command,errormsg):
 ############################################################################
 ## main program
 
-if len(sys.argv) != 3:
-  print("USAGE:  python3 phase1.py PREFIX laptop/cluster")
+if len(sys.argv) != 4:
+  print("USAGE:  python3 phase1.py PREFIX laptop/cluster new/canned")
+  print("new/canned refers to whether species-specific reference files")
+  print("need to be made (new) or already exist (canned)")
   exit(-1)
 
 prefix = sys.argv[1]
@@ -42,6 +48,13 @@ runtype = sys.argv[2]
 if runtype != "laptop" and runtype != "cluster":
   print("Illegal run type ",runtype," (must be laptop or cluster)")
   exit(-1)
+input_canned = sys.arg[3]
+if input_canned != "new" and input_canned != "canned":
+  print("Reference flag must be new or canned")
+  exit(-1)
+if input_canned == "new":  canned = False
+else:  canned = True
+
 
 # make the seizure directory if it doesn't already exist
 if os.path.isdir(prefix):
@@ -94,7 +107,7 @@ run_and_report(command,"Duplicate samples detected")
 
 # run prep_scat_data
 command = ["python3",ivory_dir + "src/prep_scat_data.py",prefix]
-run_and_report(command,"Failure in pre_scat_data.py")
+run_and_report(command,"Failure in prep_scat_data.py")
 print("Data validated and prepared")
 
 # marshall files for ebhybrids
@@ -144,9 +157,10 @@ if runtype == "laptop":
   command.append("F")
 else:
   command.append("T")
-# use canned reference rather than the one computed in this cycle:
-# this provides coherence over multiple seizures
-command.append("T")
+if canned:
+  command.append("T")
+else:
+  command.append("F")
 run_and_report(command,"Could not filter hybrids")
 
 # as needed:
