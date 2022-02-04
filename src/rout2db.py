@@ -20,9 +20,14 @@ outlines = [outline,]
 for line in rinlines[1:]:
   outline = secno + "\t"
   pline = line.rstrip().split("\t")
-  sz1 = sid2seiz[pline[0]]
-  sz2 = sid2seiz[pline[1]]
-  outline += sz1 + "\t" + sz2 + "\t" + line
+  sid1 = pline[0]
+  sid2 = pline[1]
+  if sid1 > sid2:
+    # using python swap pecularity
+    sid2, sid1 = sid1, sid2
+  sz1 = sid2seiz[sid1]
+  sz2 = sid2seiz[sid2]
+  outline += sz1 + "\t" + sz2 + "\t" + sid1 + "\t" + sid2 + line[2:]
   outlines.append(outline)
 
 outfilename = sys.argv[1][:-4]
