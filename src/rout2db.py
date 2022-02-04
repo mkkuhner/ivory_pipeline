@@ -12,6 +12,10 @@ sid2seiz = {}
 for line in metalines:
   pline = line.rstrip().split("\t")
   seiz = pline[0]
+  seiz = seiz.replace(", ","_")
+  if " " in seiz:
+    print("ERROR: seizure",seiz,"from file",sys.argv[2],"contains a space")
+    exit(-1)
   sid = pline[1]
   sid2seiz[sid] = seiz
 
