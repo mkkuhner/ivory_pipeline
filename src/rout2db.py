@@ -27,7 +27,8 @@ for line in rinlines[1:]:
     sid2, sid1 = sid1, sid2
   sz1 = sid2seiz[sid1]
   sz2 = sid2seiz[sid2]
-  outline += sz1 + "\t" + sz2 + "\t" + sid1 + "\t" + sid2 + line[2:]
+  parselen = len(sid1) + len(sid2) + 2  # +2 for the tabs
+  outline += sz1 + "\t" + sz2 + "\t" + sid1 + "\t" + sid2 + "\t" + line[parselen:]
   outlines.append(outline)
 
 outfilename = sys.argv[1][:-4]
