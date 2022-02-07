@@ -3,10 +3,6 @@
 # move sorting to rout2db.py and make that program overwrite its input.
 # check that entries really are sorted in same_sids
 
-# report on how many things you added
-
-# have a specific "create" function; add w/o previous database is error
-
 from datetime import datetime
 now = datetime.now()
 datestring = now.strftime("%d/%m/%Y $H:%M:%S")
@@ -15,14 +11,14 @@ datestring = now.strftime("%d/%m/%Y $H:%M:%S")
 # classes
 
 class match_entry:
-  def __init__(self,header,inputline):
-    self.secno = inputline[header.index("secno")]
+  def __init__(self,header,inputlist):
+    self.secno = inputlist[header.index("secno")]
     self.seizures = []
-    self.seizures.append(inputline[header.index("sz1")])
-    self.seizures.append(inputline[header.index("sz2")])
+    self.seizures.append(inputlist[header.index("sz1")])
+    self.seizures.append(inputlist[header.index("sz2")])
     self.sids = []
-    self.sids.append(inputline[header.index("s1")])
-    self.sids.append(inputline[header.index("s2")])
+    self.sids.append(inputlist[header.index("s1")])
+    self.sids.append(inputlist[header.index("s2")])
     # sort the sids, keeping the seizures synchronized
     if self.sids[0] > self.sids[1]:
       print("Expected input to be sorted!")
@@ -30,12 +26,12 @@ class match_entry:
       self.sids[0], self.sids[1] = self.sids[1], self.sids[0]
       self.seizures[0], self.seizures[1] = self.seizures[1], self.seizures[0]
     self.lrs = []
-    self.lrs.append(float(inputline[header.index("DM_LR")]))
-    self.lrs.append(float(inputline[header.index("PO_LR")]))
-    self.lrs.append(float(inputline[header.index("FS_LR")]))
-    self.lrs.append(float(inputline[header.index("HS_LR")]))
+    self.lrs.append(float(inputlist[header.index("DM_LR")]))
+    self.lrs.append(float(inputlist[header.index("PO_LR")]))
+    self.lrs.append(float(inputlist[header.index("FS_LR")]))
+    self.lrs.append(float(inputlist[header.index("HS_LR")]))
     self.maxlr = max(self.lrs)
-    self.nloci = int(inputline[header.index("nloci")])
+    self.nloci = int(inputlist[header.index("nloci")])
     self.date = datestring
 
   def __str__(self):
@@ -62,19 +58,22 @@ class match_entry:
 ####
 
 class match_database:
-  def __init__(self):
+  def __init__(self,inputfile):
     self.db = []
     self.index = 0
     self.header = None
+    self.read_database_file(inputfile)
+    assert self.header is not None
 
-  def add_entry(self,newentry):
+  def add_entry(self,inputlist,newheader):
+    if newheader != self.header:
+      print("**Error:  headers of database files incompatible")
+      print("All db files must have identical headers")
+      exit(-1)
+    newentry = match_entry(self.header,inputlist)
     for oldentry in self.db:
       if oldentry.same_sids(newentry):
         print("Duplicate entry for sids: ",oldentry.sids[0],oldentry.sids[1])
-        print("Old entry:")
-        print(oldentry)
-        print("New entry:")
-        print(newentry)
         exit(-1)
     self.db.append(newentry)
 
@@ -113,8 +112,7 @@ class match_database:
               print("All db files must have identical headers")
               exit(-1)
           continue
-        match = match_entry(self.header,line)
-        self.add_entry(match)
+        self.add_entry(line,self.header)
     except SystemExit:
       raise
     except:
@@ -127,6 +125,31 @@ class match_database:
     print("Modifying database:  backup will be in", backupname)
     shutil.copyfile(filename,backupname)
 
+  def remove_seizure(self,seizurename):
+    numremoved = 0
+    newdb = []
+    for entry in self.db:
+      if not entry.contains_seizure(seizurename):
+        newdb.append(entry)
+      else:
+        numremoved += 1
+    self.db = newdb
+    return numremoved
+
+  def return_selected_from_seizure(self,seizurename,cutoff,minloci):
+    printform = "\t".join(self.header) + "\n"
+    for entry in self.db:
+      if entry.contains_seizure(seizurename) and entry.is_significant(cutoff,minloci):
+        printform += str(entry)
+    return printform
+
+  def return_selected(self,cutoff,minloci):
+    printform = "\t".join(self.header) + "\n"
+    for entry in self.db:
+      if entry.is_significant(cutoff,minloci):
+        printform += str(entry)
+    return printform
+
 ################
 # functions
 
@@ -135,6 +158,7 @@ def print_usage_statement():
   print("Legal actions:  create, verify, add, remove, report")
   print("Examples:  python3 fammatch_database.py database.tsv add newdata.tsv")
   print("\tpython3 fammatch_database.py database.tsv report seizurename reportfile 2.0 13")
+  print("\tpython3 fammatch_database.py database.tsv report ALL reportfile 2.0 13")
   print("\tpython3 fammatch_database.py database.tsv remove seizurename")
   print("\tpython3 fammatch_database.py database.tsv verify")
   print("\tpython3 fammatch_database.py database.tsv create newdata.tsv")
@@ -172,7 +196,6 @@ if numargs != argdict[action]:
   print(action,"command requires",argdict[action],"arguments but received",numargs)
   exit(-1)
 
-database = match_database()
 
 # check if database exists 
 db_exists = os.path.isfile(olddatafile)
@@ -191,7 +214,7 @@ else:
 
 # VERIFY action; make sure database can be read successfully
 if action == "verify":
-  database.read_database_file(olddatafile)
+  database = match_database(olddatafile)
   print("Database",olddatafile,"exists and can be read successfully")
   exit(0)
 
@@ -201,14 +224,10 @@ if len(sys.argv) < 4:
 else:
   argument = sys.argv[3]
 
-# read old database
-if db_exists:
-  database.read_database_file(olddatafile)
-  
 # CREATE action 
 if action == "create":
   newdata = argument
-  database.read_database_file(newdata)
+  database = match_database(newdata)
   outfile = open(olddatafile,"w")
   outfile.write(str(database))
   outfile.close()
@@ -217,6 +236,7 @@ if action == "create":
 
 # ADD action
 if action == "add":
+  database = match_database(olddatafile)
   database.backup_database(olddatafile)
   newdata = argument
   database.read_database_file(newdata)
@@ -228,32 +248,26 @@ if action == "add":
 
 # REPORT action
 if action == "report":
+  database = match_database(olddatafile)
   reportfile = sys.argv[4]
   cutoff = float(sys.argv[5])
   minloci = int(sys.argv[6])
   report = open(reportfile,"w")
-  report.write("\t".join(database.header) + "\n")
   seizurename = argument
-  for entry in database:
-    if entry.contains_seizure(seizurename):
-      if entry.is_significant(cutoff,minloci):
-        report.write(str(entry))
+  if seizurename == "ALL":
+    report.write(database.return_selected(cutoff,minloci))
+  else:
+    report.write(database.return_selected_from_seizure(seizurename,cutoff,minloci))
   report.close()
   print("Report written on seizure",argument,"to file",reportfile)
   exit(0)
 
 # REMOVE action
 if action == "remove":
+  database = match_database(olddatafile)
   database.backup_database(olddatafile)
   badseizure = argument
-  newdb = match_database()
-  numremoved = 0
-  for entry in database:
-    if not entry.contains_seizure(badseizure):
-      newdb.add_entry(entry)
-    else:
-      numremoved += 1
-  database = newdb
+  numremoved = database.remove_seizure(badseizure)
   outfile = open(olddatafile,"w")
   outfile.write(str(database))
   outfile.close()
