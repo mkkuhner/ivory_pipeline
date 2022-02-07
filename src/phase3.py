@@ -11,9 +11,6 @@ from subprocess import Popen, PIPE
 ###################################################################
 # functions
 
-# assumes a file "ivory_paths.tsv" exists in the same directory as the
-# calling function
-
 def readivorypath(pathsfile):
   ivorypaths = {}
   inlines = open(pathsfile,"r").readlines()
@@ -53,8 +50,7 @@ pathsfile = sys.argv[2]
 formalseizurename = prefix.replace("_", ", ")
 print("Seizure will be called",formalseizurename)
 
-# memorize what directory we were run in (should be root
-# diretory of all seizures
+# save what directory we were run in (should be root directory of all seizures)
 startdir = os.getcwd()
 
 # read paths file
@@ -67,7 +63,7 @@ meta_path, meta_prefix = pathdir["metadata_prefix"]
 mod_path, mod_prefix = pathdir["seizure_modifications_prefix"]
 ref_path, ref_prefix = pathdir["reference_prefix"]
 
-# create fammatch directory 
+# create fammatch subdirectory in seizure directory
 os.chdir(prefix)
 if os.path.isdir("fammatch"):
   print("Overwriting previous familial matching results")
