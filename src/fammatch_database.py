@@ -106,13 +106,10 @@ class match_database:
           newheader = line
           if self.header is None:
             self.header = newheader
-          else:
-            if self.header != newheader:
-              print("**Error:  headers of database files incompatible")
-              print("All db files must have identical headers")
-              exit(-1)
+          # we do not check if header is the same as before; this will be
+          # caught in add_entry 
           continue
-        self.add_entry(line,self.header)
+        self.add_entry(line,newheader)
     except SystemExit:
       raise
     except:
@@ -134,13 +131,19 @@ class match_database:
       else:
         numremoved += 1
     self.db = newdb
+    print("No entries removed for seizure",seizurename,"--is there a typo?")
     return numremoved
 
   def return_selected_from_seizure(self,seizurename,cutoff,minloci):
     printform = "\t".join(self.header) + "\n"
+    numfound = 0
     for entry in self.db:
-      if entry.contains_seizure(seizurename) and entry.is_significant(cutoff,minloci):
-        printform += str(entry)
+      if entry.contains_seizure(seizurename):
+        numfound += 1
+        if entry.is_significant(cutoff,minloci):
+          printform += str(entry)
+    if numfound == 0:
+      print("No information found on seizure",seizurename,"--is there a typo?")
     return printform
 
   def return_selected(self,cutoff,minloci):
@@ -218,11 +221,7 @@ if action == "verify":
   print("Database",olddatafile,"exists and can be read successfully")
   exit(0)
 
-if len(sys.argv) < 4:
-  print("Not enough arguments for action",action)
-  exit(-1)
-else:
-  argument = sys.argv[3]
+argument = sys.argv[3]
 
 # CREATE action 
 if action == "create":
