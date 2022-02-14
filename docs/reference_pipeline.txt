@@ -48,8 +48,8 @@ savannah.
 2)  Run make_eb_input using the special flag "reference" to indicate that you 
 are using only reference data (no seizure data):  
 
-python make_eb_input PREFIX_structure_output.txt_f PREFIX 
-  dropoutrates_savannahonly.txt reference
+python make_eb_input.py PREFIX_structure_output.txt_f PREFIX 
+  dropoutrates_savannahfirst.txt reference
 
 This will write an EBhybrids run script as well as REFERENCE_ancestryprobs.txt.
 

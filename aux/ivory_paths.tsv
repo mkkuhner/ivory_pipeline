@@ -5,7 +5,7 @@ reference_prefix	/home/mkkuhner/data/	REFELE_4.4
 zones_prefix	/home/mkkuhner/data/	zones_40
 metadata_prefix	/home/mkkuhner/data/	seizure_metadata_43c
 seizure_modifications_prefix	/home/mkkuhner/data/	seizure_modifications_rerun
-map_prefix	/home/mkkuhner/data/	mapfile_161220	
+map_prefix	/home/mkkuhner/scat/ivory_pipeline/aux/	mapfile_161220	
 seizure_data_dir	/home/mkkuhner/scat/seizures/datafiles/
 structure_executable	/home/mkkuhner/hybrids/structure_kernal_src/struture
-fammatch_archive_dir	/home/mkkuhner/data/fammatch_inputs/
+fammatch_archive_dir	/media/mkkuhner/ElephantDataArchives/elephant_archive/	elephant_msat_database.tsv

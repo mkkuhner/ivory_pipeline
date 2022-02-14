@@ -1,25 +1,40 @@
-# given a list of names of new elephants, and a genotype file for
-# them, as well as an archive of old elephants (reference, genotypes,
-# names and results):
+# run_fammatch.py
 
-# 1.  figure out what fammatches to run
-# 2.  construct needed input files
-# 3.  run the fammatches (one at a time?  all at once?)
-# 4.  update the archive to include the new elephants
+# Marshall input files, run fammatch R scripts, archive results
 
-# archive structure:
-# root directory
-# subdirectories old_names, old_inputs, old_results, old_reference
-# within those, sectors (sec0, sec1 etc.)
-# within those, seizures (old_inputs, and old_results)
+# inputs:
+# sector specific genotype files of new elephants
+# sector specific genotype files of old elephants
+# sector specific reference files
 
-# ISSUES:  do we do anything with the reference files?
+# archive directory structure (N is sector number):
+#   old_inputs/oldN.txt where N is sector number
+#   reference/refN_fammatch.csv 
+#   elephant_msat_database.tsv
+
+# also uses but does not modify:
+#   sector_metadata.tsv
+# uses and modifies:
+#   seizure_metadata
+
+import os, sys
 
 ##########################################################################
 # functions
 
 import subprocess
 from subprocess import Popen
+
+def file_exists(filename):
+  return os.path.isfile(filename)
+
+def readivorypath(pathsfile):
+  ivorypaths = {}
+  inlines = open(pathsfile,"r").readlines()
+  for line in inlines:
+    pline = line.rstrip().split("\t")
+    ivorypaths[pline[0]] = pline[1:]
+  return ivorypaths
 
 def run_and_report(command,errormsg):
   process = Popen(command)
@@ -30,7 +45,7 @@ def run_and_report(command,errormsg):
     exit(-1)
 
 def safecopy(fromfile,tofile):
-  if not os.path.isfile(tofile):
+  if not file_exists(tofile):
     command = ["cp",fromfile,tofile]
     run_and_report(command, "Unable to copy file " + fromfile)
 
@@ -52,247 +67,149 @@ def make_dir_if_needed(pathname):
 ##########################################################################
 # main program
 
-import os, sys
-#from datetime import date
 from datetime import datetime
 
-if len(sys.argv) != 4:
-  print("USAGE:  run_fammatch.py prefix fammatch_archive pipeline_dir")
+if len(sys.argv) != 3:
+  print("USAGE:  run_fammatch.py prefix ivory_paths")
   exit(-1)
-
-nsec = 6
-
-header = "Match ID,FH67,FH67,FH71,FH71,FH19,FH19,FH129,FH129,FH60,FH60,FH127,FH127,FH126,FH126,FH153,FH153,FH94,FH94,FH48,FH48,FH40,FH40,FH39,FH39,FH103,FH103,FH102,FH102,S03,S03,S04,S04"
 
 # set up directory names to be used throughout
-# NO DIRECTORY NAMES END IN /
+# all end in "/"
 
 prefix = sys.argv[1]
-seizuredir = prefix + "/fammatch"
-archivedir = sys.argv[2]
-ivorydir = sys.argv[3]
+pathfile = sys.argv[2]
+seizuredir = prefix + "/fammatch/"
+pathdir = readivorypath(pathfile)
+ivory_dir = pathdir["ivory_pipeline_dir"][0]
+archivedir, fam_db = pathdir["fammatch_archive_dir"]
+metadir, metafile = pathdir["metadata_prefix"]
+metafile = metadir + metafile + ".tsv"
 
-names_archive = make_dir_if_needed(archivedir + "old_names")
-inputs_archive = make_dir_if_needed(archivedir + "old_inputs")
-results_archive = make_dir_if_needed(archivedir + "old_results")
-# results_archive needs an absolute path because we change directories
-# to run Rscripts before saving our fammatch results
-results_archive = os.path.abspath(results_archive)
-ref_archive = make_dir_if_needed(archivedir + "reference")
-today = str(datetime.today()).replace(" ","_")
-today = today.replace(":","_")
-upper_backupdir = make_dir_if_needed(archivedir + "backups/")
-backupdir = "upper_backupdir" + today
-
-
-# before starting, back up previous results
-if not os.path.isdir(backupdir):
-  os.mkdir(backupdir)
-else:
-  print("Backups for ",today," already exist.  Remove before running.")
+if not os.path.isdir(archivedir):
+  print("Cannot find fammatch archive:  did you forget to hook up the external HD?")
+  print("Location tried was",archivedir)
   exit(-1)
 
-command = ["cp","-r",names_archive,backupdir]
-run_and_report(command,"Cannot back up "+names_archive)
-command = ["cp","-r",inputs_archive,backupdir]
-run_and_report(command,"Cannot back up "+inputs_archive)
-command = ["cp","-r",results_archive,backupdir]
-run_and_report(command,"Cannot back up "+results_archive)
-command = ["cp","-r",ref_archive,backupdir]
-run_and_report(command,"Cannot back up "+ref_archive)
+old_inputs_dir = archivedir + "old_inputs/"
+make_dir_if_needed(old_inputs_dir)
+old_ref_dir = archivedir + "reference/"
+make_dir_if_needed(old_ref_dir)
 
-
-# create fammatch inputs and run program
-old_names = [[] for x in range(0,nsec)]
-old_namelines = [[] for x in range(0,nsec)]
-new_names = [[] for x in range(0,nsec)]
-new_namelines = [[] for x in range(0,nsec)]
-
-# read sector metadata from ivory pipeline
-sectorfile = ivorydir + "/aux/sector_metadata.tsv"
+# associate sectors with species
+sectorfile = ivory_dir + "aux/sector_metadata.tsv"
 sector2species = read_sector_metadata(sectorfile)
+nsec = len(sector2species)
 
+# for each sector, assemble fammatch inputs and run fammatch if necessary
 for sector in range(0,nsec):
   secname = str(sector)
   species = sector2species[secname]
 
-  # REFERENCE
-  # if reference file is present it MUST be identical to the archived one
-  # (we cannot merge results from difference references!)
-  newreffile = seizuredir + "/ref_" + secname + "_fammatch.csv"
-  if os.path.isfile(newreffile):
-    oldreffile = ref_archive + "/ref_" + secname + "_fammatch.csv"
-    # if the old ref file doesn't exist we don't need to check against it
-    if os.path.isfile(oldreffile):
-      command = ["diff",newreffile,oldreffile]
-      run_and_report(command,"Discrepant reference data detected for sector " + secname)
-    else:
-      command = ["cp",newreffile,oldreffile]
-      run_and_report(command,"Unable to copy reference file for sector " + secname)
+  # determine if we need to run this sector (i.e. there are new data)
+  newdataname = seizuredir + "new" + secname + ".csv"
+  if not file_exists(newdataname):
+    continue
 
-  # establish what samples we're dealing with, respecting that the sector might not
-  # have any previously existing samples
+  ## REFERENCE
 
-  oldnamefile = names_archive + "/old_names_" + secname + ".tsv"
-  newnamefile = seizuredir + "/names_" + secname + ".tsv"
+  # obtain reference data:  for safety we check that the reference
+  # generated de novo is IDENTICAL to the archived one.  This protects
+  # against merging data from different references.
 
-  print("About to try running sector ",secname)
-  if not os.path.isfile(newnamefile):  continue    # nothing to add
-  print("Will run sector ",secname)
+  newrefname = seizuredir + "ref_" + secname + "_fammatch.csv"
+  oldrefname = old_ref_dir + "ref_" + secname + "_fammatch.csv"
 
-  myoldnames = set()
-
-  # NAMES
-  if os.path.isfile(oldnamefile):
-    # read old_names file
-    # it has the form archive/old_names/old_names_0.tsv
-    for line in open(oldnamefile,"r"):
-      myline = line.rstrip().split("\t")
-      name = myline[0]
-      seize = myline[1]
-      myoldnames.add(name)
-      old_namelines[sector].append(line)
-  old_names[sector] = list(myoldnames)
-
-  # read new_names file, bail if nothing new
-  # it has the form seizuredir/names_0.tsv
-  # policy change:  if a new elephant duplicates an old one, we warn AND CONTINUE RUNNING
-  newnamelines = open(newnamefile,"r").readlines()
-  new_names[sector] = []
-  for line in newnamelines:
-    name = line.rstrip().split("\t")[0]
-    if name in old_names[sector]:
-      print("WARNING:  New elephant ",name," in sector ",secname," has already been seen")
-    new_names[sector].append(name)
-    new_namelines[sector].append(line)
-
-  # be sure to remove old (temp) directories if present
-  # and be sure to clean up at end, maybe only a single temp directory
-  # since archiving should happen after each sector run
-  # create run directories if needed
-
-  # ***DEBUG*** is this lava flow?
-  rundir = seizuredir + "/"
-  if not os.path.isdir(rundir):
-    os.mkdir(rundir)
-
-  # assemble the "old" and "new" files.  In case there are no "old" lines, borrow
-  # one from "new".
-
-  oldinputdir = inputs_archive + "/"
-  oldlines = []
-  if os.path.isdir(oldinputdir):
-    for oldinputfile in os.listdir(oldinputdir):
-      # discard wrong-sector files
-      sectorcode = oldinputfile.split("_")[-1][0]
-      if int(sectorcode) != sector:  continue
-      # read old lines
-      for line in open(oldinputdir + "/" + oldinputfile,"r"):
-        if line.startswith("Match"):  continue   # header
-        sid = line.rstrip().split(",")[0]
-        if sid in old_names[sector]:
-          oldlines.append(line)
-        else:
-          print("FAILURE:  Name file contained ",sid," but no genotypes found for it")
-          exit(-1)
-
-  # assemble lines for the "new" file and handle the case when one of the "new" sids
-  # is to be treated as an "old" sid
-  # 
-  # csv format used because that is what the Rscripts expect
-  # output files have 1 line per elephant, all msats on the same line, comma delimited
-  # ***DEBUG***
-  # the header seems to come and go, why?
-
-  prepfilename = rundir + "prep" + secname + ".csv"
-  newlines = []
-  print("Reading prepfile ",prepfilename)
-  for line in open(prepfilename,"r"):
-    # DEBUG
-    if line.startswith("Match"):   # header
-      continue
-    sid = line.rstrip().split(",")[0]
-    assert sid in new_names[sector]
-    newlines.append(line)
-  
-  # write "old" and "new" files
-  #
-  # csv format used because that is what the Rscripts expect
-  # we handle borrowing a new elephant here--the structures always will have new
-  # elephants in new structures, only the output varies
-
-  # special case:  with 1 new elephant and no old elephants, we can't run fammatch at all.
-  # we skip the runs and write an indictor file, but we *do* archive the 1 elephant
-  didnotrun = False
-  if len(oldlines) == 0 and len(newlines) == 1:
-    indicatorfile = open(rundir + "ONLY_ONE_SAMPLE","w")
-    indicatorfile.write("Only one new sample and no previous ones, familial matching not run\n")
-    indicatorfile.close()
-    didnotrun = True
+  # if old reference exists, compare with new; otherwise archive new
+  if file_exists(oldrefname):
+    command = ["diff",newrefname,oldrefname]
+    run_and_report(command,"Discrepant reference data detected for sector " + secname)
   else:
-    oldfilename = rundir + "old" + secname + ".csv"
-    oldfile = open(oldfilename,"w")
-    newfilename = rundir + "new" + secname + ".csv"
-    newfile = open(newfilename,"w")
+    command = ["cp",newrefname,oldrefname]
+    run_and_report(command,"Cannot copy reference file for sector " + secname)
 
-    oldfile.write(header + "\n")
-    newfile.write(header + "\n")
-    for oldline in oldlines:
-      oldfile.write(oldline)
+  ## OLD AND NEW DATA
 
-    mystart = 0
-    if len(oldlines) == 0:   # borrow an elephant
-      oldfile.write(newlines[0])
-      mystart += 1
+  # if there are no "old" data, borrow one from "new"
+  olddataname = old_inputs_dir + "old" + secname + ".csv"
+  if not file_exists(olddataname):   
+    # read new data and check if more than 1 sample
+    newdata = open(newdataname,"r").readlines()
+    numsamples = len(newdata) - 1   # header
 
-    for newline in newlines[mystart:]:
-      newfile.write(newline)
-
+    # make old file and put 1 sample into it
+    oldfile = open(olddataname,"w")
+    for line in newdata[0:2]:
+      oldfile.write(line)  # header and first sample
     oldfile.close()
+
+    # rewrite new file in place with one less sample
+    newfile = open(newdataname,"w")
+    newfile.write(newdata[0])    # header
+    for line in newdata[2:]:     # skip first sample
+      newfile.write(line)
     newfile.close()
 
-    # copy fammatch code into run directory
-    safecopy(ivorydir + "/src/calculate_LRs.R", rundir + "calculate_LRs.R")
-    safecopy(ivorydir + "/src/LR_functions.R", rundir + "LR_functions.R")
+    # if there aren't any new samples left, we cannot run fammatch; bail out
+    # new data is already saved in this case (by creating olddatafile)
+    if numsamples == 1:
+      indicatorfile = open(seizuredir + "ONLY_ONE_SAMPLE_" + secno,"w")
+      indicatorfile.write("Insuffcient samples:  No matching run for sector" + secname + "\n")
+      indicatorfile.close()
+      continue
 
-    # run fammatch
-    os.chdir(rundir)  # we do this to be able to run the Rscripts but we need to then
-                      # pass the local filenames to it
-    rfile = "ref_" + secname + "_fammatch.csv"
-    ofile = "old" + secname + ".csv"
-    nfile = "new" + secname + ".csv"
-    command = ["Rscript","calculate_LRs.R",species,rfile,ofile,nfile]
-    print("Calculating familial matches for sector ",sector)
-    run_and_report(command,"Unable to execute calculate_LRs.R")
-    # end of if statement in case of not enough elephants to run
+  ## FAMMATCH RUNS
 
-  # archive files
+  # make directory for runs
+  rundir = seizuredir + "sub" + secname + "/"
+  make_dir_if_needed(rundir)
+  safecopy(ivory_dir + "src/calculate_LRs.R", rundir + "calculate_LRs.R")
+  safecopy(ivory_dir + "src/LR_functions.R", rundir + "LR_functions.R")
 
-  # add new sample names to old_names
-  if len(new_namelines[sector]) > 0:
-    outfile = open(oldnamefile,"w")
-    # DEBUG
-    print("Writing old_names file",oldnamefile)
-    for line in old_namelines[sector]:
-      outfile.write(line) 
-    for line in new_namelines[sector]:
-      outfile.write(line)
-    outfile.close()
+  # get absolute paths to give to R scripts (safest)
+  r_oldrefname = os.path.abspath(oldrefname)
+  r_olddataname = os.path.abspath(olddataname)
+  r_newdataname = os.path.abspath(newdataname)
 
-  # make a new seizure file of old_inputs
-  # we don't copy "newfile" because one sample might have gone into "oldfile"
-  if len(newlines) > 0:
-    # ***DEBUG*** what to do if this file already exists?
-    inputfile = inputs_archive + "/" + prefix + "_inputs_" + secname + ".tsv"
-    infile = open(inputfile,"w")
-    for line in newlines:
-      infile.write(line)
-    infile.close()
+  # run fammatch
+  olddir = os.getcwd()
+  os.chdir(rundir)  # the Rscripts have to be run from within their resident directory
+  command = ["Rscript","calculate_LRs.R",species,r_oldrefname,r_olddataname,r_newdataname]
+  print("Calculating familial matches for sector ",sector)
+  print(" ".join(command))
+  run_and_report(command,"Unable to execute calculate_LRs.R")
 
-  # make a new seizure file of old_results
-  if not didnotrun:
-    resultsfile = "obsLRs." + species + ".txt"
-    resname = prefix + "_obsLRs_" + secname + ".tsv"
-    archive_resultsfile = results_archive + "/" + resname 
-    command = ["cp",resultsfile,archive_resultsfile]
-    run_and_report(command,"Unable to copy results file " + resultsfile + " to archive") 
+  # translate results to database format
+  progfile = ivory_dir + "src/rout2db.py"
+  # we are in rundir, so use local filename only
+  rfile = "obsLRs." + species + ".txt"
+  command = ["python3",progfile,rfile,metafile,secname]
+  run_and_report(command,"Unable to execute rout2db.py")
+  # result will be in file with "_full" before its extension
+  os.chdir(olddir)
+
+  # archive results in database
+  progfile = ivory_dir + "src/fammatch_database.py" 
+  infile = rundir + "obsLRs." + species + "_full.tsv"
+  dbfile = archivedir + fam_db
+  if not file_exists(dbfile):
+    # create new archive file
+    print("Creating new archive file",dbfile)
+    command = ["python3",progfile,dbfile,"create",infile]
+  else:
+    # add to existing archive file
+    print("Adding to existing archive file",dbfile)
+    command = ["python3",progfile,dbfile,"add",infile]
+  run_and_report(command,"Could not add new results to fammatch database" + dbfile)
+  
+  os.chdir(olddir)
+
+  # archive input files
+  # at this point olddata file and newdata file will both exist
+  # we open both and append everything but header in newdata onto end of olddata
+  append_old = open(olddataname,"a")
+  newdata = open(newdataname,"r").readlines()
+  for line in newdata[1:]:
+    append_old.write(line)
+  append_old.close()
+
+  
