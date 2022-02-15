@@ -42,14 +42,14 @@ savannah.
 
 ***C)  Filter out hybrids to prepare for familial matching
 
-1)  Put the EBhybrids R scripts (in src) and the file ebscript_template.R
-(in auxillary_files) in the working directory.
+1)  Put the EBhybrids R scripts (from src:  calcfreqs.R, inferencefunctions.R, 
+and likelihoodfunctionsandem.R) and the file ebscript_template.R (from
+aux) in the working directory.
 
 2)  Run make_eb_input using the special flag "reference" to indicate that you 
 are using only reference data (no seizure data):  
 
-python make_eb_input.py PREFIX_structure_output.txt_f PREFIX 
-  dropoutrates_savannahfirst.txt reference
+python make_eb_input.py PREFIX_structure_output.txt_f PREFIX_known.txt PREFIX dropoutrates_savannahfirst.txt reference
 
 This will write an EBhybrids run script as well as REFERENCE_ancestryprobs.txt.
 
