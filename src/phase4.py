@@ -35,8 +35,8 @@ def run_and_report(command,errormsg):
 ##########################################################################
 # main program
 
-if len(sys.argv) != 3:
-  print("USAGE:  phase4.py ivory_paths.tsv dms.tsv")
+if len(sys.argv) != 5:
+  print("USAGE:  python3 phase4.py ivory_paths.tsv dms.tsv LR_cutoff minloci")
   print("This program jointly does all available seizures")
   print("Be sure phase3.py has been run on all desired seizures first!")
   print("dms.tsv lists direct matches obtained by other means than fammatch")
@@ -51,7 +51,12 @@ mods = pathdir["seizure_modifications_prefix"]
 modfile = mods[0] + mods[1]
 archive = pathdir["fammatch_archive_dir"]
 archivefile = archive[0] + archive[1]
+metadata = pathdir["metadata_prefix"]
+metafile = metadata[0] + metadata[1] + ".tsv"
 
+dmfile = sys.argv[2]
+LR_cutoff = float(sys.argv[3])
+minloci = int(sys.argv[4])
 
 # immediately test archive access
 
@@ -78,7 +83,6 @@ for line in open(fpfile,"r"):
   fps[whichspecies].append([float(line[0]),float(line[1])))
 
 # check that DM file exists
-dmfile = sys.argv[2]
 if not os.path.isfile(dmfile):
   print("Cannot open DM file (exact matches): ",dmfile)
   exit(-1)
@@ -89,11 +93,40 @@ reportfile = "fammatch_global.tsv"
 command = ["python3",progname,archivefile,"report","ALL",reportfile,"2.0","13"]
 run_and_report(command,"Unable to pull report from fammatch database ",archivefile")
 
+# read seizure_modifications file
+rejected_seizures = []
+merged_seizures = {}
+state = None
+for line in open(modfile,"r"):
+  line = line.rstrip().split("\t")
+  if line[0] == "REJECT":
+    state = "reject"
+    continue
+  if line[0] == "MERGE":
+    state = "merge"
+    continue
+  if state == "reject":
+    assert len(line) == 1
+    rejected_seizures.append(line[0])
+    continue
+  if state == "merge":
+    # merge requires a new name and at least two old names
+    assert len(line) >= 3
+    newname = line[0]
+    for entry in line[1:]:
+      merged_seizures[entry] = newname
+
+# filter database report based on seizure_modifications
+# rules:  delete all lines mentioning a REJECT seizure
+#         rename MERGE seizures
+for line in open(reportfile,"r"):
+  line = line.rstrip().split("\t")
 
 
-# read seizure_modifications and apply
 
 # run create_network_input.py
+progname = ivory_dir + "src/create_network_input.py"
+command = ["python3", progname, metafile, dmfile, modfile,
 
 # run network creation program
 
