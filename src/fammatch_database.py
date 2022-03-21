@@ -1,11 +1,12 @@
 # manage the fammatch database 
 
-# move sorting to rout2db.py and make that program overwrite its input.
-# check that entries really are sorted in same_sids
+# This program backs up the database and will restore from backups if
+# it seems to have failed
 
 from datetime import datetime
 now = datetime.now()
 datestring = now.strftime("%d/%m/%Y $H:%M:%S")
+import math
 
 #################
 # classes
@@ -49,51 +50,46 @@ class match_entry:
     return seizurename in self.seizures
 
   def is_significant(self,cutoff,minloci):
-    return self.maxlr >= cutoff and self.nloci >= minloci
-
-  def same_sids(self,other):
-    if self.sids == other.sids:  return True
-    return False
+    cutoff_nonlog = 10.0**cutoff
+    return self.maxlr >= cutoff_nonlog and self.nloci >= minloci
 
 ####
 
 class match_database:
   def __init__(self,inputfile):
-    self.db = []
+    self.db = {}    # dict makes for faster searches
     self.index = 0
     self.header = None
     self.read_database_file(inputfile)
-    assert self.header is not None
+    if self.header is None:
+      msg = "Database file does not have appropriate header"
+      raise RuntimeError(msg)
 
   def add_entry(self,inputlist,newheader):
     if newheader != self.header:
-      print("**Error:  headers of database files incompatible")
-      print("All db files must have identical headers")
-      exit(-1)
-    newentry = match_entry(self.header,inputlist)
-    for oldentry in self.db:
-      if oldentry.same_sids(newentry):
-        print("Duplicate entry for sids: ",oldentry.sids[0],oldentry.sids[1])
-        exit(-1)
-    self.db.append(newentry)
+      msg = "All db files must have identical headers"
+      raise RuntimeError(msg)
+    try:
+      newentry = match_entry(self.header,inputlist)
+    except:
+      msg = "Could not create database entry:  malformed input?"
+      raise RuntimeError(msg)
+    key = tuple(newentry.sids)
+    if key in self.db:
+      msg = "Duplicate entry for sids: " + newentry.sids[0] + " " + newentry.sids[1]
+      raise RuntimeError(msg)
+    self.db[key] = newentry
 
   def numentries(self):
     return len(self.db)
 
   def __iter__(self):
-    self.index = 0
-    return self
+    return iter(self.db.values())
 
-  def __next__(self):
-    if self.index == len(self.db):
-      raise StopIteration
-    self.index += 1
-    return self.db[self.index-1]
-        
   def __str__(self):
     outputstr = "\t".join(self.header) + "\n"
-    for entry in database:
-      outputstr += str(entry)
+    for key, value in self.db.items():
+      outputstr += str(value)
     return outputstr
 
   def read_database_file(self, datafile):
@@ -111,47 +107,53 @@ class match_database:
           continue
         self.add_entry(line,newheader)
     except SystemExit:
-      raise
+      msg = "Exit called unexpectedly"
+      raise RuntimeError(msg)
     except:
-      print("**Error in database file",datafile)
-      print("Here is Python's diagnosis of the problem")
-      raise
-
-  def backup_database(self,filename):
-    backupname = filename + "_bak"
-    print("Modifying database:  backup will be in", backupname)
-    shutil.copyfile(filename,backupname)
+      msg = "Error in reading database file " + datafile
+      raise RuntimeError(msg)
 
   def remove_seizure(self,seizurename):
     numremoved = 0
-    newdb = []
-    for entry in self.db:
-      if not entry.contains_seizure(seizurename):
-        newdb.append(entry)
+    newdb = {}
+    for key,value in self.db.items():
+      if not value.contains_seizure(seizurename):
+        newdb[key] = value
       else:
         numremoved += 1
     self.db = newdb
-    print("No entries removed for seizure",seizurename,"--is there a typo?")
+    if numremoved == 0:
+      print("No entries removed for seizure",seizurename,"--is there a typo?")
     return numremoved
 
   def return_selected_from_seizure(self,seizurename,cutoff,minloci):
     printform = "\t".join(self.header) + "\n"
     numfound = 0
-    for entry in self.db:
-      if entry.contains_seizure(seizurename):
+    for key,value in self.db.items():
+      if value.contains_seizure(seizurename):
         numfound += 1
-        if entry.is_significant(cutoff,minloci):
-          printform += str(entry)
+        if value.is_significant(cutoff,minloci):
+          printform += str(value)
     if numfound == 0:
       print("No information found on seizure",seizurename,"--is there a typo?")
     return printform
 
   def return_selected(self,cutoff,minloci):
     printform = "\t".join(self.header) + "\n"
-    for entry in self.db:
-      if entry.is_significant(cutoff,minloci):
-        printform += str(entry)
+    for key,value in self.db.items():
+      if value.is_significant(cutoff,minloci):
+        printform += str(value)
     return printform
+
+  def write_database(self,outfilename):
+    try:
+      outfile = open(outfilename,"w")
+      outfile.write(str(self))
+      outfile.close()
+    except:
+      msg = "Unable to write database to filename " + outfilename
+      raise RuntimeError(msg)
+
 
 ################
 # functions
@@ -165,6 +167,30 @@ def print_usage_statement():
   print("\tpython3 fammatch_database.py database.tsv remove seizurename")
   print("\tpython3 fammatch_database.py database.tsv verify")
   print("\tpython3 fammatch_database.py database.tsv create newdata.tsv")
+
+def backup_database(filename):
+  backupname = filename + "_bak"
+  print("Modifying database:  backup will be in", backupname)
+  try:
+    shutil.copyfile(filename,backupname)
+  except:
+    msg = "Could not back up database"
+    raise RuntimeError(msg)
+
+def restore_from_backup(filename):
+  backupname = filename + "_bak"
+  try:
+    shutil.copyfile(backupname,filename)
+  except:
+    print("Could not restore database from backups")
+    print("DANGER:  database may be corrupt!")
+    exit(-1)
+  else:
+    print("Database restored from backups")
+
+def explain_and_abend(e):
+  print(e)
+  exit(-1)
 
 ################
 # main
@@ -217,41 +243,72 @@ else:
 
 # VERIFY action; make sure database can be read successfully
 if action == "verify":
-  database = match_database(olddatafile)
-  print("Database",olddatafile,"exists and can be read successfully")
-  exit(0)
+  try:
+    database = match_database(olddatafile)
+  except RuntimeError as e:
+    explain_and_abend(e)
+  else:
+    print("Database",olddatafile,"exists and can be read successfully")
+    exit(0)
 
 argument = sys.argv[3]
 
 # CREATE action 
 if action == "create":
-  newdata = argument
-  database = match_database(newdata)
-  outfile = open(olddatafile,"w")
-  outfile.write(str(database))
-  outfile.close()
-  print("Created database",olddatafile,"based on",newdata)
-  exit(0)
+  try:
+    newdata = argument
+    database = match_database(newdata)
+  except RuntimeError as e:
+    explain_and_abend(e)
+  else:
+    try:
+      database.write_database(olddatafile)
+    except RuntimeError as e:
+      explain_and_abend(e)
+    else:
+      print("Created database",olddatafile,"based on",newdata)
+      exit(0)
 
 # ADD action
 if action == "add":
-  database = match_database(olddatafile)
-  database.backup_database(olddatafile)
-  newdata = argument
-  database.read_database_file(newdata)
-  outfile = open(olddatafile,"w")
-  outfile.write(str(database))
-  outfile.close()
-  print("Added",newdata,"to",olddatafile)
-  exit(0)
+  backup_database(olddatafile)
+
+  # do non-writing operations; abend if failure
+  try:
+    database = match_database(olddatafile)
+    newdata = argument
+    database.read_database_file(newdata)
+  except RuntimeError as e:
+    explain_and_abend(e)
+
+  # do writing operations; restore and abend if failure
+  try:
+    database.write_database(olddatafile)
+  except RuntimeError as e:
+    restore_from_backup(olddatafile)
+    explain_and_abend(e)
+  else:
+    print("Added",newdata,"to",olddatafile)
+    exit(0)
 
 # REPORT action
 if action == "report":
-  database = match_database(olddatafile)
-  reportfile = sys.argv[4]
+  # no backup as this does not modify database
+  # read database
+  try:
+    database = match_database(olddatafile)
+  except RuntimeError as e:
+    explain_and_abend(e)
+
+  # write report
+  try:
+    reportfile = sys.argv[4]
+    report = open(reportfile,"w")
+  except:
+    print("Unable to open report file")
+    exit(-1)
   cutoff = float(sys.argv[5])
   minloci = int(sys.argv[6])
-  report = open(reportfile,"w")
   seizurename = argument
   if seizurename == "ALL":
     report.write(database.return_selected(cutoff,minloci))
@@ -263,12 +320,25 @@ if action == "report":
 
 # REMOVE action
 if action == "remove":
-  database = match_database(olddatafile)
-  database.backup_database(olddatafile)
-  badseizure = argument
-  numremoved = database.remove_seizure(badseizure)
-  outfile = open(olddatafile,"w")
-  outfile.write(str(database))
-  outfile.close()
+  # make backup
+  backup_database(olddatafile)
+
+  # non-writing operations; abend on failure
+  try:
+    database = match_database(olddatafile)
+    badseizure = argument
+    numremoved = database.remove_seizure(badseizure)
+    outfile = open(olddatafile,"w")
+  except RuntimeError as e:
+    explain_and_abend(e)
+
+  # writing operations; restore and abend on failure
+  try:
+    outfile.write(str(database))
+    outfile.close()
+  except RuntimeError as e:
+    restore_from_backup(olddatafile)
+    explain_and_abend(e)
+
   print("Removed ",numremoved," entries from database",olddatafile)
   exit(0)

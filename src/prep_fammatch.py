@@ -19,6 +19,7 @@ if len(sys.argv) != 4:
   print("USAGE:  prep_fammatch.py PREFIX zonefileprefix dirwithzonefiles")
   exit(-1)
 
+# FIX HARDCODE HERE
 nsec = 6
 prefix = sys.argv[1]
 zoneprefix = sys.argv[2]
@@ -43,11 +44,8 @@ for species in specieslist:
   # identify wanted sectors based on species
   if species == "forest":
     sectors_wanted = [0,1]
-    displacement = 0
   else:
     sectors_wanted = [2,3,4,5]
-    # how far over do they start?
-    displacement = 2
 
   # set up input files based on species
   zonefile = dirwithzonefiles + zoneprefix + "_" + species + ".txt"
@@ -65,8 +63,8 @@ for species in specieslist:
       continue
     id = line[0]
     probs = [float(x) for x in line[1:nsec+1]]
-    bestprob = max(probs[sectors_wanted[0]:sectors_wanted[1]+1])
-    sector = probs.index(bestprob) + displacement
+    bestprob = max(probs[sectors_wanted[0]:sectors_wanted[-1]+1])
+    sector = probs.index(bestprob) 
     if sector not in sectors_wanted:
       print("found unexpected sector",sector)
       print("not in sectors_wanted:",sectors_wanted)
@@ -142,7 +140,7 @@ header = "Match ID,FH67,FH67,FH71,FH71,FH19,FH19,FH129,FH129,FH60,FH60,FH127,FH1
 
 for sector in range(0,nsec):
   if len(seizure[sector]) == 0:  continue
-  outfile_new = open(famdir + "prep"+str(sector)+".csv","w")
+  outfile_new = open(famdir + "new"+str(sector)+".csv","w")
   outfile_new.write(header)
   for line1, line2 in zip(seizure[sector][0::2],seizure[sector][1::2]):
     data1 = line1[2:]

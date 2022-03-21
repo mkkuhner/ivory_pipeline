@@ -17,7 +17,7 @@
 # uses and modifies:
 #   seizure_metadata
 
-import os, sys
+import os, sys, shutil
 
 ##########################################################################
 # functions
@@ -91,6 +91,7 @@ if not os.path.isdir(archivedir):
   exit(-1)
 
 old_inputs_dir = archivedir + "old_inputs/"
+old_input_backup_dir = archivedir + "old_input_backups/"
 make_dir_if_needed(old_inputs_dir)
 old_ref_dir = archivedir + "reference/"
 make_dir_if_needed(old_ref_dir)
@@ -99,6 +100,22 @@ make_dir_if_needed(old_ref_dir)
 sectorfile = ivory_dir + "aux/sector_metadata.tsv"
 sector2species = read_sector_metadata(sectorfile)
 nsec = len(sector2species)
+
+## BACKUPS
+# back up "old" and "new" data files before modification
+# we will restore from backups if things go badly
+for sector in range(0,nsec):
+  secname = str(sector)
+  # old files back up to archive subdirectory
+  olddataname = old_inputs_dir + "old" + secname + ".csv"
+  if os.path.isfile(olddataname):
+    oldbackupname = old_input_backup_dir + "old" + secname + ".csv_bak"
+    shutil.copyfile(olddataname,oldbackupname)
+  # new files back up to seizure fammatch directory
+  newdataname = seizuredir + "new" + secname + ".csv"
+  if os.path.isfile(newdataname):
+    newbackupname = newdataname + "_bak"
+    shutil.copyfile(newdataname,newbackupname)
 
 # for each sector, assemble fammatch inputs and run fammatch if necessary
 for sector in range(0,nsec):
@@ -109,6 +126,8 @@ for sector in range(0,nsec):
   newdataname = seizuredir + "new" + secname + ".csv"
   if not file_exists(newdataname):
     continue
+
+  print("Running fammatch for sector",secname)
 
   ## REFERENCE
 
@@ -131,6 +150,7 @@ for sector in range(0,nsec):
 
   # if there are no "old" data, borrow one from "new"
   olddataname = old_inputs_dir + "old" + secname + ".csv"
+    
   if not file_exists(olddataname):   
     # read new data and check if more than 1 sample
     newdata = open(newdataname,"r").readlines()
@@ -152,7 +172,7 @@ for sector in range(0,nsec):
     # if there aren't any new samples left, we cannot run fammatch; bail out
     # new data is already saved in this case (by creating olddatafile)
     if numsamples == 1:
-      indicatorfile = open(seizuredir + "ONLY_ONE_SAMPLE_" + secno,"w")
+      indicatorfile = open(seizuredir + "ONLY_ONE_SAMPLE_" + secname,"w")
       indicatorfile.write("Insuffcient samples:  No matching run for sector" + secname + "\n")
       indicatorfile.close()
       continue
@@ -170,46 +190,61 @@ for sector in range(0,nsec):
   r_olddataname = os.path.abspath(olddataname)
   r_newdataname = os.path.abspath(newdataname)
 
-  # run fammatch
-  olddir = os.getcwd()
-  os.chdir(rundir)  # the Rscripts have to be run from within their resident directory
-  command = ["Rscript","calculate_LRs.R",species,r_oldrefname,r_olddataname,r_newdataname]
-  print("Calculating familial matches for sector ",sector)
-  print(" ".join(command))
-  run_and_report(command,"Unable to execute calculate_LRs.R")
+  # run fammatch; restore backups on failure
+  try:
+    olddir = os.getcwd()
+    os.chdir(rundir)  # the Rscripts have to be run from within their resident directory
+    command = ["Rscript","calculate_LRs.R",species,r_oldrefname,r_olddataname,r_newdataname]
+    print("Calculating familial matches for sector ",sector)
+    print(" ".join(command))
+    run_and_report(command,"Unable to execute calculate_LRs.R")
 
-  # translate results to database format
-  progfile = ivory_dir + "src/rout2db.py"
-  # we are in rundir, so use local filename only
-  rfile = "obsLRs." + species + ".txt"
-  command = ["python3",progfile,rfile,metafile,secname]
-  run_and_report(command,"Unable to execute rout2db.py")
-  # result will be in file with "_full" before its extension
-  os.chdir(olddir)
+    # translate results to database format
+    progfile = ivory_dir + "src/rout2db.py"
+    # we are in rundir, so use local filename only
+    rfile = "obsLRs." + species + ".txt"
+    command = ["python3",progfile,rfile,metafile,secname]
+    run_and_report(command,"Unable to execute rout2db.py")
+    # result will be in file with "_full" before its extension
+    os.chdir(olddir)
 
-  # archive results in database
-  progfile = ivory_dir + "src/fammatch_database.py" 
-  infile = rundir + "obsLRs." + species + "_full.tsv"
-  dbfile = archivedir + fam_db
-  if not file_exists(dbfile):
-    # create new archive file
-    print("Creating new archive file",dbfile)
-    command = ["python3",progfile,dbfile,"create",infile]
-  else:
-    # add to existing archive file
-    print("Adding to existing archive file",dbfile)
-    command = ["python3",progfile,dbfile,"add",infile]
-  run_and_report(command,"Could not add new results to fammatch database" + dbfile)
+    # archive results in database
+    print("Archiving results for ",secname)
+    progfile = ivory_dir + "src/fammatch_database.py" 
+    infile = rundir + "obsLRs." + species + "_full.tsv"
+    dbfile = archivedir + fam_db
+    if not file_exists(dbfile):
+      # create new archive file
+      print("Creating new archive file",dbfile)
+      command = ["python3",progfile,dbfile,"create",infile]
+    else:
+      # add to existing archive file
+      print("Adding to existing archive file",dbfile)
+      command = ["python3",progfile,dbfile,"add",infile]
+    run_and_report(command,"Could not add new results to fammatch database" + dbfile)
   
-  os.chdir(olddir)
+    os.chdir(olddir)
 
-  # archive input files
-  # at this point olddata file and newdata file will both exist
-  # we open both and append everything but header in newdata onto end of olddata
-  append_old = open(olddataname,"a")
-  newdata = open(newdataname,"r").readlines()
-  for line in newdata[1:]:
-    append_old.write(line)
-  append_old.close()
-
-  
+    # archive input files
+    # at this point olddata file and newdata file will both exist
+    # we open both and append everything but header in newdata onto end of olddata
+    append_old = open(olddataname,"a")
+    newdata = open(newdataname,"r").readlines()
+    for line in newdata[1:]:
+      append_old.write(line)
+    append_old.close()
+  except:
+    # restore from backups, something has gone wrong
+    for sector in range(0,nsec):
+      secname = str(sector)
+      # old data files
+      olddataname = old_inputs_dir + "old" + secname + ".csv"
+      oldbackupname = old_input_backup_dir + "old" + secname + ".csv_bak"
+      if os.path.isfile(oldbackupname):
+        shutil.copyfile(oldbackupname,olddataname)
+      # new data files
+      newdataname = seizuredir + "new" + secname + ".csv"
+      newbackupname = newdataname + "_bak"
+      if os.path.isfile(newbackupname):
+        shutil.copyfile(newbackupname,newdataname)
+    exit(-1)

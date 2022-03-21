@@ -22,17 +22,19 @@ for line in open(seizurefile,"r"):
 
 newsids = list(sids)
 
-# read old metadata file
+# read old metadata file, if any
 outlines = []
-for line in open(metafile,"r"):
-  outline = line
-  line = line.rstrip().split("\t")
-  if line[0].startswith("Seizure"):  continue
-  sid = line[1]
-  if sid in newsids:
-    # renaming an existing entry
-    outline = seizure_name + "\t" + sid + "\n"
-  outlines.append(outline)
+import os
+if os.path.isfile(metafile):
+  for line in open(metafile,"r"):
+    outline = line
+    line = line.rstrip().split("\t")
+    if line[0].startswith("Seizure"):  continue
+    sid = line[1]
+    if sid in newsids:
+      # renaming an existing entry
+      outline = seizure_name + "\t" + sid + "\n"
+    outlines.append(outline)
 
 # add new sids to it
 for sid in newsids:
