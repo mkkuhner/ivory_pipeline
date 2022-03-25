@@ -67,14 +67,20 @@ def backup_archive(arch_dir):
   run_and_report(command,"Unable to back up archive")
 
 def restore_archive(arch_dir):
-  print("DEBUG! in phase3.py, restore disabled")
-  exit(-1)
   backupdir = arch_dir + "../archive_backups/"
+
+  # make copy of current state of archive directory, for debugging
+  forensicdir = arch_dir + "../forensics/"
+  if os.path.isdir(arch_dir):
+    command = ["cp","-r",arch_dir,forensicdir]
+    run_and_report(command,"Unable to snapshot archive for debugging")
+
   # delete archive directory
   if os.path.isdir(arch_dir):
     command = ["rm","-rf",arch_dir]
     run_and_report(command,"Unable to restore from backup " + backupdir)
-  # copy backup directory
+
+  # copy backup directory into archive directory
   command = ["cp","-r",backupdir,arch_dir]
   run_and_report(command,"Unable to restore archive from backups")
 

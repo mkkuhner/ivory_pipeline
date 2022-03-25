@@ -17,4 +17,5 @@ for line in seizurelines:
   stdout, stderr = process.communicate()
   exit_code = process.wait()
   if exit_code != 0:
-    raise RuntimeError("    FAILED to run seizure " + seizure + "\nTERMINATING")
+    print("    FAILED to run seizure " + seizure + "\nTERMINATING")
+    exit(-1)
