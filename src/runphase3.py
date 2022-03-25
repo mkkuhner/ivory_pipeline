@@ -8,11 +8,11 @@ if len(sys.argv) != 3:
   exit(-1)
 
 seizurelines = open(sys.argv[1],"r").readlines()
-pathsfiles = sys.argv[2]
+pathsfile = sys.argv[2]
 
 for line in seizurelines:
   seizure = line.rstrip()
-  command = "python3 phase3.py " + seizure + " " + pathsfile
+  command = ["python3","phase3.py",seizure,pathsfile]
   process = Popen(command)
   stdout, stderr = process.communicate()
   exit_code = process.wait()
