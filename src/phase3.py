@@ -13,9 +13,6 @@ import os
 import subprocess
 from subprocess import Popen, PIPE
 
-archivefiles = ["elephant_msat_database.tsv","seizurelist.tsv","seizure_metadata.tsv"]
-archivedirs = ["old_inputs","reference"]
-
 ###################################################################
 # functions
 
@@ -28,9 +25,6 @@ def readivorypath(pathsfile):
   return ivorypaths
 
 def run_and_report(command,errormsg):
-  #print("command is ",command)
-  #print("running in ",os.getcwd())
-  #process = Popen(command, stdout=PIPE,stderr=PIPE)
   process = Popen(command)
   stdout, stderr = process.communicate()
   exit_code = process.wait()
@@ -62,31 +56,27 @@ def check_seizure_present(sfile,seizurename):
       return (True, oldseizures)
   return (False, oldseizures)
 
-def backup_archive(fam_dir):
-  backupdir = fam_dir + "archive_backups/"
+def backup_archive(arch_dir):
+  backupdir = arch_dir + "../archive_backups/"
   # delete previous backup directory
   if os.path.isdir(backupdir):
     command = ["rm","-rf",backupdir]
     run_and_report(command,"Unable to delete old backup directory" + backupdir)
-  # create backup directory and copy in files
-  command = ["mkdir",backupdir]
-  run_and_report(command,"Unable to create backup directory")
-  for filename in archivefiles:
-    copy_if_src_present(fam_dir + filename, backupdir + filename)
-  # ... and subdirectories
-  for dirname in archivedirs:
-    command = ["cp","-r",fam_dir + dirname, backupdir + dirname]
-    run_and_report(command,"Unable to populate backup directory")
+  # copy archive to backup directory
+  command = ["cp","-r",arch_dir,backupdir]
+  run_and_report(command,"Unable to back up archive")
 
-def restore_archive(fam_dir):
-  backupdir = fam_dir + "archive_backups/"
-  for filename in archivefiles:
-    copy_if_src_present(backupdir + filename, fam_dir + filename)
-  for dirname in archivedirs:
-    command = ["rm","-rf", fam_dir + dirname]
-    run_and_report(command,"Unable to delete files in " + fam_dir + dirname)
-    command = ["cp", backupdir + dirname + "/*", fam_dir + dirname + "/"]
-    run_and_report(command,"Unable to recover from backup: " + fam_dir + dirname)
+def restore_archive(arch_dir):
+  print("DEBUG! in phase3.py, restore disabled")
+  exit(-1)
+  backupdir = arch_dir + "../archive_backups/"
+  # delete archive directory
+  if os.path.isdir(arch_dir):
+    command = ["rm","-rf",arch_dir]
+    run_and_report(command,"Unable to restore from backup " + backupdir)
+  # copy backup directory
+  command = ["cp","-r",backupdir,arch_dir]
+  run_and_report(command,"Unable to restore archive from backups")
 
 ###################################################################
 # main program
@@ -99,8 +89,6 @@ if len(sys.argv) != 3:
 
 prefix = sys.argv[1]
 pathsfile = sys.argv[2]
-formalseizurename = prefix.replace("_", ", ")
-print("Seizure will be called",formalseizurename)
 
 # NB:  We do NOT check seizure_modifications in this program.
 # This means we will not omit REJECT seizures nor merge MERGE seizures.
@@ -112,50 +100,54 @@ print("Seizure will be called",formalseizurename)
 # unwanted seizures out of the final networks.
 
 # save what directory we were run in (should be root directory of all seizures)
-startdir = os.getcwd()
+startdir = os.getcwd() + "/"
 
 # read paths file
 pathdir = readivorypath(pathsfile)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
 zones_path, zones_prefix = pathdir["zones_prefix"]
 scat_exec = pathdir["scat_executable"][0]
-fam_dir = pathdir["fammatch_archive_dir"][0]
+arch_dir = pathdir["fammatch_archive_dir"][0]
 meta_path, meta_prefix = pathdir["metadata_prefix"]
 mod_path, mod_prefix = pathdir["seizure_modifications_prefix"]
 ref_path, ref_prefix = pathdir["reference_prefix"]
 
+# check if the archive actually exists; if not, create it
+if not os.path.isdir(arch_dir):
+  command = ["mkdir",arch_dir]
+  run_and_report(command, "Unable to create archive")
+
 # check if this seizure has already been run.  We will not run it again
 # unless the user first cleans it out.
 
-seizurelist = fam_dir + "seizurelist.tsv"
+seizurelist = arch_dir + "seizurelist.tsv"
 oldseizures = []
 if os.path.isfile(seizurelist):
   is_present, oldseizures = check_seizure_present(seizurelist, prefix)
   if is_present:
     print("Seizure",prefix,"is already present in the archive")
     print("If you need to rerun it, call remove_seizure_from_fammatch.py first")
-    print("NOT IMPLEMENTED YET")
     exit(-1)
 
 # Back up the entire archive.  This will be used to recover if something
 # goes wrong at any point in this program.
 
 try:
-  backup_archive(fam_dir)
+  backup_archive(arch_dir)
 except RuntimeError as e:
-  print("Unable to back up archive:  terminating.")
-  print(e)
+  print("FAILURE:  Unable to back up archive:  terminating.")
+  print("FAILURE REASON: ",e)
   exit(-1)
 
 # create fammatch subdirectory in seizure directory
 # if this directory currently exists it will be DELETED; this avoids
 # the risk of getting a mix of stale and current files in here.
 # if this fails, we just terminate; nothing harmful has been done yet
+# as a side effect, deletes failfile from previous cycle
 
 try:
   os.chdir(prefix)
   if os.path.isdir("fammatch"):
-    print("Deleting previous familial matching directory")
     command = ["rm","-rf","fammatch"]
     run_and_report(command,"Unable to delete fammatch directory")
   command = ["mkdir","fammatch"]
@@ -163,7 +155,7 @@ try:
 except RuntimeError as e:
   print(e)
   exit(-1)
-  
+
 # the remainder of the program is in a try loop:  if it
 # catches we will restore from backup
 
@@ -171,8 +163,9 @@ try:
   # update seizure metadata 
   # note:  update_metadata.py will create this file if it does not exist
   seizure_metafile = meta_path + meta_prefix + ".tsv"
+  print("metafile is",seizure_metafile)
   prog = ivory_dir + "src/update_metadata.py"
-  command = ["python3",prog,seizure_metafile,prefix,formalseizurename]
+  command = ["python3",prog,seizure_metafile,prefix]
   run_and_report(command,"Unable to update seizure metadata")
   
   # for each species present:
@@ -197,7 +190,7 @@ try:
   
   # run prep_fammatch.py
   os.chdir(startdir)     # return to root directory of all seizures
-  sector_metafile = fam_dir + "sector_metadata.txt"
+  sector_metafile = arch_dir + "sector_metadata.txt"
   progname = ivory_dir + "src/prep_fammatch.py"
   command = ["python3",progname]
   command += [prefix, zones_prefix, zones_path]
@@ -219,7 +212,14 @@ try:
   for entry in oldseizures:
     outfile.write(entry)
   outfile.close()
+
 except RuntimeError as e:
-  print("Restoring from backups")
-  restore_from_backups(fam_dir)
+  # write failfile
+  failname = startdir + prefix + "/fammatch/FAILURE_REPORT"
+  failfile = open(failname,"w")
+  failfile.write(str(e) + "\n")
+  failfile.close()
+  print("FAILED:  Restoring from backups")
+  print("FAILURE REASON:  ",e)
+  restore_archive(arch_dir)
   exit(-1)

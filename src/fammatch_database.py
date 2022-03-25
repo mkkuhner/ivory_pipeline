@@ -109,6 +109,8 @@ class match_database:
     except SystemExit:
       msg = "Exit called unexpectedly"
       raise RuntimeError(msg)
+    except RuntimeError as e:
+      print("RuntimeError:",e)
     except:
       msg = "Error in reading database file " + datafile
       raise RuntimeError(msg)

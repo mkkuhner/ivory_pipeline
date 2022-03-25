@@ -194,9 +194,14 @@ run_calc <- function(pop_df, old_df, obs_df, theta){
   index_grid_filt <- index_grid_filt[incl_ind,]
 
   # add 4 NA column to fit the LR we'll calculate, as well as 1 for nloci
-  sample_grid <- cbind(sample_grid_filt, 
-                       matrix(, nrow=nrow(sample_grid_filt), ncol=5))
-  index_grid <- index_grid_filt
+  
+  if (nrow(sample_grid) == 1) {
+    sample_grid <- cbind(t(matrix(sample_grid_filt)), matrix(, nrow=nrow(sample_grid), ncol=5))
+    index_grid <- index_grid_filt
+  } else {
+    sample_grid <- cbind(sample_grid_filt, matrix(, nrow=nrow(sample_grid_filt), ncol=5))
+    index_grid <- index_grid_filt
+  }
   # get info from reference data
   # consider the full range of alleles from all loci in the obs data
   # this way we avoid having to update alleles on the fly
@@ -214,10 +219,16 @@ run_calc <- function(pop_df, old_df, obs_df, theta){
 
   # go through each pair of tusks
   for (i in 1:nrow(sample_grid)){
-    pair <- index_grid[i,]
-    # get gts
-    gt1 <- obs_df[pair[1],]
-    gt2 <- obs_df[pair[2],]
+    if (nrow(sample_grid) == 1) {
+      pair <- index_grid[i]
+      gt1 <- obs_df[1,]
+      gt2 <- obs_df[2,]
+    } else {
+      pair <- index_grid[i,]
+      gt1 <- obs_df[pair[1],]
+      gt2 <- obs_df[pair[2],]
+    }
+
     # pick out only loci where both tusks have data
     gt1_obs <- which(!is.na(gt1))
     gt1_obs <- gt1_obs[gt1_obs %% 2 ==1]

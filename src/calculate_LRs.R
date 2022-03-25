@@ -18,7 +18,7 @@
 #
 # output: tab-delimited file with pairwise LRs
 
-# read in command line args
+# # read in command line args
 args = commandArgs(trailingOnly=TRUE)
 species <- args[1]
 refname <- args[2]
@@ -32,10 +32,16 @@ suppressMessages(library(dplyr))
 # make sure this file is in the same directory
 source('./LR_functions.R')
 
-# read in reference file and sample file
-refgts <- read.table(refname, sep=',', header=TRUE)
-oldgts <- read.table(oldfname, sep=',', header=TRUE)
-sampgts <- read.table(sampfname, sep=',', header=TRUE)
+# read in reference and sample files (NEW Only for Ryan)
+#species <- "savannah"
+refgts <- read.csv(refname)
+oldgts <- read.csv(oldfname)
+sampgts <- read.csv(sampfname)
+
+# # read in reference file and sample file
+# refgts <- read.table(refname, sep=',', header=TRUE)
+# oldgts <- read.table(oldfname, sep=',', header=TRUE)
+# sampgts <- read.table(sampfname, sep=',', header=TRUE)
 
 # use same theta estimates as in the 2018 Sci Adv paper
 if (species == "forest"){
