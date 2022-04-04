@@ -24,7 +24,12 @@ if origname not in stuff:
   print("  no changes made")
   exit(-1)
 
-for root, dirs, files in os.walk(cwd, topdown = True):
+if not cwd.endswith("/"):
+  cwd += "/"
+
+newroot = cwd + origname
+
+for root, dirs, files in os.walk(newroot, topdown = True):
   for dir in dirs:
      if origname in dir:
        dir = os.path.join(root,dir)
@@ -35,3 +40,5 @@ for root, dirs, files in os.walk(cwd, topdown = True):
        file = os.path.join(root,file)
        newfile = file.replace(origname,newname)
        os.replace(file,newfile)
+
+os.replace(cwd+origname,cwd+newname)
