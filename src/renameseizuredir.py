@@ -32,14 +32,15 @@ newroot = cwd + origname
 for root, dirs, files in os.walk(newroot, topdown = True):
   for dir in dirs:
      if origname in dir:
-       dir = os.path.join(root,dir)
        newdir = dir.replace(origname,newname)
+       newdir = os.path.join(root,newdir)
+       dir = os.path.join(root,dir)
        os.replace(dir,newdir)
   for file in files:
      if origname in file:
        newfile = file.replace(origname,newname)
        newfile = os.path.join(root,newfile)
-       file = os.path.join(root,newfile)
+       file = os.path.join(root,file)
        os.replace(file,newfile)
 
 os.replace(cwd+origname,cwd+newname)
