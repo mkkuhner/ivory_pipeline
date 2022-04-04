@@ -37,8 +37,8 @@ for root, dirs, files in os.walk(newroot, topdown = True):
        os.replace(dir,newdir)
   for file in files:
      if origname in file:
-       file = os.path.join(root,file)
        newfile = file.replace(origname,newname)
+       newfile = os.path.join(root,newfile)
        os.replace(file,newfile)
 
 os.replace(cwd+origname,cwd+newname)
