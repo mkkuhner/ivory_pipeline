@@ -3,11 +3,13 @@ import sys
 
 if len(sys.argv) != 3:
   print("USAGE: python makehybridreport.py ebhybrids_outfile hybrid_cutoff")
-  print("  ebhybrids_outfile often of the form foo_hybt.txt")
+  print("  ebhybrids_outfile must be of the form foo_hybt.txt")
   exit(-1)
 
 ebfile = sys.argv[1]
 cutoff = float(sys.argv[2])
+prefix = ebfile.split("_hybt.txt")[0]
+hyboutname = prefix + "_hybout.txt"
 
 savcount = 0
 forcount = 0
@@ -15,8 +17,8 @@ hybcount = 0
 hyblist = []
 
 import os
-if os.path.isfile("hybout.txt"):
-  print("previous hybout.txt detected. Move, Rename or Remove file\nNothing done")
+if os.path.isfile(hyboutname):
+  print("previous output detected. Move, Rename or Remove file",hyboutname,"\nNothing done")
   exit(-1)
 
 # read ebhybrids
@@ -44,7 +46,7 @@ outline = "Found " + str(savcount) + " savannah, " + str(forcount) + " forest an
 outline += str(hybcount) + " hybrids" + "\n"
 print(outline)
 
-hybout = open("hybout.txt","w")
+hybout = open(hyboutname,"w")
 hybout.write(outline)
 outline = "\nHybrid sids:\n"
 sids_inline = 5
@@ -57,4 +59,4 @@ for sid in hyblist:
     cursid = 0
 hybout.write(outline)
 
-print("Counts and listings written to hybout.txt")
+print("Counts and listings written to",hyboutname)
