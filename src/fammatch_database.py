@@ -3,6 +3,10 @@
 # This program backs up the database and will restore from backups if
 # it seems to have failed
 
+# NOTE:  The input "cutoff" value for reports is in log scale.  The
+# LRs are NOT, so we un-log this before use.  If you do not want to use
+# a cutoff, pass "None" for this parameter.  (Not zero!)
+
 from datetime import datetime
 now = datetime.now()
 datestring = now.strftime("%d/%m/%Y $H:%M:%S")
@@ -50,8 +54,16 @@ class match_entry:
     return seizurename in self.seizures
 
   def is_significant(self,cutoff,minloci):
-    cutoff_nonlog = 10.0**cutoff
-    return self.maxlr >= cutoff_nonlog and self.nloci >= minloci
+    if cutoff is not None:
+      return self.maxlr >= cutoff and self.nloci >= minloci
+    else:
+      return self.nloci >= minloci
+
+  def rename_seizure(self,oldname,newname):
+    if self.seizures[0] == oldname:
+      self.seizures[0] = newname  
+    if self.seizures[1] == oldname:
+      self.seizures[1] = newname  
 
 ####
 
@@ -156,19 +168,24 @@ class match_database:
       msg = "Unable to write database to filename " + outfilename
       raise RuntimeError(msg)
 
+  def rename_seizure(self,oldname,newname):
+    for key in self.db:
+      self.db[key].rename_seizure(oldname,newname)
+
 
 ################
 # functions
 
 def print_usage_statement():
   print("USAGE: python3 fammatch_database.py database action argument [reportfile cutoff minloci]")
-  print("Legal actions:  create, verify, add, remove, report")
+  print("Legal actions:  create, verify, add, remove, report, rename")
   print("Examples:  python3 fammatch_database.py database.tsv add newdata.tsv")
   print("\tpython3 fammatch_database.py database.tsv report seizurename reportfile 2.0 13")
   print("\tpython3 fammatch_database.py database.tsv report ALL reportfile 2.0 13")
   print("\tpython3 fammatch_database.py database.tsv remove seizurename")
   print("\tpython3 fammatch_database.py database.tsv verify")
   print("\tpython3 fammatch_database.py database.tsv create newdata.tsv")
+  print("\tpython3 fammatch_database.py database.tsv rename oldname newname")
 
 def backup_database(filename):
   backupname = filename + "_bak"
@@ -210,7 +227,7 @@ olddatafile = sys.argv[1]
 action = sys.argv[2]
 
 # determine what action is being done
-legalactions = ["add","report","remove","verify","create"]
+legalactions = ["add","report","remove","verify","create","rename"]
 if action not in legalactions:
   print("Unrecognized action ",action)
   exit(-1)
@@ -222,6 +239,7 @@ argdict["report"] = 7
 argdict["remove"] = 4
 argdict["verify"] = 3
 argdict["create"] = 4
+argdict["rename"] = 5
 
 if numargs != argdict[action]:
   print(action,"command requires",argdict[action],"arguments but received",numargs)
@@ -309,7 +327,11 @@ if action == "report":
   except:
     print("Unable to open report file")
     exit(-1)
-  cutoff = float(sys.argv[5])
+  cutoff = sys.argv[5]
+  if cutoff == "None": 
+     cutoff = None
+  else:
+    cutoff = 10**float(cutoff)  # it is given in log scale, need non-log here
   minloci = int(sys.argv[6])
   seizurename = argument
   if seizurename == "ALL":
@@ -343,4 +365,29 @@ if action == "remove":
     explain_and_abend(e)
 
   print("Removed ",numremoved," entries from database",olddatafile)
+  exit(0)
+
+# RENAME action
+if action == "rename":
+  # make backup
+  backup_database(olddatafile)
+
+  # non-writing operations; abend on failure
+  try:
+    database = match_database(olddatafile)
+    oldname = sys.argv[3]
+    newname = sys.argv[4]
+    outfile = open(olddatafile,"w")
+  except RuntimeError as e:
+    explain_and_abend(e)
+
+  # writing operations:  restore and abend on failure
+  try:
+    database.rename_seizure(oldname,newname)
+    outfile.write(str(database))
+    outfile.close()
+  except RuntimeError as e:
+    restore_from_backup(olddatafile)
+    explain_and_abend(e)
+  print("Seizure",oldname,"renamed",newname,"successfully")
   exit(0)

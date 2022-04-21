@@ -47,12 +47,6 @@ seizuredir = prefix + "/"
 # set up needed variables
 pathdir = readivorypath(pathsfile)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
-scat_exec = pathdir["scat_executable"][0]
-reference_path, reference_prefix = pathdir["reference_prefix"]
-zones_path, zones_prefix = pathdir["zones_prefix"]
-map_path, map_prefix = pathdir["map_prefix"]
-seizure_data_dir = pathdir["seizure_data_dir"][0]
-voronoi_exec = pathdir["voronoi_executable"][0]
 
 os.chdir(seizuredir)
 specieslist = ["forest","savannah"]
@@ -67,7 +61,7 @@ for species in specieslist:
   if os.path.isdir(dirname):
     os.chdir(dirname)
     setuppath = ivory_dir + "src/setupvoronoi.py"
-    command = ["python3",setuppath,prefix,species]
+    command = ["python3",setuppath,prefix,species,pathsfile]
     run_and_report(command,"Failure in setupvoronoi.py")
 
     print("About to run VORONOI:  be patient with this step")

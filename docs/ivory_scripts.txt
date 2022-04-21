@@ -10,7 +10,7 @@ repository, programs and scripts are in the /src directory,
 additional files needed to run the scripts are in the /aux
 directory, and documentation files are in the /docs directory.
 
-WARNING:  Never check anything into the GitHub repository which is
+***WARNING:  Never check anything into the GitHub repository which is
 law enforcement sensitive or otherwise high security.  
 
 The pipeline also relies on the following code found in other
@@ -24,7 +24,7 @@ Structure -- https://web.stanford.edu/group/pritchardlab/structure_software/rele
 
 Currently the ivorydata/src directory does not include Structure, SCAT or
 VORONOI, but does include copies of EBhybrids and Familial Matching.
-If these programs are updated, replace these copies!
+If those programs are updated, replace these copies!
 
 ***General Rules
 
@@ -41,8 +41,8 @@ Genotypes file.
 
 This document covers the use of automated scripts to run all parts of the
 pipeline except for SCAT (not automated because you may wish to run it on
-the cluster).  For directions on running individual programs by hand, see 
-ivory_pipeline.txt.
+the cluster) and draw_network.py (not audomated because it is interactive).  
+For directions on running individual programs by hand, see ivory_pipeline.txt.
 
 ***A)  Obtain all needed files
 
@@ -65,7 +65,7 @@ seizure data.  Data for a brand new seizure is generally not yet in this file;
 it should be requested from the laboratory staff who genotyped it.
 
 You will minimally need the Master Elephant Genotype file, which is 
-distributed as a .xlsx file, unfortunately with variations in its name.  
+distributed as an .xlsx file, unfortunately with variations in its name.  
 It may be something like:
 
 Elephant_Genotypes_Master_[DBno].xlsx
@@ -73,8 +73,9 @@ ElephantMasterFile[DBno].xlsx
 
 If your seizure has not yet been added to this file, you will also need a 
 data file containing its genotypes; this will generally be an .xlsx file 
-but its name is arbitrary.  (Also ask them what the official name of the 
-new seizure is.)
+but its name is arbitrary.  (Also ask Yves what the official name of the 
+new seizure is.  If seizure name has to be changed later, the program
+renameseizure.py can be helpful.)
 
 3)  Obtain the reference data and reference Structure runs. 
 
@@ -150,7 +151,7 @@ The phase1.py program takes PREFIX as its first argument and either "laptop"
 or "cluster" as its second.  Use "laptop" for running on your own machine
 (whether it is actually a laptop or not) and "cluster" for running on the
 Biology HYAK cluster using SLURM.  Note that if you plan to use the cluster for
-your SCAT runs, you will still run phase1.py on your own machine and then
+your SCAT runs, you will run phase1.py on your own machine and then
 transfer the resulting SCAT run directories to the cluster for execution.
 (We have not tested steps other than SCAT on the cluster and they are not
 likely to work there without modification.)
@@ -204,20 +205,16 @@ the same information as the three summary files, but in textual form.
 TO DO:  write a note on how to install Cartopy:  it's tricky.
 
 
-***F)  Run familial matching
+***F)  Run familial matching on the new seizure
 
 This document explains how to do familial matching of a new seizure when
-all previous seizures have already been run and archived.  If
-you need to do familial matching on the entire data set at once, see 
-documentation file familial_pipeline.txt, and be aware that it will 
-take 3+ days.  Rerunning the whole thing is needed if large changes 
-have been made to the reference data, the sector definitions have 
-changed, or the set of previous seizures to be used has changed.
+all previous seizures have already been run and archived.  See the end of this
+section for other possibilities.
 
-This is carried out by the script phase3.py.  It is meant to be run in the
+Familial matching is run by the script phase3.py.  It should be run in the
 parent directory of all seizures, and takes PREFIX as its argument.
 Inefficiently, it does the familial matching R script runs one at a time.
-They can all be run at once safely, but downstream code must not execute
+They could all be run at once safely, but downstream code must not execute
 until they have all completed, and I have not figured out how to code that.
 
 At the end of this program, there will exist a "fammatch" directory in
@@ -236,4 +233,33 @@ currently 2.0.  These results can be used for a quick and dirty evaluation of ma
 but matches with relatively low logLR scores have a high chance of being false positives,
 especially in savannah.
 
-The script does not yet recalculate false positive rates.
+TO DO:  Make a proper report about matches in this specific seizure.
+
+***G)  (Optional)  Run network analysis on all seizures
+
+This step creates network diagrams showing relationships among seizures.  If you do
+not need these diagrams you can stop at the end of step F.
+
+1)  The colors used in the network diagram to associate seizures with their ports
+of origin are stored in the ivory pipeline directory in /aux/port_colors.tsv.  If 
+your data involves ports not in this list, you will need to assign colors for them.  
+The first column of numbers is R,G,B for the diagram node, and the second column is 
+R,G,B for the text inside that node; these should be contrasting colors (i.e. don't 
+use black text on a navy blue node).  If you don't want to bother, copy the colors 
+for UNK (unknown).
+
+2)  If you have added any seizures since last time this was run, you will need
+to update the seizure numbering list.  This will potentially renumber all seizures,
+so you must not mix pre- and post-addition graphics in a publication!  The file
+to update is ivory_pipeline/aux/seizure_numbering_XXXX.tsv.  Make a copy with a
+new number (we use yyyymmdd).  Add your seizures at the end in the following
+format:  official seizure name (underscore version), tab, "X", tab, port abbreviation.
+Use "UNK" if the origin port is unknown.  Then run program number_seizures.py,
+found in ivory_pipeline/src, with your new seizure numbering file as both the first
+and the second arguments.  This will renumber the seizures in chronological order.
+(NOTE that the official seizure name should be XXX_mm_yy_X.Xt; any other format will
+either crash or be renumbered incorrectly as the seizure date has to be deduced
+from the name.)
+
+
+2)  Run phase4.py in the root directory of all seizures.  

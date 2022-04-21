@@ -20,15 +20,16 @@ def readivorypath(infile):
 
 import sys, os, subprocess
 
-if len(sys.argv) != 3:
-  print("USAGE:  setupvoronoi.py PREFIX species")
+if len(sys.argv) != 4:
+  print("USAGE:  setupvoronoi.py PREFIX species ivory_paths.tsv")
   exit(-1)
 
 prefix = sys.argv[1]
 species = sys.argv[2]
 scatdata = prefix + "_" + species + ".txt"
+pathfile = sys.argv[3]
 
-ivorypaths = readivorypath("../../ivory_paths.tsv")
+ivorypaths = readivorypath(pathfile)
 
 ivorydir = ivorypaths["ivory_pipeline_dir"][0]
 vor_exe = ivorypaths["voronoi_executable"][0]

@@ -70,12 +70,11 @@ seizuredir = prefix + "/"
 # set up needed variables
 pathdir = readivorypath(pathsfile)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
-scat_exec = pathdir["scat_executable"][0]
+scat_dir, scat_exec = pathdir["scat_dir"]
 reference_path, reference_prefix = pathdir["reference_prefix"]
 zones_path, zones_prefix = pathdir["zones_prefix"]
 map_path, map_prefix = pathdir["map_prefix"]
 seizure_data_dir = pathdir["seizure_data_dir"][0]
-voronoi_exec = pathdir["voronoi_executable"][0]
 
 specieslist = ["forest","savannah"]
 
@@ -87,7 +86,7 @@ run_and_report(command,"Could not locate raw data file " + rawdata)
 
 # log_seizure.py
 # this program creates a logfile recording run parameters
-command = ["python3", ivory_dir+"src/log_seizure.py",prefix,ivory_dir,reference_path + reference_prefix,scat_exec,voronoi_exec,pathsfile]
+command = ["python3", ivory_dir+"src/log_seizure.py",prefix,pathsfile]
 run_and_report(command,"Failed to log the run")
 
 # cd to newly created directory
@@ -182,8 +181,9 @@ for species in specieslist:
     command = ["cp",runfile,dirname]
     run_and_report(command,"Could not access " + runfile)
 
-    command = ["cp",scat_exec,dirname]
-    run_and_report(command,"Could not access scat executable " + scat_exec)
+    scat_path = scat_dir + scat_exec
+    command = ["cp",scat_path,dirname]
+    run_and_report(command,"Could not access scat executable " + scat_path)
 
     # run setupscatruns.py (or cluster variant)
     if runtype == "laptop":

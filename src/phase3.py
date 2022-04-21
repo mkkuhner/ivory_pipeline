@@ -29,6 +29,7 @@ def run_and_report(command,errormsg):
   stdout, stderr = process.communicate()
   exit_code = process.wait()
   if exit_code != 0:
+    print("exit code was",exit_code)
     raise RuntimeError(errormsg)
 
 # "cp" onto an existing file may fail, even if "-f" is used, 
@@ -97,9 +98,9 @@ prefix = sys.argv[1]
 pathsfile = sys.argv[2]
 
 # NB:  We do NOT check seizure_modifications in this program.
-# This means we will not omit REJECT seizures nor merge MERGE seizures.
+# This means we will not omit or merge/rename any seizures.
 # This allows us to have fammatch results for them in case they are
-# of interest, and also allows us to change our minds about MERGE or
+# of interest, and also allows us to change our minds about merge or
 # reject without having to rerun everything.
 
 # The seizure_modifications are implemented in phase4.py instead, to keep

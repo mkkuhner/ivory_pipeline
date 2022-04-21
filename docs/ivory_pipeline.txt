@@ -41,11 +41,11 @@ Genotypes file.
 
 ***Automated Scripts
 
-This document covers running the pipeline step by step, by hand.  To run 
-it using automated scripts, see document ivory_scripts.txt.
+This document covers running the pipeline by hand.  To run it using automated 
+scripts, see document ivory_scripts.txt.
 
 
-***A)  Obtaining all needed files
+***A)  Setup
 
 1)  If you do not have up-to-date installations of the following programs:
 
@@ -56,8 +56,8 @@ Familial Matching
 Structure
 
 obtain and install them now.  Detailed instructions are in document 
-installing_software.txt in the ivory_pipeline directory.  I have assumed
-that the SCAT and VORONOI executables are named SCAT and VORONOI;
+installing_software.txt in the ivory_pipeline directory.  This document
+assumes that the SCAT and VORONOI executables are named SCAT and VORONOI;
 adjust appropriately if they are not. 
 
 2)  Obtain the needed data files.  Files with elephant genotypes, reference or 
@@ -76,8 +76,41 @@ ElephantMasterFile[DBno].xlsx
 
 If your seizure has not yet been added to this file, you will also need a 
 data file containing its genotypes; this will generally be an .xlsx file 
-but its name is arbitrary.  (Also ask them what the official name of the 
+but its name is arbitrary.  (Also ask Yves what the official name of the 
 new seizure is.)
+
+3)  Create a pathfile which gives paths to information needed by the pipeline.
+This should be a .tsv (we often call it ivory_paths.tsv and will use this name
+throughout the documentation).  Multiple programs in the pipeline rely on the 
+pathfile to locate needed resources.
+
+A sample ivory_paths.tsv file can be found in
+
+ivory_pipeline/aux/ivory_paths.tsv
+
+but will need to be modified for your own directory structure.
+
+Lines within the pathfile can be in any order; entries within the same line must 
+be in order and must be separated with tabs.  Directory names must end in "/".
+The first entry of each line names a particular required directory or file.  The second 
+entry gives a path to find it; for lines with a third entry, this gives the prefix of 
+the file (useful when there are several related files such as _forest and _savannah variants).
+
+Legal lines in the pathfile:
+
+ivory_pipeline_dir      path to the ivory_pipeline root directory
+scat_executable         path and filename of the SCAT executable
+voronoi_executable      path and filename of the VORONOI executable
+reference_prefix        path to the reference data files        prefix of these files
+zones_prefix            path to zones files                     prefix of these files
+metadata_prefix         path to seizure metadata                prefix of this file
+seizure_modifications_prefix    path to modifications file      prefix of this file
+map_prefix              path to map files                       prefix of these files
+seizure_data_dir        directory where raw seizure data is kept
+structure_executable    path and filename of the Structure executable
+fammatch_archive_dir    path to familial matching input file archive
+
+TO DO:  get rid of metadata_prefix as this file can be found in fammatch_archive_dir.
 
 ***B)  Obtain the reference data.
 
@@ -97,7 +130,8 @@ If you do not have these files, steps to prepare them are in
 ***C)  Preprocess the data for analysis
 
 1)  Pick a PREFIX (ideally the official name of the seizure) that will 
-tag all runs for this case.
+tag all runs for this case.  (If you find out later that you had the
+wrong name, program renameseizuredir.py can be used to rename a seizure.)
 
 2)  Obtain the seizure genotype data.  For a new seizure, open the
 spreadsheet and look for a tab labeled "Scat input".  To use data
@@ -109,27 +143,33 @@ can be done with LibreOffice by saving the file as .csv but setting the
 delimiter to tab rather than comma, and then changing the name of the
 resulting file.  Name this file PREFIX_raw.tsv.
 
+4)  Run the logging program log_seizure.py to record the parameters under
+which the run was done.  The run command is:
+python3 log_seizure.py PREFIX ivory_paths.tsv
+
 4)  Validate the microsat data by running verifymsat.py with the following
 arguments:
 --number of msats (currently 16)
 --REFELE_[DBno]_raw.csv
 --PREFIX_raw.tsv
 
-This program checks for samples with more than 2 previously unknown alleles.
-This can indicate that the microsats have gotten out of order; if it fires,
-carefully check your input seizure data.  NOTE:  it only checks the seizure 
-data, and assumes the reference data are correct.
+This program identifies samples with more than 2 previously unknown alleles.
+If it fires, carefully check your input seizure data for ordering or
+calibration problems.  NOTE:  it only checks the seizure data, and assumes 
+the reference data are correct.
 
-If you have carefully checked and believe your data are correct (perhaps
-your seizure is from a poorly sampled area and has lots of novel alleles), 
-you can continue with the next program in the pipeline.
+If you have examined your data and verified that the unknown alleles are
+correct (perhaps your seizure is from a poorly sampled area and has lots 
+of novel alleles), you can continue with the next program in the pipeline.
+Subsequent programs are prepared to handle unknown alleles, but we check
+here as they may indicate a systematic data quality issue.
 
 5)  Check for exact matches in input data by running detect_duplicates
 with the argument of PREFIX_raw.tsv.  If this fires, there are two or
 more samples in the input with identical genotypes at non-missing loci.
 These are very likely to be the same animal.  Inclusion of duplicate 
 samples wastes effort in SCAT and is actively misleading in VORONOI and
-familial matching:  such duplicates should be culled before contining
+familial matching:  such duplicates should be culled before continuing
 (and reported to Yves, the database manager).
 
 5)  Run prep_scat_data.py with an argument of PREFIX. This reads
@@ -149,8 +189,8 @@ results MUST be for exactly the version of the database that you are
 using; even a single elephant change will invalidate them.  If in
 doubt, rerun.
 
-1)  Obtain the appropriate allelic dropout file.  This is
-currently "dropoutrates_savannahfirst.txt" and is in the /aux 
+1)  Obtain the appropriate allelic dropout file.  This is currently 
+"dropoutrates_savannahfirst.txt" and is in the ivory_pipeline/aux 
 directory.  (It is a columns reversed version of the original file from 
 Mondol et al, which was named "Mondoletal_allelicdropoutrates.txt".)
 
@@ -196,6 +236,7 @@ it is a hybrid.  Information is identical between .csv and .txt.
 Please note that EBhybrids estimates the probability that a sample is
 a hybrid, NOT the proportion of its genome that comes from a given species.
 
+TO DO:  integrate the hybrid report program here
 
 ***E) Running SCAT
 
@@ -208,7 +249,7 @@ exclude valid habitat).  Use up-to-date mapfiles instead.
 
 -- Map files of choice: either the "full" map files mapfile_[MAPNO]_[species].txt
 or the IUCN map files iucn_[MAPNO]_[species].txt.  These are found in the
-/aux subdirectory.
+ivory_pipeline/aux subdirectory.
 
 -- Zone files:  zones_[ZONENO]_savannah.txt and zones_[ZONENO]_forest.txt.  
 These are not on Github; if you need a copy, ask Mary Kuhner.  The zone 
@@ -221,7 +262,7 @@ If new input zones have been added to the reference data, you will need
 to update these files and assign a new version number.
 
 -- Prototype SCAT and VORONOI run files master_scat_runfile.sh and
-master_voronoi_runfile.sh.  These are found in the /aux
+master_voronoi_runfile.sh.  These are found in the ivory_pipeline/aux
 directory; they are templates for creating run commands for your
 SCAT and VORONOI runs.
 
@@ -267,6 +308,8 @@ forest and a savannah SCAT input file, called PREFIX_[species].txt;
 if there are no unknown individuals from a species, that file will not be 
 written.  It silently discards individuals called as hybrids. 
 
+TO DO:  Is it still "silently"?
+
 Outputs:
 
 SCAT-format data files:  PREFIX_[species].txt 
@@ -284,10 +327,10 @@ Place a SCAT executable in this species-specific SCAT directory.  We
 recommend a clean optimized build from source.  
 
 4)  If you plan to run SCAT on a non-cluster machine, run
-setupscatruns.py with the following arguments (twice, if you
-have both forest and savannah individuals):
+setupscatruns.py in the main PREFIX directory with the following arguments (twice, 
+if you have both forest and savannah individuals):
 
--- name of the species-specific run directory
+-- name of the species-specific run directory (nforest or nsavannah)
 -- name of the master scat run script (runfile_[species].sh) 
 -- random number seed (positive integer)
 
@@ -309,7 +352,7 @@ directory number) and an /outputs directory to hold the results.
 
 5)  To run on your own machine, open a window for each numbered directory and 
 execute the runX.sh file (using "source" as they are not executable files).  
-This should run SCAT nine times.  It may take hours or days to run.
+This will run SCAT nine times.  It may take hours or days to run.
 
 To run on the cluster, consult cluster documentation.
 
@@ -327,34 +370,25 @@ TO DO:  the script will run this even with one sample.  It seems harmless
 but there is a risk that the resulting VORONOI outputs will be used for
 something.  This should be blocked.
 
+TO DO:  VORONOI is actually bad with < 10 samples; adjust accordingly.
+
 1)  Obtain or prepare a masterfile consisting of 9 lines as follows (there
-is an example, called "masterfile", in the /aux directory):
+is an example, called "masterfile", in the ivory_pipeline/aux directory):
 
 1/outputs
 2/outputs 
 ...
 
-2)  In the species-specific directory, run setupvoronoi.py with
-arguments PREFIX and species name (savannah or forest).  This sets
-up for a new-style VORONOI run in which SCAT results are read directly
+2)  In the species-specific directory, run setupvoronoi.py with arguments 
+PREFIX, species name (savannah or forest), and the ivory_paths.tsv file.  
+This sets up for a new-style VORONOI run in which SCAT results are read directly
 from the directories that contain them, rather than being recoded and
 copied into the working directory.  (We STRONGLY discourage use of
 the old format, which leads all too easily to getting confused about
 which sample is which as they are not named.)
 
-2)  In the species-specific directory, run scat2voronoi.py
-with the argument being the masterfile from step 1.  This will
-write two files:
-
-a)  A file named PREFIX_names.txt which gives the names of all
-unknown-location (seizure) samples for this species.
-
-b)  A run file named voronoi_runfile_[species].sh.
-
-3)  Pull a VORONOI executable:  we recommend a clean optimized build from
-source.
-
-4)  Run VORONOI:
+3)  From nforest or nsavannah, run VORONOI using the run command file written
+by setupvoronoi.py:
 
 source voronoi_runfile_[species].sh
 
@@ -376,7 +410,7 @@ This writes several types of files into directory PREFIX_reports:
 -- voronoi_sumary.jpg (VORONOI results as grid square of highest posterior)
 -- PREFIX_point_estimates.tsv (best estimates for each sample)
 
-To do:  make this program work if there are no VORONOI results, for
+TO DO:  make this program work if there are no VORONOI results, for
 example because there was only 1 sample.  plot_scat.py used to do 
 this but would need extensive rewriting; better to make plot_scat_vor.py do it.
 
@@ -385,7 +419,7 @@ TO DO:  write a note on how to install Cartopy:  it's tricky.
 
 ***H)  Run familial matching
 
-This document explains how to do familial matching of a new seizure when
+This document covrs familial matching of a new seizure when
 all previous seizures have already been run and archived.  If
 you need to do familial matching on the entire data set at once, see 
 documentation file familial_pipeline.txt, and be aware that it will 
@@ -393,30 +427,33 @@ take 3+ days.  Rerunning the whole thing is needed if large changes
 have been made to the reference data, the sector definitions have 
 changed, or the set of previous seizures to be used has changed.
 
-WARNING: Step H2 uses files from previous seizures.  Do not run step H2 on more 
-than one seizure at a time!  (Other steps are okay.)
+Familial matching results for all seizures are archived in the fammatch
+archive directory (currently on the external HD) as a file called 
+elephant_msat_database.tsv.
 
-** OPTIONAL **
+I do not recommend doing step H by hand.  The scripts that do it automatically
+make elaborate backups at each step to avoid corrupting the archive; if you
+do it by hand it is easy to make a mistake and have to rerun the entire
+familial matching process on all seizures.
 
-The following steps (H1-H4) can be done by the script mary_fammatch.sh on Mary's
-laptop.  It is meant to be run in the parent director of all the seizure 
-directories, and takes PREFIX as its argument.  Note that the script spawns
-jobs for the familial matching runs, and when it says it is finished these
-may still be running.  You may safely run the same program on a *different
-seizure* once it terminates on the current seizure, but you must NOT do 
-postprocessing on the current seizure until all of the jobs terminate.
+WARNING:  These instructions assume this seizure has not been run before.  
+If it has, but you have modified it and want to rerun, you need to remove
+the previous results from the archive.  This is done with 
+remove_seizure_from_fammatch.py, which takes PREFIX as its argument.
 
-Note that running mary_fammatch.sh will destroy the current /fammatch subdirectory
-for this seizure.
+1)  Update the seizure metadata (a file listing the seizure of each sample ID).
+This file is found in the same directory as the database file; if the file
+does not exist, this program will create it.  The command is:
 
-1)  Make a directory "fammatch" in your main PREFIX directory (not
-nforest/nsavannah).  Make two subdirectories within it for SCAT sector
-assignment runs:  "outdir_forest" and "outdir_savannah".
+python3 update_metadata.py seizure_metafile PREFIX
 
-For each species present in your seizure you will need to do a SCAT
-run here:
+2)  Use SCAT to assign seizure samples to sectors.  Make a directory "fammatch" 
+in your main PREFIX directory (not nforest/nsavannah).  Make two subdirectories 
+within it for SCAT sector assignment runs:  "outdir_forest" and "outdir_savannah".  
+For each species present in your seizure do a SCAT run (in the main PREFIX 
+directory) with the following run command:
 
-./SCAT -Z -H2 ../PREFIX_[species]_plus_ref.txt ../zones_species.txt outdir_[species] 16
+./SCAT -Z -H2 ../PREFIX_[species]_plus_ref.txt ../zones_[species].txt outdir_[species] 16
 
 This will compute sector (previously called "subregion") probabilities for all 
 reference and seizure samples.  The seizure samples will be classified into 
@@ -424,24 +461,20 @@ sectors based on these probabilities:  the reference samples will instead be
 classified based on their sector in the regionfile, but must be included here
 to establish the sector allele frequencies.  It runs in minutes.
 
-2)  Obtain make_fammatch_incremental.py from the ivory_pipeline /src
-directory.  Check to make sure it has the correct value for the
-nsub variable (number of sectors, currently 6).  Run this
-program for each species for which you have samples, using the following
-arguments:
+3)  Set up familial matching.  Return to the root directory of all seizures and run
+prep_fammatch.py with the following arguments:  PREFIX,
+zone file prefix, zone file path.  This prepares the familial matching
+directories for running.
 
-PREFIX
-outdir_[species]
-path to familial matching input archive (currently ~/data/fammatch_input
-   on Mary's laptop)
-regionfile_[species]
+TO DO:  prep_fammatch.py should use ivory_paths rather than taking these
+arguments.
 
-This will create subdirectories for each sector that has samples
-in the seizure.  It will also add the samples from the new seizure to
-the archive for further use.  (Therefore, if you are running on a 
-copy of the archive, you will need to update the original.  This can
-be done by finding all files in the archive that begin with PREFIX
-and adding them to the canonical archive, in the proper subdirectories.)  
+4)  Run familial matching.  Still in the root directory of all seizures,
+run run_fammatch.py with the following arguments:  PREFIX, ivory_paths.tsv.
+This can take hours if many previous seizures are available.  It is written
+in an inefficient but safe way to run only one sector at a time; it could
+be speeded up (for seizures with samples from many sectors) by parallelizing
+this.
 
 One unusual case can occur:  If there is exactly one
 sample for a particular sector in this seizure, and no samples for
@@ -451,44 +484,16 @@ subdirectory for that sector (and absence of some of the run files).
 The sample will be archived as usual and will participate in subsequent
 familial matching.
 
-This program also writes run files for familial matching into each
-sector directory, called "runrscript.sh".
-
-Nothing below this point separates the species (as samples have been
-divided into sectors, and the species information is implicit in the
-sector).
-
-3)  Place copies of calculate_LRs.R and LR_functions.R in each
-sector directory.
-
-4)  In each sector directory, source runrscript.sh (no arguments).
-This will contain a run command of the form:
-
-Rscript calculate_LRs.R [species] refN_fammatch.csv oldN.txt newN.txt
-
-Runtime depends on the size of the seizure but usually not more than
-a few hours and often much less.  These runs do not interact so you
-can run all sectors at the same time (as the script does).
+5)  Update the log of familial-matched seizures.  This is in the same
+directory as the archive and is called "seizurelist.tsv".  Simply
+add PREFIX, on its own line, to the end.
 
 
 ***I)  Postprocess familial matching
 
-1)  Obtain the file seizure_metadata_[DBno].tsv (this is not kept
-on the Github site; ask Mary Kuhner for a copy).  Make a COPY of this
-file and run update_metadata.py on the copy (this program changes its
-input file in place!)  The three arguments are the metadata (copy) file,
-PREFIX, and the official name of your new seizure; the program
-expects to be run in directory PREFIX.
+TO DO:  write a single-seizure interim report.
 
-Check that the results are sensible (your new seizure should be at
-the bottom of the file) before overwriting the original.  If you have 
-changed [DBno] be sure to change the name of this file.  Return the
-modified file to Mary for archiving.
-
-This step can be run on an already processed seizure to change its name
-in the metadata file.  
-
-2) OPTIONAL.  To simply view the results of familial matching on your new 
+1) OPTIONAL.  To simply view the results of familial matching on your new 
 seizure, you can run Charles' Python scripts in each sector directory for
 which you had samples in your seizure.  These are found in the /src directory.
 If no matches are found, there is no point continuing with network analysis.
@@ -520,7 +525,7 @@ present in src if you find a use for it.)
 
 The remaining steps are for a full, formal familial matching analysis.
 
-3)  Obtain or create a seizure_modifications file.  This file contains
+2)  Obtain or create a seizure_modifications file.  This file contains
 information on any seizures to be excluded from analysis or merged
 together.  A copy of the current version, seizure_modifications_nature,
 is in the /aux directory.  It reflects the seizure changes
@@ -529,71 +534,93 @@ made for the paper submitted to Nature Human Behavior in May 2021.
 This file has two sections.  The first is introduced with REJECT
 on a line by itself and lists seizures to be rejected, one per line.
 The second is introduced with MERGE on a line by itself and
-introduces tab-separated lists of seizure names.  The first name will
+contains tab-separated lists of seizure names.  The first name will
 be used as the name of the merged seizure, and the remainder will be
-merged.  Note that you can use this to rename a seizure by giving
-two entries, the first being the new name and the second the old
+renamed to that name.  Note that you can use this to rename a seizure 
+by giving two entries, the first being the new name and the second the old
 name.
 
-It is likely that if you change this file at all, except as it pertains
-to the new seizure you are running, you will have to rerun the
-entire familial matching analysis as described in familial_pipeline.txt.
-You *may* be able to reject more seizures than were rejected when your
-previous familial matching runs were done, though this is not tested;
-similarly, you may be able to rename old seizures.  You certainly 
-cannot reject fewer old seizures or merge old seizures with each other 
-or with the new ones.
+If you do not want to reject or merge any seizures, the file can consist
+of just the two lines REJECT and MERGE.
 
-4)  Obtain results of previous familial matching.  They will take the form of 
-files named obsLRs_[species]_N.txt, where N is the sector number.  These are
-archived by Mary.  Place them in the directory which contains your sector
-directories sub0, sub1 etc.
+TO DO:  Does the pipeline correctly handle matches between seizures which
+are now being merged?
 
-Obtain a file of false-positive results from simulated data, called fprates.tsv;
-a copy is in /aux.  If the sectoring scheme is changed, these will
-need to be regenerated.
+3)  Obtain a file of false-positive rates from simulated data, called
+fprates.tsv; the current version is in ivory_pipeline/aux.  If the sectoring
+scheme is changed these will need to be regenerated.
 
 TO DO:  document simulation pipeline used to make these false-positive rates.
 
 Obtain a copy of the canonical list of direct (exact) matches, called dms.tsv.
 This is not kept on Github; ask Mary for a copy.  This file is used because we 
 recognize as direct matches some imperfect matches which have been detected by
-allelic-dropout-aware code such as CERVUS, whereas allowing for imperfect
-matches in the familial matching code would make it too slow.
+allelic-dropout-aware code such as CERVUS.  We do not currently allow for 
+imperfect matches in the familial matching code for speed reasons.
 
-5)  Run consolidate_fammatch.py to merge old and new results.
+4)  The next steps cannot currently be run individually by hand as essential
+code exists only in the main scripts.  Also, the main script manages
+critical backups to prevent database corruption.  Therefore, the next
+step is to run phase4.py with the following inputs:
 
-6)  Run create_network_input.py to calculate weighted matches between seizures.
-Its arguments are:
+ivory_paths.tsv
+dms.tsv
+LR_cutoff (we normally use 2.0)
+minloci (minimum loci in a valid comparison; we normally use 13)
 
-seizure_metadata.txt
-dmfile.tsv
-seizure_modifications
-log(LR) cutoff (standard is 2.0)
-minimum typed loci in common (standard is 13)
+5)  Prepare a seizure numbering file that gives numbers for all the
+seizures you will use, and also gives the country code of the port of origin 
+for each seizure (if port is not known, code as UNK).  The easiest way
+to do this is to add your seizure at the end of the current 
+seizure_numbering_[date].tsv file found in ivory_pipeline/aux, with a
+placeholder for the seizure number and the correct port.  Then run
+number_seizures.py with arguments of the current seizure numbering
+file and the desired new seizure numbering file.  This will renumber the
+seizures as needed to make them chronological. 
 
-The program also silently reads fprates.tsv, which must be in its run directory;
-and it contains hardcoded path names for the obsLRs files (see line 63 and following)
-which will have to be changed if you use a different directory setup.
+NB:  This program assumes that all seizure names are of the form
+CCC_MM_YY_n.nt, possibly followed by an additional letter.  If your
+seizure is not named in that way, you will have to update seizure_numbering
+by hand. 
 
-It writes seizure_nodes.csv and seizure_edges.csv, which contain the weighted
-matches between each pair of seizures.  It also writes two matrices of counts
-between pairs of seizures, broken out by forest and savannah, into a single
-file named "ryanfile" used by Ryan's graphical software.
+NB:  The chronological numbering assumes that seizure years are either
+1950-1999 or 2000-2049, because the seizure names use 2 digit years.
+If you have a seizure prior to 1950, you will have to renumber by hand.
+There are no such seizures in the database as of 4/21/22 but one could
+conceivably be assembled from museum specimens.
 
-If you simply want to know about all weighted matches involving the new seizure,
-grep for its name in seizure_edges.csv.
+5)  To cluster seizures and make a network diagram, run draw_network.py
+with the following arguments:
 
-If this program fails with a KeyError message, there is a sample ID in your
-familial matching results which is not in your seizure_metadata file.  Did
-you forget to update this file?  Is it a sample which was supposed to be
-deleted, but was not?
+minlink (minimum weight of a link to be drawn; our default is 1.0)
+ivory_paths.tsv
+seizure_numbering.tsv
+"None"
 
-7)  To infer a Louvain network and make a graphic of it, run the Python program
-infer_louvain_network.py.  Arguments are:
+The final argument is a layout file (typically called layout.pkl) which
+allows you to re-use a nice layout from a previous attempt.  However, if
+any seizures have been added or removed this is not possible and you
+must pass None.
 
-minlink -- connections with weight below this are dropped.  Was 1.0 in paper.
-seizure_modifications
+This program is interactive.  It will display the Louvain clustering
+network, colored by clustering partition, which is generally hideous in its 
+default form as nodes will overlay each other; use the mouse to rearrange 
+the nodes.  Your rearrangements will be incorporated into the graphics
+files written by the program.
 
-There are fancier versions of this program which pull in forensic data, Ryan's
-data, etc. but this is the basic version.
+It will then write five files.  Four are images of the network:
+
+network_graph_partition.svg -- colored by partition, edges shown
+network_graph_partition_nolines.svg -- colored by partition, edges not shown
+network_graph_port.svg -- colored by port, edges shown
+network_graph_port_nolines.svg -- colored by port, edges not shown
+
+(Ryan uses the no-edges version to prepare graphics for publication.)
+
+The fifth file is a layout file, "new_layoutfile.pkl", which will reproduce
+the spatial layout of the nodes.  It does not contain information about
+colors or line thicknesses.  If you decide you don't like the
+current layout, rerunning using this as the layout file and then
+rearranging further by mouse is helpful.  Note that if you do not use a
+layout file, the visual output of this program is highly stochastic and
+will never be the same twice.
