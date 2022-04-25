@@ -110,8 +110,6 @@ seizure_data_dir        directory where raw seizure data is kept
 structure_executable    path and filename of the Structure executable
 fammatch_archive_dir    path to familial matching input file archive
 
-TO DO:  get rid of metadata_prefix as this file can be found in fammatch_archive_dir.
-
 ***B)  Obtain the reference data.
 
 If you already have SCAT-style formatted reference data and the 
@@ -236,7 +234,16 @@ it is a hybrid.  Information is identical between .csv and .txt.
 Please note that EBhybrids estimates the probability that a sample is
 a hybrid, NOT the proportion of its genome that comes from a given species.
 
-TO DO:  integrate the hybrid report program here
+5)  OPTIONAL:  You can now generate a short report on how many forest,
+savannah, and hybrid individuals were found, and the hybrid probabilities
+of the putative hybrids.  This is often useful in writing up a seizure.
+To do this, run makehybridreport.py with arguments of the EBhybrids
+output file PREFIX_hybt.txt and the desired hybrid cutoff (normally 0.5).
+This will write its report to PREFIX_hybout.txt.  This file is not used
+downstream in the pipeline.
+
+TO DO:  Currently this program gets both seizure and reference individuals.
+Fix it so it doesn't.  (First, ask Jon if he already did.)
 
 ***E) Running SCAT
 
@@ -306,9 +313,9 @@ screen.  Make sure this cutoff is what you want.
 This program uses PREFIX_hybt.txt to sort the samples into, maximally, a 
 forest and a savannah SCAT input file, called PREFIX_[species].txt;
 if there are no unknown individuals from a species, that file will not be 
-written.  It silently discards individuals called as hybrids. 
-
-TO DO:  Is it still "silently"?
+written.  It silently discards individuals called as hybrids.  You can
+find out which individuals were discarded by examining PREFIX_hybout.txt,
+if you ran the optional step D5 (hybrid report).
 
 Outputs:
 
@@ -409,10 +416,6 @@ This writes several types of files into directory PREFIX_reports:
 -- scat_summary_squares.jpg (SCAT results as grid square of highest count)
 -- voronoi_sumary.jpg (VORONOI results as grid square of highest posterior)
 -- PREFIX_point_estimates.tsv (best estimates for each sample)
-
-TO DO:  make this program work if there are no VORONOI results, for
-example because there was only 1 sample.  plot_scat.py used to do 
-this but would need extensive rewriting; better to make plot_scat_vor.py do it.
 
 TO DO:  write a note on how to install Cartopy:  it's tricky.
 

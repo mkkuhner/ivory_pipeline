@@ -133,6 +133,16 @@ command = ["Rscript","ebscript.R"]
 run_and_report(command,"Failure in EBhybrids")
 print("EBhybrids run completed")
 
+# generate report on hybrids
+hybrid_reportfile = prefix + "_hybout.txt"
+ebhyrbid_output = prefix + "_hybt.txt"
+hybrid_cutoff = 0.5
+command = ["rm","-rf",hybrid_reportfile]
+run_and_report(command,"Could not delete previous hybrid report")
+command = ["python3",ivory_dir + "src/makehybridreport.py",
+  ebhybrid_output,hybrid_cutoff]
+run_and_report(command,"Could not generate hybrid report")
+
 # prep files for filter_hybrids
 for species in specieslist:
   mapfile = map_path + map_prefix + "_" + species + ".txt"
