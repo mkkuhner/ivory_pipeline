@@ -15,17 +15,35 @@
 import sys
 import os
 
-if len(sys.argv) != 4:
-  print("USAGE:  prep_fammatch.py PREFIX zonefileprefix dirwithzonefiles")
+#######################################################################
+# functions
+
+def readivorypath(pathsfile):
+  ivorypaths = {}
+  inlines = open(pathsfile,"r").readlines()
+  for line in inlines:
+    pline = line.rstrip().split("\t")
+    ivorypaths[pline[0]] = pline[1:]
+  return ivorypaths
+
+#######################################################################
+# main program
+
+if len(sys.argv) != 3:
+  print("USAGE:  prep_fammatch.py PREFIX ivory_paths.tsv")
   exit(-1)
 
 # FIX HARDCODE HERE
 nsec = 6
 prefix = sys.argv[1]
-zoneprefix = sys.argv[2]
-dirwithzonefiles = sys.argv[3]
-if not dirwithzonefiles.endswith("/"):
-  dirwithzonefiles += "/"
+pathsfile = sys.argv[2]
+pathdir = readivorypaths(pathsfile)
+zones_path, zones_prefix = pathdir["zones_prefix"]
+
+zones_prefix = sys.argv[2]
+zones_path = sys.argv[3]
+if not zones_path.endswith("/"):
+  zones_path += "/"
 famdir = prefix + "/fammatch/"
 
 # determine which species are wanted
@@ -48,7 +66,7 @@ for species in specieslist:
     sectors_wanted = [2,3,4,5]
 
   # set up input files based on species
-  zonefile = dirwithzonefiles + zoneprefix + "_" + species + ".txt"
+  zonefile = zones_path + zones_prefix + "_" + species + ".txt"
   hybfile = prefix + "/fammatch/outdir_" + species + "/Output_hybrid"
   genofile = prefix + "/" + prefix + "_" + species + ".txt"
 

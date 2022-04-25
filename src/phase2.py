@@ -2,10 +2,17 @@
 # VORONOI, and prepares reports and images
 # meant to be run in the parent directory of all seizures
 
+# If there are fewer than minimum_samples in this seizure/species
+# combination, VORONOI will not be run; it is unreliable in such
+# cases.
+
 import sys
 import os
 import subprocess
 from subprocess import Popen, PIPE
+
+# minimum number of samples needed to run VORONOI
+minimum_samples = 10
 
 
 ############################################################################
@@ -60,9 +67,17 @@ for species in specieslist:
   dirname = "n" + species
   if os.path.isdir(dirname):
     os.chdir(dirname)
+    
     setuppath = ivory_dir + "src/setupvoronoi.py"
     command = ["python3",setuppath,prefix,species,pathsfile]
     run_and_report(command,"Failure in setupvoronoi.py")
+
+    # count the samples, bail if fewer than minimum_samples
+    namefile = prefix + "_names.txt"
+    namelines = open(namefile,"r").readlines()
+    if len(namelines) < minimum_samples:
+      print("Only ",len(namelines),"samples available for",species,"so VORONOI not run")
+      continue
 
     print("About to run VORONOI:  be patient with this step")
     command = ["/bin/bash","voronoi_runfile_" + species + ".sh"]

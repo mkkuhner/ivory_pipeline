@@ -2,13 +2,13 @@
 import sys
 
 if len(sys.argv) != 3:
-  print("USAGE: python makehybridreport.py ebhybrids_outfile hybrid_cutoff")
-  print("  ebhybrids_outfile must be of the form PREFIX_hybt.txt")
+  print("USAGE: python makehybridreport.py prefix hybrid_cutoff")
+  print("  uses the file prefix_hybt.txt as input")
   exit(-1)
 
-ebfile = sys.argv[1]
+prefix = sys.argv[1]
+ebfile = prefix + "_hybt.txt"
 cutoff = float(sys.argv[2])
-prefix = ebfile.split("_hybt.txt")[0]
 hyboutname = prefix + "_hybout.txt"
 
 savcount = 0
@@ -21,12 +21,23 @@ if os.path.isfile(hyboutname):
   print("previous output detected. Move, Rename or Remove file",hyboutname,"\nNothing done")
   exit(-1)
 
+# read the _raw file and make a list of SIDs; we will use this to distinguish
+# seizure from reference data
+
+rawfile = prefix + "_raw.tsv"
+wanted_ids = []
+for line in open(rawfile,"r"):
+  if line.startswith("MatchID"):  continue
+  line = line.rstrip().split()
+  wanted_ids.append(line[0])
+
 # read ebhybrids
 speciesdict = {}
 for line in open(ebfile,"r"):
   if line.startswith("Sample"):  continue
   line = line.rstrip().split()
   id = line[0] 
+  if id not in wanted_ids:  continue
   savannah = float(line[1])
   forest = float(line[2])
   hybs = [float(x) for x in line[3:]]

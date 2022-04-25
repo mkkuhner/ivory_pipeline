@@ -140,7 +140,7 @@ hybrid_cutoff = 0.5
 command = ["rm","-rf",hybrid_reportfile]
 run_and_report(command,"Could not delete previous hybrid report")
 command = ["python3",ivory_dir + "src/makehybridreport.py",
-  ebhybrid_output,hybrid_cutoff]
+  prefix,hybrid_cutoff]
 run_and_report(command,"Could not generate hybrid report")
 
 # prep files for filter_hybrids

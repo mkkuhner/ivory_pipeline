@@ -242,9 +242,6 @@ output file PREFIX_hybt.txt and the desired hybrid cutoff (normally 0.5).
 This will write its report to PREFIX_hybout.txt.  This file is not used
 downstream in the pipeline.
 
-TO DO:  Currently this program gets both seizure and reference individuals.
-Fix it so it doesn't.  (First, ask Jon if he already did.)
-
 ***E) Running SCAT
 
 We do not recommend using the built-in species ranges in SCAT or
@@ -368,16 +365,13 @@ TO DO:  document running on the cluster.
 
 ***F)  Running VORONOI
 
+Currently we do not recommend running VORONOI unless there are at least
+10 samples available in a given species.  It is not reliable with 
+small numbers of samples. 
 Do not do this step unless there were at least 2 samples in the species
 under consideration:  running VORONOI on one sample is not useful.
 You will need to execute steps F and G once for each species present
 in the seizure.
-
-TO DO:  the script will run this even with one sample.  It seems harmless
-but there is a risk that the resulting VORONOI outputs will be used for
-something.  This should be blocked.
-
-TO DO:  VORONOI is actually bad with < 10 samples; adjust accordingly.
 
 1)  Obtain or prepare a masterfile consisting of 9 lines as follows (there
 is an example, called "masterfile", in the ivory_pipeline/aux directory):
@@ -469,9 +463,6 @@ prep_fammatch.py with the following arguments:  PREFIX,
 zone file prefix, zone file path.  This prepares the familial matching
 directories for running.
 
-TO DO:  prep_fammatch.py should use ivory_paths rather than taking these
-arguments.
-
 4)  Run familial matching.  Still in the root directory of all seizures,
 run run_fammatch.py with the following arguments:  PREFIX, ivory_paths.tsv.
 This can take hours if many previous seizures are available.  It is written
@@ -545,9 +536,6 @@ name.
 
 If you do not want to reject or merge any seizures, the file can consist
 of just the two lines REJECT and MERGE.
-
-TO DO:  Does the pipeline correctly handle matches between seizures which
-are now being merged?
 
 3)  Obtain a file of false-positive rates from simulated data, called
 fprates.tsv; the current version is in ivory_pipeline/aux.  If the sectoring

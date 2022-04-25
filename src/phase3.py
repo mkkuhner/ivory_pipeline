@@ -197,10 +197,9 @@ try:
   
   # run prep_fammatch.py
   os.chdir(startdir)     # return to root directory of all seizures
-  sector_metafile = arch_dir + "sector_metadata.txt"
   progname = ivory_dir + "src/prep_fammatch.py"
   command = ["python3",progname]
-  command += [prefix, zones_prefix, zones_path]
+  command += [prefix, pathsfile]
   run_and_report(command,"Failure in program " + progname)
   
   # run run_fammatch.py

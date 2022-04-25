@@ -196,6 +196,8 @@ for line in open(dmfile,"r"):
     sz1 = merged_seizures[sz1]
   if sz2 in merged_seizures:
     sz2 = merged_seizures[sz2]
+  if sz1 == sz2:  # after merges this is a within-seizure match, discard
+    continue
   spec = line[4]
   if spec == "F":  species = "forest"
   elif spec == "S":  species = "savannah"
@@ -232,9 +234,13 @@ for line in open(reportfile,"r"):
     continue
   # merged seizure
   if sz1 in merged_seizures:
+    sz1 = merged_seizures[sz1]
     line[sz1_index] = merged_seizures[sz1]
   if sz2 in merged_seizures:
+    sz2 = merged_seizures[sz2]
     line[sz2_index] = merged_seizures[sz2]
+  if sz1 == sz2:  # this is a within-seizure match now, discard
+    continue
   s1 = line[s1_index]
   s2 = line[s2_index]
   key = tuple(sorted([s1,s2]))
