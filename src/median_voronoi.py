@@ -87,13 +87,14 @@ def makemap_for_summaries(proj,minlat,maxlat,minlong,maxlong):
 
 import sys
 
-if len(sys.argv) != 4:
-  print("USAGE: python median_voronoi.py mapinfo samplenames vor_regions")
+if len(sys.argv) != 5:
+  print("USAGE: python median_voronoi.py mapinfo samplenames vor_regions point_estimates.tsv")
   exit(-1)
 
 mapinfofilename = sys.argv[1]
 samplenamesfilename = sys.argv[2]
 regionfilename = sys.argv[3]
+estimatesfilename = sts.argv[4]
 
 # read mapinfo file to set up the grid
 minlat,minlong,maxlat,maxlong,dim = read_mapinfo(mapinfofilename)
@@ -123,6 +124,16 @@ point_lats = []
 point_longs = []
 point_estimates = {}
 
+# read in point_estimates file to modify
+estlines = open(estimatesfilename,"r").readlines()
+sid2estline = {}
+for line in estlines[1:]:
+  pline = line.rstrip().split("\t")
+  sid = pline[0]
+  sid2estline[sid] = "\t".join(pline)
+
+estout = open(estimatesfilename,"w")
+
 for sid in sids:
   print("Processing",sid)
   scatfiles = [x + sid for x in scatpaths]
@@ -148,6 +159,11 @@ for sid in sids:
   point_lats.append(medlat)
   point_longs.append(medlong)
   print("Estimate for ",sid,medlat,medlong)
+  sid2estline[sid] += "\t"+str(medlat)+","+str(medlong)+"\n"
+
+estout.write(estlines[0].rstrip() + "\tVoronoi_median\n")
+for sid in sids:
+  estout.write(sid2estline[sid])
 
 # plot
 crs_lonlat = ccrs.PlateCarree()
