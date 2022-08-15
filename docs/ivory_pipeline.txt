@@ -98,9 +98,9 @@ the file (useful when there are several related files such as _forest and _savan
 
 Legal lines in the pathfile:
 
-ivory_pipeline_dir      path to the ivory_pipeline root directory
-scat_executable         path and filename of the SCAT executable
-voronoi_executable      path and filename of the VORONOI executable
+ivory_pipeline_dir	path to the ivory_pipeline root directory
+scat_dir	        path and filename of the SCAT executable
+voronoi_dir		path and filename of the VORONOI executable
 reference_prefix        path to the reference data files        prefix of these files
 zones_prefix            path to zones files                     prefix of these files
 metadata_prefix         path to seizure metadata                prefix of this file
@@ -247,7 +247,7 @@ downstream in the pipeline.
 We do not recommend using the built-in species ranges in SCAT or
 the old-style boundary file 316forestboundary.txt.   The programs will
 run, but the resulting boundaries are very poor (they include ocean and
-exclude valid habitat).  Use up-to-date mapfiles instead.
+exclude valid habitat).  Use up-to-date mapfiles instead.  
 
 1)  Make sure you have the following files:
 
@@ -549,7 +549,13 @@ recognize as direct matches some imperfect matches which have been detected by
 allelic-dropout-aware code such as CERVUS.  We do not currently allow for 
 imperfect matches in the familial matching code for speed reasons.
 
-4)  The next steps cannot currently be run individually by hand as essential
+4)  If your seizure has a novel port of origin, update the file
+ivory_pipeline/aux/portcolors.tsv.  This file lists ports by three letter
+country code followed by the fill color and text color in R,G,B format.
+Use contrasting colors for fill and text or the text will not be readable.  If
+you don't want to bother, copy the colors for UNK (unknown).
+
+5)  The next steps cannot currently be run individually by hand as essential
 code exists only in the main scripts.  Also, the main script manages
 critical backups to prevent database corruption.  Therefore, the next
 step is to run phase4.py with the following inputs:
@@ -566,8 +572,9 @@ to do this is to add your seizure at the end of the current
 seizure_numbering_[date].tsv file found in ivory_pipeline/aux, with a
 placeholder for the seizure number and the correct port.  Then run
 number_seizures.py with arguments of the current seizure numbering
-file and the desired new seizure numbering file.  This will renumber the
-seizures as needed to make them chronological. 
+file and the desired new seizure numbering filename 
+(seizure_numbering_[newdate].tsv).  This will renumber the seizures as 
+needed to make them chronological. 
 
 NB:  This program assumes that all seizure names are of the form
 CCC_MM_YY_n.nt, possibly followed by an additional letter.  If your
@@ -613,5 +620,5 @@ the spatial layout of the nodes.  It does not contain information about
 colors or line thicknesses.  If you decide you don't like the
 current layout, rerunning using this as the layout file and then
 rearranging further by mouse is helpful.  Note that if you do not use a
-layout file, the visual output of this program is highly stochastic and
-will never be the same twice.
+layout file, the visual output of this program will vary hugely from run
+to run.

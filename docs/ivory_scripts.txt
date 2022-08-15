@@ -91,9 +91,10 @@ If you do not have these files, steps to prepare them are in
 
 4)  Prepare a pathnames file.
 
-This file must be named "ivory_paths.tsv" and must be placed in the
-parent directory of your seizure runs.  It gives pathname information to find
-all necessary files for the run.  Lines within this file can be in any
+This is a .tsv file (we generally name it ivory_paths.tsv, and it
+will be called that throughout this documentation, but other names
+are legal) which tells the pipeline where to look for all of
+its essential information.  Lines within this file can be in any
 order; entries within the same line must be in order and must be separated
 with tabs, not spaces.  Directory names should end in "/".
 
@@ -111,8 +112,8 @@ related files such as _forest and _savannah variants).
 Lines in this file are as follows:
 
 ivory_pipeline_dir	path to the ivory_pipeline root directory	
-scat_executable		path and filename of the SCAT executable
-voronoi_executable	path and filename of the VORONOI executable
+scat_dir		path and filename of the SCAT executable
+voronoi_dir		path and filename of the VORONOI executable
 reference_prefix	path to the reference data files	prefix of these files
 zones_prefix		path to zones files			prefix of these files
 metadata_prefix		path to seizure metadata		prefix of this file
@@ -138,23 +139,44 @@ delimiter to tab rather than comma, and then changing the name of the
 resulting file.  Name this file PREFIX_raw.tsv and place it in the directory
 you have indicated (in ivory_paths.tsv) as containing seizure data files.
 
+The first entry in the data file header seems to vary.  Code expects it to
+be "MatchID" (not "Sample" or anything else) and this may need to be
+corrected by hand before proceeding.
+
 ***C)  Data preparation and SCAT run setup
 
 The Python program "phase1.py" begins with raw seizure data.  It validates
 the data, classifies it by species, removes hybrids, and prepares the data
 for SCAT.  It also sets up directories and runfiles for running SCAT.
 
-Because the user may want to run SCAT on the cluster, this program does 
-not actually start the SCAT runs; this must be done by hand.
+Because the user may want to run SCAT on the cluster or to run it in 
+multiple windows and monitor its progress, this program does not actually 
+start the SCAT runs; this must be done by hand.
 
-The phase1.py program takes PREFIX as its first argument and either "laptop"
-or "cluster" as its second.  Use "laptop" for running on your own machine
-(whether it is actually a laptop or not) and "cluster" for running on the
-Biology HYAK cluster using SLURM.  Note that if you plan to use the cluster for
-your SCAT runs, you will run phase1.py on your own machine and then
-transfer the resulting SCAT run directories to the cluster for execution.
-(We have not tested steps other than SCAT on the cluster and they are not
-likely to work there without modification.)
+NB:  If you are running the pipeline on multiple seizures, it is important that
+they all use exactly the same reference data so that the results are strictly
+comparable.  If each seizure chooses its own reference data, stochastic 
+processes may cause them to differ slightly.  The phase1.py program offers an
+option to use "canned" reference data from previous runs.  You should
+always used canned references except on the very first runs with a new
+reference data set or new hybrid cutoff.  (Starting with seizure AGO_06-18_1.1t 
+fortuitously creates both savannah and forest reference.)
+
+The phase1.py program takes the following arguments:
+-- PREFIX
+-- "laptop" or "cluster"
+-- "new" or "canned"
+-- ivory_paths.tsv
+
+Use "laptop" for running on your own machine (whether it is actually a laptop 
+or not) and "cluster" for running on the Biology HYAK cluster using SLURM.  Note 
+that if you plan to use the cluster for your SCAT runs, you will run phase1.py 
+on your own machine and then transfer the resulting SCAT run directories to the 
+cluster for execution.  (We have not tested steps other than SCAT on the cluster
+ and they are not likely to work there without modification.)
+
+Use "new" if this is the first seizure to be run with new reference data
+or a new hybrid cutoff, and "canned" otherwise.
 
 Programs run by phase1.py check for unexpected microsatellite alleles and
 for duplicate samples.  The program will terminate with an error message if
@@ -185,37 +207,38 @@ TO DO:  document running on the cluster.
 
 ***E)  Running VORONOI
 
-The script phase2.py sets up and runs VORONOI.  It should be run in the 
-parent directory of all seizures, and expects to find ivory_paths.tsv in 
-that directory.  It takes PREFIX as its argument. 
+The script phase2.py sets up and runs VORONOI and plots the SCAT and
+VORONOI results.  It should be run in the parent directory of all seizures, 
+and takes PREFIX and ivory_paths.tsv as its arguments. 
 
-This script sets up the VORONOI run, executes it, and creates plots of
-the results.  VORONOI outputs will be found in /nforest and/or /nsavannah.
+NB:  If there are fewer than 10 samples for a given species, phase2.py will not
+run VORONOI as it is unreliable on such data.  Even if you know this is the case
+in advance, run phase2.py to get plots and summaries of the SCAT results.
+
+VORONOI outputs will be found in /nforest and/or /nsavannah.
 Plots will be found in a subdirectory of /nforest and/or /nsavannah called
-PREFIX_reports.  Each sample will have a SCAT heatmap and a VORONOI
-heatmap.  There will also be three summary files as follows:
+PREFIX_reports.  Each sample will have a SCAT heatmap and, if VORONOI was
+run, a VORONOI heatmap.  There will also be four summary files as follows:
 
 scat_summary_medians.png  -- SCAT results summarized as median latitude and longitude
 scat_summary_squares.png  -- SCAT results summarized as maximal 1-degree square
 voronoi_summary.png       -- VORONOI results summarized as maximal 1-degree square
-
-Finally, there will be a file called PREFIX_point_estimates.tsv, which gives
-the same information as the three summary files, but in textual form.
+PREFIX_point_estimates.tsv -- table of point estimates corresponding to the above
 
 TO DO:  write a note on how to install Cartopy:  it's tricky.
 
 
-***F)  Run familial matching on the new seizure
+***F)  Run familial matching 
 
 This document explains how to do familial matching of a new seizure when
 all previous seizures have already been run and archived.  See the end of this
 section for other possibilities.
 
 Familial matching is run by the script phase3.py.  It should be run in the
-parent directory of all seizures, and takes PREFIX as its argument.
-Inefficiently, it does the familial matching R script runs one at a time.
-They could all be run at once safely, but downstream code must not execute
-until they have all completed, and I have not figured out how to code that.
+parent directory of all seizures, and takes PREFIX and ivory_paths.tsv as arguments.
+It does the familial matching R script runs one at a time; they could all be run 
+at once safely, but downstream code must not execute until they have all completed, 
+and I have not figured out how to code that.
 
 At the end of this program, there will exist a "fammatch" directory in
 seizure directory PREFIX, with up to 6 subdirectories called "subN".
@@ -245,7 +268,7 @@ of origin are stored in the ivory pipeline directory in /aux/port_colors.tsv.  I
 your data involves ports not in this list, you will need to assign colors for them.  
 The first column of numbers is R,G,B for the diagram node, and the second column is 
 R,G,B for the text inside that node; these should be contrasting colors (i.e. don't 
-use black text on a navy blue node).  If you don't want to bother, copy the colors 
+use black text on a dark blue node).  If you don't want to bother, copy the colors 
 for UNK (unknown).
 
 2)  If you have added any seizures since last time this was run, you will need
@@ -257,9 +280,11 @@ format:  official seizure name (underscore version), tab, "X", tab, port abbrevi
 Use "UNK" if the origin port is unknown.  Then run program number_seizures.py,
 found in ivory_pipeline/src, with your new seizure numbering file as both the first
 and the second arguments.  This will renumber the seizures in chronological order.
-(NOTE that the official seizure name should be XXX_mm_yy_X.Xt; any other format will
-either crash or be renumbered incorrectly as the seizure date has to be deduced
-from the name.)
+(NOTE that the official seizure name should be XXX_mm_yy_X.Xt with optional A or
+B suffix; other formats will either fail to run or be renumbered incorrectly as 
+the seizure date has to be deduced from the seizure name.)
+
+3)  Run phase4.py in the root directory of all seizures.  It takes the
+following arguments:
 
 
-2)  Run phase4.py in the root directory of all seizures.  

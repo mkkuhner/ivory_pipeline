@@ -45,13 +45,13 @@ pathsfile = sys.argv[2]
 seizuredir = os.path.abspath(prefix)
 
 pathinfo = readivorypath(pathsfile)
-ivory_dir = pathinfo["ivory_pipeline_dir"]
-scat_dir, scat_exe = pathdir["scat_executable"]
-vor_dir, vor_exe = pathdir["voronoi_executable"]
-reference_path, reference_prefix = pathdir["reference_prefix"]
-zones_path, zones_prefix = pathdir["zones_prefix"]
-map_path, map_prefix = pathdir["map_prefix"]
-seizure_data_dir = pathdir["seizure_data_dir"][0]
+ivory_dir = pathinfo["ivory_pipeline_dir"][0]
+scat_dir, scat_exe = pathinfo["scat_executable"]
+vor_dir, vor_exe = pathinfo["voronoi_executable"]
+reference_path, reference_prefix = pathinfo["reference_prefix"]
+zones_path, zones_prefix = pathinfo["zones_prefix"]
+map_path, map_prefix = pathinfo["map_prefix"]
+seizure_data_dir = pathinfo["seizure_data_dir"][0]
 
 outfile = open(seizuredir + "/" + prefix + "_logfile.txt","w")
 
@@ -80,7 +80,7 @@ outfile.write(outline)
 code = get_github_code(vor_dir)
 outline = "VORONOI GitHub version: " + code + "\n"
 outfile.write(outline)
-outline = "VORONOI executable: " + vor_dir + vor_exe "\n\n"
+outline = "VORONOI executable: " + vor_dir + vor_exe + "\n\n"
 outfile.write(outline)
 
 # working directories

@@ -37,11 +37,9 @@ if len(sys.argv) != 3:
 nsec = 6
 prefix = sys.argv[1]
 pathsfile = sys.argv[2]
-pathdir = readivorypaths(pathsfile)
+pathdir = readivorypath(pathsfile)
 zones_path, zones_prefix = pathdir["zones_prefix"]
 
-zones_prefix = sys.argv[2]
-zones_path = sys.argv[3]
 if not zones_path.endswith("/"):
   zones_path += "/"
 famdir = prefix + "/fammatch/"

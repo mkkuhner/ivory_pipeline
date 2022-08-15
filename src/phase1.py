@@ -70,7 +70,7 @@ seizuredir = prefix + "/"
 # set up needed variables
 pathdir = readivorypath(pathsfile)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
-scat_dir, scat_exec = pathdir["scat_dir"]
+scat_dir, scat_exec = pathdir["scat_executable"]
 reference_path, reference_prefix = pathdir["reference_prefix"]
 zones_path, zones_prefix = pathdir["zones_prefix"]
 map_path, map_prefix = pathdir["map_prefix"]
@@ -136,11 +136,12 @@ print("EBhybrids run completed")
 # generate report on hybrids
 hybrid_reportfile = prefix + "_hybout.txt"
 ebhyrbid_output = prefix + "_hybt.txt"
-hybrid_cutoff = 0.5
+hybrid_cutoff = 0.95
 command = ["rm","-rf",hybrid_reportfile]
 run_and_report(command,"Could not delete previous hybrid report")
 command = ["python3",ivory_dir + "src/makehybridreport.py",
-  prefix,hybrid_cutoff]
+  prefix,str(hybrid_cutoff)]
+print(command)
 run_and_report(command,"Could not generate hybrid report")
 
 # prep files for filter_hybrids

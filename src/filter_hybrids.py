@@ -58,7 +58,7 @@ def make_runfiles(clusterrun,species,prefix,seizelines,mapfile,regionfile):
     runline = runlines[0]
     datafile = "../../" + datafile
   assert is_even(len(seizelines))
-  runline = runline.replace("SCAT",scat_exec)
+  runline = runline.replace("SCAT",scat_execpath)
   numind = len(seizelines) / 2
   runline = runline.replace("NUMIND",str(numind))
   # we do NOT replace SEED; that will be done downstream, as each
@@ -101,7 +101,8 @@ ebfile = prefix+"_hybt.txt"
 ifile = "../ivory_paths.tsv"
 pathdir = readivorypath(ifile)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
-scat_exec = pathdir["scat_executable"][0]
+scat_dir, scat_exec = pathdir["scat_executable"]
+scat_execpath = scat_dir + scat_exec
 reference_path, reference_prefix = pathdir["reference_prefix"]
 zones_path, zones_prefix = pathdir["zones_prefix"]
 zones_savannah = zones_path + zones_prefix + "_savannah.txt"

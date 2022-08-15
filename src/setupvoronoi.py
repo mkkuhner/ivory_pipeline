@@ -32,7 +32,8 @@ pathfile = sys.argv[3]
 ivorypaths = readivorypath(pathfile)
 
 ivorydir = ivorypaths["ivory_pipeline_dir"][0]
-vor_exe = ivorypaths["voronoi_executable"][0]
+vor_dir, vor_exe = ivorypaths["voronoi_executable"]
+vor_exe = vor_dir + vor_exe
 map_dir, map_prefix = ivorypaths["map_prefix"]
 
 masterfile = ivorydir + "aux/master_voronoi_runfile.sh"

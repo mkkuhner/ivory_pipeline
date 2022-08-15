@@ -50,26 +50,6 @@ def read_scat(sfiles):
       data.append(latlong)
   return data
 
-# this routine collects SCAT results for *one* sample
-#def read_scat(sfiles,gridsize,minlat,maxlat,minlong,maxlong):
-#  # this code accumulates over all 9 SCAT files for one sample
-#  gridcounts = [[0 for x in range(0,gridsize)] for x in range(0,gridsize)]
-#  lats = []
-#  longs = []
-#  for file in sfiles:
-#    lines = open(file,"r").readlines()
-#    for line in lines[99:]:  # skip burnin!
-#      line = line.rstrip().split()
-#      mylat = float(line[0])
-#      mylong = float(line[1])
-#      gridlat, gridlong = latlong_to_grid(mylat,mylong,minlat,maxlat,minlong,maxlong)
-#      gridcounts[gridlat][gridlong] += 1
-#      lats.append(mylat)
-#      longs.append(mylong)
-#  medlat = statistics.median(lats)
-#  medlong = statistics.median(longs)
-#  return gridcounts,medlat,medlong
-
 # use this map for plotting point estimates
 def makemap_for_summaries(proj,minlat,maxlat,minlong,maxlong):
   m = plt.axes(projection=proj)
@@ -87,14 +67,16 @@ def makemap_for_summaries(proj,minlat,maxlat,minlong,maxlong):
 
 import sys
 
-if len(sys.argv) != 5:
-  print("USAGE: python median_voronoi.py mapinfo samplenames vor_regions point_estimates.tsv")
+if len(sys.argv) != 2:
+  print("USAGE: python median_voronoi.py prefix")
   exit(-1)
 
-mapinfofilename = sys.argv[1]
-samplenamesfilename = sys.argv[2]
-regionfilename = sys.argv[3]
-estimatesfilename = sts.argv[4]
+prefix = sys.argv[1]
+mapinfofilename = prefix + "_mapinfo"
+samplenamesfilename = prefix + "_names.txt"
+regionfilename = prefix + "_regions"
+reportdir = prefix + "_reports/"
+estimatesfilename = reportdir + prefix + "_point_estimates.tsv" 
 
 # read mapinfo file to set up the grid
 minlat,minlong,maxlat,maxlong,dim = read_mapinfo(mapinfofilename)
@@ -168,10 +150,13 @@ for sid in sids:
 # plot
 crs_lonlat = ccrs.PlateCarree()
 plt.figure(0)
+myred = [255,0,0,0.5]
 # DEBUG this should be communicated somehow, not hardcoded
 border = 7
 m = makemap_for_summaries(crs_lonlat,minlat+border,maxlat-border,minlong+border,maxlong-border)
 for x,y in zip(point_lats,point_longs):
-  m.plot(y,x,"r.",transform=crs_lonlat)
-  plt.title("Voronoi summary")
-  plt.savefig("voronoi_summary.png")
+  m.plot(y,x,"r.",transform=crs_lonlat,markeredgecolor="k",markersize=10, markerfacecolor=myred)
+
+plt.title(prefix + ": Voronoi median lat/long")
+plt.savefig(prefix + "_voronoi_summary_median.png")
+

@@ -18,9 +18,6 @@ minimum_samples = 10
 ############################################################################
 ## functions
 
-# assumes a file "ivory_paths.tsv" exists in the same directory as the 
-# calling function
-
 def readivorypath(pathsfile):
   ivorypaths = {}
   inlines = open(pathsfile,"r").readlines()
@@ -48,6 +45,7 @@ if len(sys.argv) != 3:
 
 prefix = sys.argv[1]
 pathsfile = sys.argv[2]
+pathsfile = os.path.abspath(pathsfile)
 seizuredir = prefix + "/"
 
 # read ivory_paths.tsv file
@@ -75,13 +73,12 @@ for species in specieslist:
     # count the samples, bail if fewer than minimum_samples
     namefile = prefix + "_names.txt"
     namelines = open(namefile,"r").readlines()
-    if len(namelines) < minimum_samples:
+    if len(namelines) >=minimum_samples:
+      print("About to run VORONOI:  be patient with this step")
+      command = ["/bin/bash","voronoi_runfile_" + species + ".sh"]
+      run_and_report(command,"Could not run VORONOI")
+    else:
       print("Only ",len(namelines),"samples available for",species,"so VORONOI not run")
-      continue
-
-    print("About to run VORONOI:  be patient with this step")
-    command = ["/bin/bash","voronoi_runfile_" + species + ".sh"]
-    run_and_report(command,"Could not run VORONOI")
 
     reportdir = prefix + "_reports"
     if not os.path.isdir(reportdir):
@@ -89,7 +86,7 @@ for species in specieslist:
       run_and_report(command,"Could not create directory" + reportdir)
 
     plotname = ivory_dir + "src/plot_scat_vor.py"
-    command = ["python3",plotname,prefix]
+    command = ["python3",plotname,pathsfile,prefix]
     run_and_report(command,"Failure in" + plotname)
     
     print("Completed",species,"run")

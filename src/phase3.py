@@ -113,7 +113,8 @@ startdir = os.getcwd() + "/"
 pathdir = readivorypath(pathsfile)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
 zones_path, zones_prefix = pathdir["zones_prefix"]
-scat_exec = pathdir["scat_executable"][0]
+scat_dir, scat_exe = pathdir["scat_executable"]
+scat_exe = scat_dir + scat_exe
 arch_dir = pathdir["fammatch_archive_dir"][0]
 meta_path, meta_prefix = pathdir["metadata_prefix"]
 mod_path, mod_prefix = pathdir["seizure_modifications_prefix"]
@@ -192,7 +193,7 @@ try:
     # create SCAT sector run command and run SCAT
     datafile = "../" + prefix + "_" + species + ".txt"
     zonefile = zones_path + zones_prefix + "_" + species + ".txt"
-    command = [scat_exec,"-Z","-H2",datafile,zonefile,outdirname,"16"]
+    command = [scat_exe,"-Z","-H2",datafile,zonefile,outdirname,"16"]
     run_and_report(command,"Unable to run SCAT to determine sectors")
   
   # run prep_fammatch.py

@@ -11,8 +11,6 @@ import os
 import math
 import statistics
 
-margin = 7
-
 ########################################################################
 # functions
 
@@ -130,7 +128,6 @@ def read_mapinfo(mapfile):
   return [lllat,lllong,urlat,urlong,dim]
 
 # read a map file
-# this code has to be in synch with readboundary.cpp's version
 def mapinfo_from_map(mapfilename):
   lats = []
   longs = []
@@ -138,35 +135,18 @@ def mapinfo_from_map(mapfilename):
     line = line.rstrip().split()
     lats.append(float(line[0]))
     longs.append(float(line[1]))
-
-  minlat = math.floor(min(lats)) - margin
-  minlong = math.floor(min(longs)) - margin
+  lllat = min(lats)
+  lllong = min(longs)
   # +1 in next two lines because if the upper right square is X,Y then the
   # address of the actual corner is X+1,Y+1.
-  maxlat = math.floor(max(lats)) + margin + 1
-  maxlong = math.floor(max(longs)) + margin + 1
-
-  size_lat = int(maxlat - minlat)
-  size_long = int(maxlong - minlong)
-  if size_lat != size_long:
-    maxgrid = max(size_lat,size_long)
-    mingrid = min(size_lat,size_long)
-    diff = maxgrid - mingrid
-    leftadd = math.floor(diff/2)    # deliberate truncation
-    rightadd = diff - leftadd
-    print("diff",diff,"leftadd",leftadd,"rightadd",rightadd)
-    if maxgrid == maxlat:   # lat is bigger
-      minlong -= leftadd
-      maxlong += rightadd
-      size_long = maxlong - minlong
-      assert size_long == size_lat
-    else:     # long is bigger
-      minlat -= leftadd
-      maxlat += rightadd
-      size_lat = maxlat - minlat
-      assert size_long == size_lat
-  print(minlat,minlong,maxlat,maxlong,size_lat)
-  return [minlat,minlong,maxlat,maxlong,size_lat]
+  urlat = max(lats) + 1
+  urlong = max(longs) + 1
+  nsdim = urlat - lllat
+  ewdim = urlong - lllong
+  if (nsdim != ewdim):
+    print("FAILURE: grid not square")
+    exit(-1)
+  return [lllat,lllong,urlat,urlong,nsdim]
   
 
 
@@ -180,7 +160,7 @@ if len(sys.argv) != 3 and len(sys.argv) != 4:
 
 pathsfile = sys.argv[1]
 prefix = sys.argv[2]
-reportdir = prefix + "_reports/"
+reportdir = prefix + "_reports"
 if len(sys.argv) == 4:
   wanted_sid = sys.argv[3]
 else:
@@ -189,12 +169,10 @@ else:
 pathdir = readivorypath(pathsfile)
 map_path, map_prefix = pathdir["map_prefix"]
 vor_mapinfo = prefix + "_mapinfo"
-namesfile = prefix + "_names.txt"
-regionfilename = prefix + "_regions"
 
 # NOTE:  If the mapinfo file exists, we will read it and will assume that
 # VORONOI was run.  If it does not exist, we will go back to the original
-# map, and will assume VORONOI was NOT run (so will only handle SCAT results).
+# map, and will assume VORONOI was NOT run (so will only graph SCAT results).
 # To figure out which map to use, we look at the name of the directory we
 # are currently in; "nsavannah" uses savannah map, "nforest" uses forest map,
 # anything else ends with an error message.
@@ -215,11 +193,11 @@ else:                             # VORONOI did not run
     print("Unable to deduce which map was used for SCAT; this program")
     print("needs to be run in either 'nsavannah' or 'nforest'")
     exit(-1)
-  mapfile = map_path + map_prefix + "_" + species + ".txt"
+  mapfile = map_path + map_prefix + "_" + species + ".tsv"
   minlat,minlong,maxlat,maxlong,dim = mapinfo_from_map(mapfile)
 
 # if not doing a single SID, read list of SIDs (this was written by
-# setupvoronoi.py and exists even if voronoi didn't run) 
+# setupvoronoi.py)
 wantednames = []
 if wanted_sid is None:
   namesfile = prefix + "_names.txt"
@@ -264,7 +242,7 @@ med_scatx = []
 med_scaty = []
 
 # set up file for point estimate reporting
-pointfile = open(reportdir + prefix + "_point_estimates.tsv","w")
+pointfile = open(reportdir + "/" + prefix + "_point_estimates.tsv","w")
 if use_voronoi:
   hdr = "SID\tVoronoi\tSCAT_median\tSCAT_bestsquare\n"
 else:
@@ -304,7 +282,7 @@ for sid in wantednames:
     cb.set_ticks([])
 
     plt.title("Voronoi " + shortsid);
-    plt.savefig(reportdir + sid + "_voronoi.png")
+    plt.savefig(reportdir + "/" + sid + "_voronoi.png")
     plt.close()
 
   # scat data
@@ -333,7 +311,7 @@ for sid in wantednames:
   cb.set_ticks([])
 
   plt.title("Scat " + shortsid)
-  plt.savefig(reportdir + sid + "_scat.png")
+  plt.savefig(reportdir + "/" + sid + "_scat.png")
   plt.close()
 
 pointfile.close()
@@ -348,7 +326,7 @@ if use_voronoi:
   for x,y in zip(best_vorx,best_vory):
     m.plot(y,x,"r+",transform=crs_lonlat)
   plt.title("Voronoi summary")
-  plt.savefig(reportdir+"voronoi_summary.png")
+  plt.savefig(reportdir+"/voronoi_summary.png")
 
 # scat summary by squares
 figno += 1
@@ -357,7 +335,7 @@ m = makemap_for_summaries(crs_lonlat,minlat,maxlat,minlong,maxlong)
 for x,y in zip(best_scatx,best_scaty):
   m.plot(y,x,"r+",transform=crs_lonlat)
 plt.title("Scat summary:  most occupied grid square")
-plt.savefig(reportdir+"scat_summary_squares.png")
+plt.savefig(reportdir+"/scat_summary_squares.png")
 
 # scat summary by medians
 figno += 1
@@ -366,5 +344,5 @@ m = makemap_for_summaries(crs_lonlat,minlat,maxlat,minlong,maxlong)
 for x,y in zip(med_scatx,med_scaty):
   m.plot(y,x,"r+",transform=crs_lonlat)
 plt.title("Scat summary:  median lat/long")
-plt.savefig(reportdir+"scat_summary_medians.png")
+plt.savefig(reportdir+"/scat_summary_medians.png")
 
