@@ -60,6 +60,7 @@ print(outline)
 hybout = open(hyboutname,"w")
 hybout.write(outline)
 outline = "\nHybrid SIDs and probabilities:\n"
+hybout.write(outline)
 hyblist.sort()
 for sid,prob in hyblist:
   outline = sid + "\t" + str(prob) + "\n"
