@@ -67,7 +67,7 @@ def read_scat(sfiles,gridsize,minlat,maxlat,minlong,maxlong):
       longs.append(mylong)
   medlat = statistics.median(lats)
   medlong = statistics.median(longs)
-  return gridcounts,medlat,medlong
+  return lats,longs,gridcounts,medlat,medlong
 
 # find biggest entry in a 2D grid
 def get_maximum(vgrid):
@@ -174,7 +174,7 @@ def mapinfo_from_map(mapfilename):
 # main program
 
 if len(sys.argv) != 3 and len(sys.argv) != 4:
-  print("USAGE:  python plot_voronoi_Africa.py ivory_paths.tsv prefix sid")
+  print("USAGE:  python plot_scat_vor.py ivory_paths.tsv prefix sid")
   print("If no sid is given, plots everything")
   exit(-1)
 
@@ -231,19 +231,33 @@ else:
 # read SCAT data
 dirnames = [str(x) + "/outputs" for x in range(1,10)]
 scatgrids = {}
+scatraw = {}
 scatmedians = {}
 for sid in wantednames:
   scatfiles = []
   for dir in dirnames:
     scatfiles.append(dir + "/" + sid)
-  gridcounts,medlat,medlong = read_scat(scatfiles,dim,minlat,maxlat,minlong,maxlong)
+  scatlats,scatlongs,gridcounts,medlat,medlong = read_scat(scatfiles,dim,minlat,maxlat,minlong,maxlong)
   scatgrids[sid] = gridcounts
   scatmedians[sid] = [medlat,medlong]
+  scatraw[sid] = [scatlats,scatlongs]
   
-# read Voronoi data
 if use_voronoi:
+  # read Voronoi printprobs data
   printprobs = prefix + "_printprobs"
   vordict = read_voronoi(printprobs,minlat,maxlat,minlong,maxlong)
+
+  # read Voronoi regions data, for median estimation
+  regions = [[0 for x in range(0,dim)] for x in range(0,dim)]
+  row = 0
+  for line in open(regionfilename,"r"):
+     line = line.rstrip().split()
+     assert len(line) == dim
+     for i in range(0,dim):
+       if line[i] == "1":
+         regions[row][i] += 1
+     row += 1
+     if row == dim:  row = 0
 
 # if we only want one SID, eliminate the others
 if wanted_sid is not None:
@@ -252,12 +266,13 @@ if wanted_sid is not None:
   vordict = newvordict
 
 # prepare reports and graphs
-
-longs = [x for x in range(minlong,maxlong+1)]
 lats = [x for x in range(minlat,maxlat+1)]
+longs = [x for x in range(minlong,maxlong+1)]
 
 best_vorx = []
 best_vory = []
+med_vorx = []
+med_vory = []
 best_scatx = []
 best_scaty = []
 med_scatx = []
@@ -266,16 +281,34 @@ med_scaty = []
 # set up file for point estimate reporting
 pointfile = open(reportdir + prefix + "_point_estimates.tsv","w")
 if use_voronoi:
-  hdr = "SID\tVoronoi\tSCAT_median\tSCAT_bestsquare\n"
+  hdr = "SID\tVoronoi_bestsquare\tVoronoi_median\tSCAT_bestsquare\tSCAT_median\n"
 else:
-  hdr = "SID\tSCAT_median\tSCAT_bestsquare\n"
+  hdr = "SID\tSCAT_bestsquare\tSCAT_median\n"
 
 pointfile.write(hdr)
+
 
 # plot heatmaps
 
 figno = 1
 crs_lonlat = ccrs.PlateCarree()
+
+# make overall image of Voronoi regions 
+if use_voronoi:
+  plt.figure(figno)
+  m = makemap_for_heatmaps(crs_lonlat,minlat,maxlat,minlong,maxlong)
+  x,y = np.meshgrid(longs,lats)
+  m.pcolormesh(x,y,regions,shading="flat",cmap=plt.cm.hot,transform=crs_lonlat)
+  sm = plt.cm.ScalarMappable(cmap=plt.cm.hot)
+  sm._A = []
+  cb = plt.colorbar(sm)
+  cb.set_ticks([])
+  plt.title("Voronoi region");
+  plt.savefig(reportdir + "voronoi_region.png")
+  plt.close()
+  figno += 1
+
+
 for sid in wantednames:
   pointline = sid  
   shortsid = sid
@@ -307,6 +340,30 @@ for sid in wantednames:
     plt.savefig(reportdir + sid + "_voronoi.png")
     plt.close()
 
+    # following code makes median-style VORONOI point estimates by masking out
+    # everything outside the VORONOI region, then taking median lat/long of the
+    # survivors.  Code from median_voronoi.py.
+
+    # how this works:  regions[][] contains a count of the number
+    # of times each grid square was in R.  For each SCAT observation,
+    # we add it to the list a number of times equal to regions[][],
+    # which is equivalent to weighting it by how often it's in R
+    # --done this way so we can take a median.
+    masked_scatdata = []
+    for vlat,vlong in zip(scatraw[sid][0],scatraw[sid][1]):
+      gridlat,gridlong = latlong_to_grid(vlat,vlong,minlat,maxlat,minlong,maxlong)
+      for i in range(0,regions[gridlat][gridlong]):
+        masked_scatdata.append([vlat,vlong])
+
+    # take median lat/long
+    vlats = [x[0] for x in masked_scatdata]
+    vlongs = [x[1] for x in masked_scatdata]
+    medvlat = statistics.median(vlats)
+    medvlong = statistics.median(vlongs)
+    med_vorx.append(medvlat)
+    med_vory.append(medvlong)
+    pointline += "\t" + str(medlat) + "," + str(medlong)
+
   # scat data
   plt.figure(figno) 
   figno += 1
@@ -320,8 +377,8 @@ for sid in wantednames:
   best_scaty.append(scaty+minlong+0.5)
   med_scatx.append(medlat)
   med_scaty.append(medlong)
-  pointline += "\t" + str(medlat) + "," + str(medlong) 
   pointline += "\t" + str(scatx+minlat+0.5) + "," + str(scaty+minlong+0.5) 
+  pointline += "\t" + str(medlat) + "," + str(medlong) 
   pointline += "\n"
   pointfile.write(pointline)
 
@@ -340,15 +397,24 @@ pointfile.close()
 
 # summary figures
 
-# voronoi summary
 if use_voronoi:
+  # voronoi summary by squares
   figno += 1
   plt.figure(figno)
   m = makemap_for_summaries(crs_lonlat,minlat,maxlat,minlong,maxlong)
   for x,y in zip(best_vorx,best_vory):
     m.plot(y,x,"r+",transform=crs_lonlat)
-  plt.title("Voronoi summary")
-  plt.savefig(reportdir+"voronoi_summary.png")
+  plt.title("Voronoi summary: most occupied grid square")
+  plt.savefig(reportdir+"voronoi_summary_squares.png")
+
+  # voronoi summary by medians
+  figno += 1
+  plt.figure(figno)
+  m = makemap_for_summaries(crs_lonlat,minlat,maxlat,minlong,maxlong)
+  for x,y in zip(med_vorx,med_vory):
+    m.plot(y,x,"r+",transform=crs_lonlat)
+  plt.title("Voronoi summary: median lat/long")
+  plt.savefig(reportdir+"voronoi_summary_medians.png")
 
 # scat summary by squares
 figno += 1

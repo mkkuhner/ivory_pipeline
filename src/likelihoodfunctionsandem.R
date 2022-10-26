@@ -9,7 +9,9 @@
 
 # Site specific likelihood for given values of q0 and q2 (which defines the hybrid type)
 calcloglikelocus<-function(g1,g2,f1,f2,q0,q2,nullprobs=c(0,0,0)){
-   if(as.numeric(g1)<0){
+   # change by Mary 2022.09.22; allows half-missing data to run (by treating
+   # it as all missing, but that's the best I can do)
+   if(as.numeric(g1)<0 | as.numeric(g2)<0){
       loglike = 0
    }else{
      q1 = 1-q0-q2

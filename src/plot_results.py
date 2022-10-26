@@ -180,9 +180,9 @@ def makemap_for_heatmaps(proj,mapdata):
   m.add_feature(cfeature.LAND, color="tan")
   return m
 
-def plot_summary(prefix,maxima,progname,statistic,figno,mapdata,crs_lonlat,reportdir):
+def plot_summary(prefix,maxima,progname,statistic,figno,mapdata,crs_lonlat,reportdir,whichspecies):
   alpha = 1.0
-  mygold = [1.0, 1.0, 1.0, alpha]
+  mygold = [1.0, 0.9, 0.0, alpha]
   mygreen = [0.0, 1.0, 0.0, alpha]
   backgroundcolor = "tan"
   markeredgewidth=0.6
@@ -196,6 +196,7 @@ def plot_summary(prefix,maxima,progname,statistic,figno,mapdata,crs_lonlat,repor
     statname = "best"
   m = makemap_for_summaries(crs_lonlat,mapdata)
   for species,color in zip(["savannah","forest"],[mygold,mygreen]):
+    if species not in whichspecies:  continue
     if species not in maxima:  continue
     data = maxima[species]
     lats = []
@@ -203,10 +204,14 @@ def plot_summary(prefix,maxima,progname,statistic,figno,mapdata,crs_lonlat,repor
     for sid in data:
       lats.append(data[sid][statistic][0])
       longs.append(data[sid][statistic][1])
+    firstone = True
     for x,y in zip(lats,longs):
-      m.plot(y,x,"r.",transform=crs_lonlat,markeredgecolor=markeredgecolor,markersize=markersize,markerfacecolor=color,markeredgewidth=markeredgewidth)
-      #m.plot(y,x,"r.",transform=crs_lonlat,markeredgecolor="k",markersize=10)
-
+      if firstone:
+        firstone = False
+        m.plot(y,x,"r.",transform=crs_lonlat,markeredgecolor=markeredgecolor,markersize=markersize,markerfacecolor=color,markeredgewidth=markeredgewidth,label=species)
+      else: 
+        m.plot(y,x,"r.",transform=crs_lonlat,markeredgecolor=markeredgecolor,markersize=markersize,markerfacecolor=color,markeredgewidth=markeredgewidth)
+  plt.legend(loc="lower left")
   plt.title(prefix + " " + statname)
   plt.savefig(reportdir + prefix + "_" + progname + "_" + statname + ".png")
   return(figno)
@@ -419,16 +424,21 @@ pickle.dump(mapdata,picklefile)
 pickle.dump(crs_lonlat,picklefile)
 pickle.dump(reportdir,picklefile)
 
-# scat median
-figno = plot_summary(prefix,maxima,"SCAT","scatmed",figno,mapdata,crs_lonlat,reportdir)
-# scat bestsquare
-figno = plot_summary(prefix,maxima,"SCAT","scatbest",figno,mapdata,crs_lonlat,reportdir)
+whichspecies_scat = [x[1:-1] for x in dirs_to_do]
+whichspecies_vor = []
+if use_vor["savannah"]:  whichspecies_vor.append("savannah")
+if use_vor["forest"]:  whichspecies_vor.append("forest")
 
-if use_vor[species]:
+# scat median
+figno = plot_summary(prefix,maxima,"SCAT","scatmed",figno,mapdata,crs_lonlat,reportdir,whichspecies_scat)
+# scat bestsquare
+figno = plot_summary(prefix,maxima,"SCAT","scatbest",figno,mapdata,crs_lonlat,reportdir,whichspecies_scat)
+
+if use_vor["savannah"] or use_vor["forest"]:
   # voronoi median
-  figno = plot_summary(prefix,maxima,"VORONOI","vormed",figno,mapdata,crs_lonlat,reportdir)
+  figno = plot_summary(prefix,maxima,"VORONOI","vormed",figno,mapdata,crs_lonlat,reportdir,whichspecies_vor)
   # voronoi bestsquare
-  figno = plot_summary(prefix,maxima,"VORONOI","vorbest",figno,mapdata,crs_lonlat,reportdir)
+  figno = plot_summary(prefix,maxima,"VORONOI","vorbest",figno,mapdata,crs_lonlat,reportdir,whichspecies_vor)
 
 # summary table
 outfile = reportdir + prefix + "_point_estimates.tsv"

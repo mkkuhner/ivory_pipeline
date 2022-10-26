@@ -59,7 +59,7 @@ specieslist = ["forest","savannah"]
 # if nforest/nsavannah exists:
 #   run voronoi
 #   run prep_reports
-#   run plot_scat_vor
+#   run plot_results (replaces older plot_scat_vor)
 
 for species in specieslist:
   dirname = "n" + species
@@ -85,12 +85,14 @@ for species in specieslist:
       command = ["mkdir",reportdir]
       run_and_report(command,"Could not create directory" + reportdir)
 
-    plotname = ivory_dir + "src/plot_scat_vor.py"
-    command = ["python3",plotname,pathsfile,prefix]
-    run_and_report(command,"Failure in" + plotname)
-    
     print("Completed",species,"run")
     os.chdir("..")
 
+# after both species are run, back up to main directory to run plot_results.py
+os.chdir("..")
+plotname = ivory_dir + "src/plot_results.py"
+command = ["python3",plotname,prefix,pathsfile]
+run_and_report(command,"Failure in" + plotname)
+    
 # print confirmation message and exit
 print("VORONOI runs and reports complete for seizure",prefix)
