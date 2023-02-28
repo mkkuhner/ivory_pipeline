@@ -25,4 +25,3 @@ for i in range(1,numruns+1):
   command = 'perl -p -i -e "s/SEED/' + str(randseed) + '/;" ' + runfilepath
   os.system(command)
   randseed += 1
-print("Finished creating directories")

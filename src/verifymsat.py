@@ -27,8 +27,6 @@ with open(sys.argv[2], newline="") as csvfile:
       # on between database releases
       firstmarker = row.index("FH67")
       lastmarker = row.index("S04") + 1
-      print("firstmarker",firstmarker,"is",row[firstmarker])
-      print("lastmarker",lastmarker,"is",row[lastmarker])
       for pos in range(firstmarker,lastmarker+1,2):
         if row[pos] != row[pos+1]:
           print("ERROR. marker",row[pos],"does not match",row[pos+1],"in",sys.argv[2] )

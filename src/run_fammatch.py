@@ -18,36 +18,18 @@
 #   seizure_metadata
 
 import os, sys, shutil
+import ivory_lib as iv
 
 ##########################################################################
 # functions
 
-import subprocess
-from subprocess import Popen
-
 def file_exists(filename):
   return os.path.isfile(filename)
-
-def readivorypath(pathsfile):
-  ivorypaths = {}
-  inlines = open(pathsfile,"r").readlines()
-  for line in inlines:
-    pline = line.rstrip().split("\t")
-    ivorypaths[pline[0]] = pline[1:]
-  return ivorypaths
-
-def run_and_report(command,errormsg):
-  process = Popen(command)
-  stdout, stderr = process.communicate()
-  exit_code = process.wait()
-  if exit_code != 0:
-    print("FAILURE: " + errormsg)
-    exit(-1)
 
 def safecopy(fromfile,tofile):
   if not file_exists(tofile):
     command = ["cp",fromfile,tofile]
-    run_and_report(command, "Unable to copy file " + fromfile)
+    iv.run_and_report(command, "Unable to copy file " + fromfile)
 
 # assumes that the file consists of 2 tab delimited columns, no header,
 # first column = string, sector id
@@ -67,8 +49,6 @@ def make_dir_if_needed(pathname):
 ##########################################################################
 # main program
 
-from datetime import datetime
-
 if len(sys.argv) != 3:
   print("USAGE:  run_fammatch.py prefix ivory_paths")
   exit(-1)
@@ -79,15 +59,18 @@ if len(sys.argv) != 3:
 prefix = sys.argv[1]
 pathfile = sys.argv[2]
 seizuredir = prefix + "/fammatch/"
-pathdir = readivorypath(pathfile)
+
+pathdir = iv.readivorypath(pathfile)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
-archivedir, fam_db = pathdir["fammatch_archive_dir"]
+archiveroot, fam_db = pathdir["fammatch_archive_dir"]
+archivedir = archiveroot + fam_db
+database = archivedir + "elephant_msat_database.tsv"
 metadir, metafile = pathdir["metadata_prefix"]
 metafile = metadir + metafile + ".tsv"
 
 if not os.path.isdir(archivedir):
   print("Cannot find fammatch archive:  did you forget to hook up the external HD?")
-  print("Location tried was",archivedir)
+  print("Location tried was",archive_dir)
   exit(-1)
 
 old_inputs_dir = archivedir + "old_inputs/"
@@ -131,12 +114,15 @@ for sector in range(0,nsec):
   oldrefname = old_ref_dir + "ref_" + secname + "_fammatch.csv"
 
   # if old reference exists, compare with new; otherwise archive new
+  print("In run_fammatch.py, about to copy reference into archive")
   if file_exists(oldrefname):
+    print("File exists, checking if it matches")
     command = ["diff",newrefname,oldrefname]
-    run_and_report(command,"Discrepant reference data detected for sector " + secname)
+    iv.run_and_report(command,"Discrepant reference data detected for sector " + secname)
   else:
+    print("File does not exist, copying",newrefname,oldrefname)
     command = ["cp",newrefname,oldrefname]
-    run_and_report(command,"Cannot copy reference file for sector " + secname)
+    iv.run_and_report(command,"Cannot copy reference file for sector " + secname)
 
   ## OLD AND NEW DATA
 
@@ -189,28 +175,27 @@ for sector in range(0,nsec):
     command = ["Rscript","calculate_LRs.R",species,r_oldrefname,r_olddataname,r_newdataname]
     outline = " ".join(command)
     print(outline)
-    run_and_report(command,"Unable to execute calculate_LRs.R")
+    iv.run_and_report(command,"Unable to execute calculate_LRs.R")
 
     # translate results to database format
     progfile = ivory_dir + "src/rout2db.py"
     # we are in rundir, so use local filename only
     rfile = "obsLRs." + species + ".txt"
     command = ["python3",progfile,rfile,metafile,secname]
-    run_and_report(command,"Unable to execute rout2db.py")
+    iv.run_and_report(command,"Unable to execute rout2db.py")
     # result will be in file with "_full" before its extension
     os.chdir(olddir)
 
     # archive results in database
     progfile = ivory_dir + "src/fammatch_database.py" 
     infile = rundir + "obsLRs." + species + "_full.tsv"
-    dbfile = archivedir + fam_db
-    if not file_exists(dbfile):
+    if not file_exists(database):
       # create new archive file
-      command = ["python3",progfile,dbfile,"create",infile]
+      command = ["python3",progfile,database,"create",infile]
     else:
       # add to existing archive file
-      command = ["python3",progfile,dbfile,"add",infile]
-    run_and_report(command,"Could not add new results to fammatch database" + dbfile)
+      command = ["python3",progfile,database,"add",infile]
+    iv.run_and_report(command,"Could not add new results to fammatch database" + database)
   
     os.chdir(olddir)
 

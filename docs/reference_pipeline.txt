@@ -51,7 +51,7 @@ are using only reference data (no seizure data):
 
 python make_eb_input.py PREFIX_structure_output.txt_f PREFIX_known.txt PREFIX dropoutrates_savannahfirst.txt reference
 
-This will write an EBhybrids run script as well as REFERENCE_ancestryprobs.txt.
+This will write an EBhybrids run script as well as REFERENCE_ancestryprops.txt.
 
 3)  Execute the EBhybrids run script ebscript.R (using Rscript).  This will
 write PREFIX_HPs.csv and .txt, and PREFIX_hybt.csv and .txt.  It is fast.

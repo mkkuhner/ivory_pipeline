@@ -8,7 +8,7 @@
 ##########################################################################
 # main program
 
-import sys
+import sys, os
 if len(sys.argv) != 3:
   print("USAGE:  update_metadata.py metafile.tsv PREFIX")
   print("WARNING:  this program updates the file IN PLACE.")
@@ -20,6 +20,8 @@ seizurefile = sys.argv[2]+"_unknowns.txt"
 
 # read sample ids from new seizure
 sids = set()
+print("Trying to open seizurefile using",seizurefile)
+print("whose absolute path is",os.path.abspath(seizurefile))
 for line in open(seizurefile,"r"):
   line = line.rstrip().split()
   sids.add(line[0])

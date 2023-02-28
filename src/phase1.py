@@ -136,7 +136,7 @@ print("EBhybrids run completed")
 # generate report on hybrids
 hybrid_reportfile = prefix + "_hybout.txt"
 ebhyrbid_output = prefix + "_hybt.txt"
-hybrid_cutoff = 0.95
+hybrid_cutoff = 0.50
 command = ["rm","-rf",hybrid_reportfile]
 run_and_report(command,"Could not delete previous hybrid report")
 command = ["python3",ivory_dir + "src/makehybridreport.py",

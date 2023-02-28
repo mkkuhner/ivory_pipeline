@@ -49,6 +49,23 @@ def copy_if_src_present(src,tgt):
   command = ["cp",src,tgt]
   run_and_report(command, "Unable to copy file " + src + " to " + tgt)
 
+def get_parent(arch_dir):
+  parts = arch_dir.split("/")
+  # this will likely start and end with empty strings
+  newparts = []
+  for part in parts:
+    if part != "":
+      newparts.append(part)
+  parts = newparts
+  assert parts[-1] == "elephant_archive"
+  parent = parts[:-1]
+  parent = "/".join(parent) 
+  if arch_dir.startswith("/"):
+    parent = "/" + parent
+  if arch_dir.endswith("/"):
+    parent = parent + "/"
+  return parent
+
 def check_seizure_present(sfile,seizurename):
   oldseizures = open(sfile,"r").readlines()
   for line in oldseizures:
@@ -58,7 +75,7 @@ def check_seizure_present(sfile,seizurename):
   return (False, oldseizures)
 
 def backup_archive(arch_dir):
-  backupdir = arch_dir + "../archive_backups/"
+  backupdir = get_parent(arch_dir) + "archive_backups/"
   # delete previous backup directory
   if os.path.isdir(backupdir):
     command = ["rm","-rf",backupdir]
@@ -68,10 +85,12 @@ def backup_archive(arch_dir):
   run_and_report(command,"Unable to back up archive")
 
 def restore_archive(arch_dir):
-  backupdir = arch_dir + "../archive_backups/"
+  backupdir = get_parent(arch_dir) + "archive_backups/"
+  print("We think backupdir is",os.path.abspath(backupdir))
+  assert os.path.isdir(backupdir)
 
   # make copy of current state of archive directory, for debugging
-  forensicdir = arch_dir + "../forensics/"
+  forensicdir = get_parent(arch_dir) + "forensics/"
   if os.path.isdir(arch_dir):
     command = ["cp","-r",arch_dir,forensicdir]
     run_and_report(command,"Unable to snapshot archive for debugging")

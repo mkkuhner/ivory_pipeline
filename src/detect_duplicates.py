@@ -19,6 +19,10 @@ for line in open(infilename,"r"):
   line = line.rstrip().split("\t")
   id = line[0]
   msats = line[1:]
+  # DEBUG
+  if len(msats) != 16:
+    print(msats)
+    exit(-1)
   assert len(msats) == 16
   if id not in data:
     data[id] = []
