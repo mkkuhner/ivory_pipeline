@@ -64,7 +64,7 @@ for line in pathdata:
   elif line.startswith("metadata_prefix"):
     parts = line.split("\t")
     newline = [parts[0],arch_dir + new_archname,parts[2]]
-    newline = "\t".join(newline) + "\n"
+    newline = "\t".join(newline)  # parts didn't get rstrip(), so no xtra "\n" needed
     newpathdata.append(newline)
     found_meta = True
   else:
