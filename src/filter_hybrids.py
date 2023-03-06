@@ -84,8 +84,8 @@ cutoff = 0.5
 print("NOTE:  this program assumes that Species 1 is savannah")
 print("and is using a hybrid cutoff of >", cutoff)
 
-if len(sys.argv) != 4:
-  print("USAGE:  filter_hybrids.py prefix clusterrun use_canned_reference")
+if len(sys.argv) != 5:
+  print("USAGE:  filter_hybrids.py prefix ivory_paths.tsv clusterrun use_canned_reference")
   print("  This program uses PREFIX_plus_ref.txt and the corresponding EBhybrids output,")
   print("    and THOSE MUST MATCH.")
   print("  if clusterrun == T then this will be assumed to be a run on the biology")
@@ -95,10 +95,10 @@ if len(sys.argv) != 4:
   exit()
 
 prefix = sys.argv[1]
+ifile = sys.argv[2]
 datafile = os.path.abspath(prefix+"_plus_ref.txt")
 ebfile = prefix+"_hybt.txt"
 
-ifile = "../ivory_paths.tsv"
 pathdir = readivorypath(ifile)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
 scat_dir, scat_exec = pathdir["scat_executable"]
@@ -116,10 +116,10 @@ seizure_data_dir = pathdir["seizure_data_dir"][0]
 voronoi_exec = pathdir["voronoi_executable"][0]
 
 clusterrun = False
-if sys.argv[2] == "T":
+if sys.argv[3] == "T":
   clusterrun = True
 use_canned_reference = False
-if sys.argv[3] == "T":
+if sys.argv[4] == "T":
   use_canned_reference = True
 
 savcount = 0

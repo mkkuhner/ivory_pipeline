@@ -161,6 +161,7 @@ run_and_report(command,"Could not copy in master scat runfile")
 
 command = ["python3",ivory_dir + "src/filter_hybrids.py"]
 command.append(prefix)
+command.append(pathsfile)
 if runtype == "laptop":
   command.append("F")
 else:

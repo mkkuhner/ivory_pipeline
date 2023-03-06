@@ -144,7 +144,7 @@ os.system(command)
 # write mainparams; overwrites version in STRUCTURE directory
 paramfile = ivory_dir + "aux/mainparams"
 outfile = open(structure_dir + "mainparams","w")
-structure_outfile = refprefix + "_structure_out.txt"
+structure_outfile = refprefix + "_known_structure.txt"
 infiletag = "MY_INFILE_HERE"
 outfiletag = "MY_OUTFILE_HERE"
 numindtag = "MY_NUMINDS_HERE"
@@ -213,8 +213,8 @@ for line in open(ebfile,"r"):
     speciesdict[id] = "F"
 
 # write savannah and forest files
-savannahfile = refprefix + "_savannah.txt"
-forestfile = refprefix + "_forest.txt"
+savannahfile = refprefix + "filtered_savannah.txt"
+forestfile = refprefix + "filtered_forest.txt"
 savannah_output = open(savannahfile,"w")
 forest_output = open(forestfile,"w")
 savcount = 0.0
@@ -242,11 +242,14 @@ for line in open(refknown,"r"):
     exit(-1)
 savannah_output.close()
 forest_output.close()
-# copy them to data directory for use
+
+# copy files to data directory for use
 command = ["cp",savannahfile,"../" + savannahfile]
 iv.run_and_report(command,"Cannot copy " + savannahfile + " into data directory")
 command = ["cp",forestfile,"../" + forestfile]
 iv.run_and_report(command,"Cannot copy " + forestfile + " into data directory")
+command = ["cp",structure_outfile,"../" + structure_outfile]
+iv.run_and_report(command("Cannot copy " + structure_outfile + " into data directory")
 
 
 print("Savannah samples after filtering:",int(savcount))
