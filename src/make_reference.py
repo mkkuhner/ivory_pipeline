@@ -12,27 +12,13 @@ import os
 import subprocess
 from subprocess import Popen, PIPE
 import csv
+import ivory_lib as iv
 
 # constants
 hybrid_cutoff = 0.5
 
 ############################################################################
 ## functions
-
-def readivorypath(pathsfile):
-  ivorypaths = {}
-  inlines = open(pathsfile,"r").readlines()
-  for line in inlines:
-    pline = line.rstrip().split("\t")
-    ivorypaths[pline[0]] = pline[1:]
-  return ivorypaths
-
-def run_and_report(command,errormsg):
-  process = Popen(command)
-  exit_code = process.wait()
-  if exit_code != 0:
-    print("FAILURE: " + errormsg)
-    exit(-1)
 
 # read master reference-data csv file
 def read_raw_reference(reffile):
@@ -42,7 +28,7 @@ def read_raw_reference(reffile):
     for line in reader:
       if line[0].startswith("Match"):
         header = line
-        regionindex = header.index("Region")
+        regionindex = header.index("Input Zone")
         matchindex = header.index("Match ID")
         firstmsat = header.index("FH67")
         lastmsat = firstmsat+32
@@ -54,10 +40,10 @@ def read_raw_reference(reffile):
       rdat[sid] = [region,line[firstmsat:lastmsat]]
   return rdat
 
-def reference_to_scat(reference_prefix, refdata):
+def reference_to_scat(ref_prefix, refdata):
   # process reference and write refprefix_known.tsv
   sortsids = sorted(list(refdata.keys()))
-  refknown = reference_prefix + "_known.tsv"
+  refknown = ref_prefix + "_known.tsv"
   outfile = open(refknown,"w")
   numinds = 0
   for sid in sortsids:
@@ -88,26 +74,17 @@ def reference_to_scat(reference_prefix, refdata):
 
 if len(sys.argv) != 3:
   print("USAGE:  python3 make_reference.py REFPREFIX pathsfile.tsv")
-  print("and if it is, you will need to rename, move or delete the old fammatch archive.")
   exit(-1)
 refprefix = sys.argv[1]
 pathsfile = os.path.abspath(sys.argv[2])
 
-
 # read ivory_paths.tsv file
 # set up needed variables
-pathdir = readivorypath(pathsfile)
+pathdir = iv.readivorypath(pathsfile)
 
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
 scat_dir, scat_exec = pathdir["scat_executable"]
-reference_path, reference_prefix = pathdir["reference_prefix"]
-
-if reference_prefix != refprefix:
-  print("Asked to make reference",refprefix,"but pathfile",pathsfile)
-  print("points to",reference_path + reference_prefix)
-  print("Correct this before continuing.")
-  exit(-1)
-
+reference_path, non_used = pathdir["reference_prefix"]
 zones_path, zones_prefix = pathdir["zones_prefix"]
 map_path, map_prefix = pathdir["map_prefix"]
 meta_path, meta_prefix = pathdir["metadata_prefix"]
@@ -123,38 +100,31 @@ if not os.path.isdir(fammatch_archive_dir):
   print("Did you forget to mount the hard drive?")
   exit(-1)
 
-#numinds) name in ivory_paths must match name deduced by this program
-if fammatch_archive_name != new_fammatch_archive_name:
-  print("Convention for elephant archive name in pathsfile would be",new_fammatch_archive_name)
-  print("Correct and rerun.")
+# archive directory must not exist
+if os.path.isdir(fammatch_archive_dir + new_fammatch_archive_name):
+  print("Fammatch archive",fammatch_archive_dir + new_fammatch_archive_name,"already exists; rename or remove if you wish to replace it.")
   exit(-1)
 
-# fammatch directory under that name must NOT exist
-if isdir(fammatch_archive_dir + fammatch_archive_name):
-  print("Requested familial matching directory already exists")
-  print("as" + fammatch_archive_dir + fammatch_archive_name)
-  print("If you wish to replace it, move it away or rename it")
-  exit(-1)
-
-# all is well, so create fammatch archive
-command = ["mkdir",fammatch_archive_dir + fammatch_archive_name]
-run_and_report(command,"Unable to create fammatch archive")
+# call step0_newarchive.py to make a new fammatch archive
+progname = ivory_dir + "src/step0_newarchive.py"
+command = ["python3",progname,pathsfile,new_fammatch_archive_name]
+iv.run_and_report(command,"Unable to create new fammatch archive " + fammatch_archive_name)
 
 # read raw reference file
-refname = reference_path + reference_prefix + "_raw.csv"
+refname = reference_path + refprefix + "_raw.csv"
 refdata = read_raw_reference(refname)
 
-# make directory for processed reference
-ref_subdir = reference_path + reference_prefix + "/"
+# make working directory for processed reference
+ref_subdir = reference_path + refprefix + "/"
 if os.path.isdir(ref_subdir):
   print("Reference directory",ref_subdir,"already exists; move or rename it.")
   exit(-1)
 command = ["mkdir",ref_subdir]
-run_and_report(command,"Unable to create reference subdirectory")
+iv.run_and_report(command,"Unable to create reference subdirectory")
 os.chdir(ref_subdir)
 
 # write refprefix_known.tsv
-numinds, refknown = reference_to_scat(refprefix)
+numinds, refknown = reference_to_scat(refprefix, refdata)
 print("Found",numinds,"location-known samples")
 
 # prep STRUCTURE run
@@ -162,42 +132,64 @@ print("Found",numinds,"location-known samples")
 # make a version of ref data with header for STRUCTURE
 structure_header = ivory_dir + "aux/header_for_structure"
 structure_infile = refprefix + "_structure.txt"
+# NB we do not use run_and_report here because it doesn't work with
+# the > redirect for some reason.
 command = ["cat",structure_header,refknown,">",structure_infile]
-run_and_report(command,"Unable to create structure input file")
+command = " ".join(command)
+os.system(command)
+command = ["cp",structure_infile,structure_dir]
+command = " ".join(command)
+os.system(command)
 
 # write mainparams; overwrites version in STRUCTURE directory
 paramfile = ivory_dir + "aux/mainparams"
 outfile = open(structure_dir + "mainparams","w")
-structure_infile = refprefix + "_structure.txt"
 structure_outfile = refprefix + "_structure_out.txt"
 infiletag = "MY_INFILE_HERE"
 outfiletag = "MY_OUTFILE_HERE"
 numindtag = "MY_NUMINDS_HERE"
 for line in open(paramfile,"r"):
-  line = line.rstrip().split()
   line = line.replace(infiletag,structure_infile)
   line = line.replace(outfiletag,structure_outfile)
-  line = line.replace(numindtag,numinds)
+  line = line.replace(numindtag,str(numinds))
   outfile.write(line)
 outfile.close()
 
 # run STRUCTURE
-command = [structure_dir + structure_exec]
-run_and_report(command,"Unable to run STRUCTURE")
+currentdir = os.path.abspath(".")
+if not currentdir.endswith("/"):
+  currentdir += "/"
+os.chdir(structure_dir)
+command = ["./"+structure_exec]
+iv.run_and_report(command,"Unable to run STRUCTURE")
+os.chdir(currentdir)
 
 # run make_eb_input to prepare data for EBhybrids
-# Note:  STRUCTURE puts "-f" on the end of its output file name--dunno why
+# Note:  STRUCTURE puts "_f" on the end of its output file name--dunno why
 # it can't just use the name it's given...
 
-structure_outfile = structure_outfile + "-f"
+structure_outfile = structure_outfile + "_f"
+command = ["cp",structure_dir + structure_outfile,currentdir + structure_outfile]
+iv.run_and_report(command,"Unable to copy STRUCTURE output to working directory")
+
+# marshall files for ebhybrids
+command = ["cp",ivory_dir + "aux/ebscript_template.R","."]
+iv.run_and_report(command,"Failure to find ebscript template")
+command = ["cp",ivory_dir + "src/inferencefunctions.R","."]
+iv.run_and_report(command,"Failure to find EBhybrids source code")
+command = ["cp",ivory_dir + "src/calcfreqs.R","."]
+iv.run_and_report(command,"Failure to find EBhybrids source code")
+command = ["cp",ivory_dir + "src/likelihoodfunctionsandem.R","."]
+iv.run_and_report(command,"Failure to find EBhybrids source code")
+
 progname = ivory_dir + "src/make_eb_input.py"
 dropoutfile = ivory_dir + "aux/dropoutrates_savannahfirst.txt"
 command = ["python3",progname,structure_outfile,refknown,refprefix,dropoutfile,"reference"]
-run_and_report("Unable to run make_eb_input.py")
+iv.run_and_report(command,"Unable to run make_eb_input.py")
 
 #run EBhybrids
 command = ["Rscript","ebscript.R"]
-run_and_report(command,"Failure in EBhybrids")
+iv.run_and_report(command,"Failure in EBhybrids")
 
 # make species specific SCAT reference files
 # code excerpted from filter_hybrids.py
@@ -221,8 +213,10 @@ for line in open(ebfile,"r"):
     speciesdict[id] = "F"
 
 # write savannah and forest files
-savannah_output = open(refprefix + "_savannah.txt","w")
-forest_output = open(refprefix + "_forest.txt","w")
+savannahfile = refprefix + "_savannah.txt"
+forestfile = refprefix + "_forest.txt"
+savannah_output = open(savannahfile,"w")
+forest_output = open(forestfile,"w")
 savcount = 0.0
 forcount = 0.0
 hybcount = 0.0
@@ -248,6 +242,13 @@ for line in open(refknown,"r"):
     exit(-1)
 savannah_output.close()
 forest_output.close()
+# copy them to data directory for use
+command = ["cp",savannahfile,"../" + savannahfile]
+iv.run_and_report(command,"Cannot copy " + savannahfile + " into data directory")
+command = ["cp",forestfile,"../" + forestfile]
+iv.run_and_report(command,"Cannot copy " + forestfile + " into data directory")
+
+
 print("Savannah samples after filtering:",int(savcount))
 print("Forest samples after filtering:",int(forcount))
 print("Hybrid samples (removed):",int(hybcount))

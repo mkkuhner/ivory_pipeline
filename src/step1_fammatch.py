@@ -72,17 +72,15 @@ def check_seizure_present(sfile,seizurename):
 ############################################################################
 ## main program
 
-if len(sys.argv) != 4:
-  print("USAGE:  python3 step1_fammatch.py PREFIX laptop/cluster pathsfile.tsv")
+if len(sys.argv) != 3:
+  print("USAGE:  python3 step1_fammatch.py PREFIX pathsfile.tsv")
   exit(-1)
 
 prefix = sys.argv[1]
-runtype = sys.argv[2]
-legalruntypes = ["laptop","cluster"]
-if runtype not in legalruntypes:
-  print("Illegal run type ",runtype," (must be laptop or cluster)")
-  exit(-1)
-pathsfile = os.path.abspath(sys.argv[3])
+# we do not do the short SCAT runs needed for fammatch on the
+# cluster, so we force "laptop" version here
+runtype = "laptop"
+pathsfile = os.path.abspath(sys.argv[2])
 
 specieslist = ["forest","savannah"]
 
@@ -91,6 +89,7 @@ specieslist = ["forest","savannah"]
 pathdir = iv.readivorypath(pathsfile)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
 scat_dir, scat_exec = pathdir["scat_executable"]
+scat_path = scat_dir + scat_exec
 reference_path, reference_prefix = pathdir["reference_prefix"]
 zones_path, zones_prefix = pathdir["zones_prefix"]
 map_path, map_prefix = pathdir["map_prefix"]
@@ -106,7 +105,9 @@ if not homedir.endswith("/"):
 # Directory setup and checking
 
 # seizure directory should not exist yet
-seizure_dir = os.path.abspath(prefix) + "/"
+seizure_dir = os.path.abspath(prefix)
+if not seizure_dir.endswith("/"):
+  seizure_dir += "/"
 if os.path.isdir(seizure_dir):
   print("FAILURE:  The seizure directory",seizure_dir,"already exists")
   print("If you want to replace all previous results, delete or move away")
@@ -242,13 +243,13 @@ if runtype == "laptop":
   command.append("F")
 else:
   command.append("T")
-# the following T means "canned" reference; we verified this is available
+# the following T means "canned" reference; we already verified this exists
 command.append("T")
 iv.run_and_report(command,"Could not filter hybrids")
 
-# make and populate species directories
+# make species directories; various programs expect they'll exist
+# we do not populate them yet as they're for regular SCAT runs, not fammatch
 
-species_done = []
 for species in specieslist:
   if os.path.isfile("runfile_" + species + ".sh"):
     # set up species specific directory
@@ -260,40 +261,14 @@ for species in specieslist:
       print("FAILURE: ",dirname," directory already exists")
       exit(-1)
 
-# DEBUG is this scat rather than fammatch?
-    datafile = prefix+"_"+species+".txt"
-    command = ["cp",datafile,dirname]
-    iv.run_and_report(command,"Could not access " + datafile)
-
-    runfile = "runfile_"+species+".sh"
-    command = ["cp",runfile,dirname]
-    iv.run_and_report(command,"Could not access " + runfile)
-
-    scat_path = scat_dir + scat_exec
-    command = ["cp",scat_path,dirname]
-    iv.run_and_report(command,"Could not access scat executable " + scat_path)
-
-    # run setupscatruns.py (or cluster variant)
-    if runtype == "laptop":
-      progname = ivory_dir + "/src/setupscatruns.py"
-      command = ["python3",progname,dirname,runfile,"1001"]
-      iv.run_and_report(command,"Failure in setupscatruns")
-    else:
-      progname = ivory_dir + "/src/cluster_setupscatruns.py"
-      command = ["python3",progname,prefix,dirname,runfile,"1001"]
-      iv.run_and_report(command,"Failure in cluster_setupscatruns")
-    species_done.append(species)
-
 # separate by species and sector
 os.chdir("fammatch")
 outprefix = "outdir"
 for species in specieslist:
-  species_present = []
   speciesdir = "n" + species
   if not os.path.isdir("../" + speciesdir):  continue   # this species is not present
-  species_present.append(species)
 
-  # create species subdirectory
+  # create species subdirectory in fammatch directory
   outdirname = outprefix + "_" + species
   command = ["mkdir",outdirname]
   iv.run_and_report(command,"Can't make species specific fammatch directory")

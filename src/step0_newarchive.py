@@ -69,6 +69,7 @@ for line in pathdata:
     found_meta = True
   else:
     newpathdata.append(line)
+print("Name of fammatch archive changed in",pathsfile)
 
 if not found_archive:
   print("Could not find fammatch_archive_dir entry in",pathsfile)
@@ -81,4 +82,3 @@ else:
   for line in newpathdata:
     pathout.write(line)
   pathout.close()
-  print("Updated paths file",pathsfile)
