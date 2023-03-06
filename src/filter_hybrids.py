@@ -86,13 +86,14 @@ print("and is using a hybrid cutoff of >", cutoff)
 
 if len(sys.argv) != 5:
   print("USAGE:  filter_hybrids.py prefix ivory_paths.tsv clusterrun use_canned_reference")
+  print("What we got:",*sys.argv())
   print("  This program uses PREFIX_plus_ref.txt and the corresponding EBhybrids output,")
   print("    and THOSE MUST MATCH.")
   print("  if clusterrun == T then this will be assumed to be a run on the biology")
   print("     computing cluster, otherwise not")
   print("  if use_canned_reference == T then precomputed references will be used")
   print("     rather than the ones from EBhybrid")
-  exit()
+  exit(-1)
 
 prefix = sys.argv[1]
 ifile = sys.argv[2]
