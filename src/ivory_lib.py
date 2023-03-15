@@ -18,10 +18,10 @@ def readivorypath(pathsfile):
   for line in inlines:
     pline = line.rstrip().split("\t")
     if not pline[1].endswith("/"):
-      print("FAILURE: ivorypaths file line\n\t",+line+"\nmissing terminal '/' on directory name")
+      print("FAILURE: ivorypaths file line\n\t"+line+"\nmissing terminal '/' on directory name")
       exit(-1)
     if pline[0] == "fammatch_archive_dir" and not pline[2].endswith("/"):
-      print("FAILURE: ivorypaths file line\n\t",+line+"\nmissing terminal '/' on directory name")
+      print("FAILURE: ivorypaths file line\n\t"+line+"\nmissing terminal '/' on directory name")
       exit(-1)
     ivorypaths[pline[0]] = pline[1:]
   return ivorypaths
