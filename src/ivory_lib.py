@@ -80,12 +80,13 @@ def dist_between(loc1,loc2):
 
 ## map for plotting point estimates (tan land, white seas)
 def makemap_for_summaries(proj,mapdata):
-  crs_lonlat = ccrs.PlateCarree()
+  # crs_lonlat = ccrs.PlateCarree()
   minlat,minlong,maxlat,maxlong,dim = mapdata
   m = plt.axes(projection=proj)
   m.set_extent([minlong,maxlong,minlat,maxlat], crs=proj)
   m.coastlines(resolution="50m", linewidth=0.4, color="black")
-  gl = m.gridlines(crs=crs_lonlat,xlocs=np.arange(-50,70,10),ylocs=np.arange(-50,70,10),draw_labels=True)
+  # gl = m.gridlines(crs=crs_lonlat,xlocs=np.arange(-50,70,10),ylocs=np.arange(-50,70,10),draw_labels=True)
+  gl = m.gridlines(crs=proj,xlocs=np.arange(-50,70,10),ylocs=np.arange(-50,70,10),draw_labels=True)
   gl.top_labels = None
   m.add_feature(cfeature.BORDERS, linewidth=0.4, linestyle="solid", color="black")
   m.add_feature(cfeature.LAND, color="tan")
