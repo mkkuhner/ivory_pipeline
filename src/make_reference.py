@@ -92,24 +92,6 @@ fammatch_archive_dir, fammatch_archive_name = pathdir["fammatch_archive_dir"]
 structure_dir, structure_exec = pathdir["structure_executable"]
 new_fammatch_archive_name = "elephant_archive_" + refprefix
 
-# protocol on the fammatch archive:
-
-# base directory must exist
-if not os.path.isdir(fammatch_archive_dir):
-  print("Parent directory of fammatch archive",fammatch_archive_dir,"does not exist")
-  print("Did you forget to mount the hard drive?")
-  exit(-1)
-
-# archive directory must not exist
-if os.path.isdir(fammatch_archive_dir + new_fammatch_archive_name):
-  print("Fammatch archive",fammatch_archive_dir + new_fammatch_archive_name,"already exists; rename or remove if you wish to replace it.")
-  exit(-1)
-
-# call step0_newarchive.py to make a new fammatch archive
-progname = ivory_dir + "src/step0_newarchive.py"
-command = ["python3",progname,pathsfile,new_fammatch_archive_name]
-iv.run_and_report(command,"Unable to create new fammatch archive " + fammatch_archive_name)
-
 # read raw reference file
 refname = reference_path + refprefix + "_raw.csv"
 refdata = read_raw_reference(refname)
@@ -249,7 +231,7 @@ iv.run_and_report(command,"Cannot copy " + savannahfile + " into data directory"
 command = ["cp",forestfile,"../" + forestfile]
 iv.run_and_report(command,"Cannot copy " + forestfile + " into data directory")
 command = ["cp",structure_outfile,"../" + structure_outfile]
-iv.run_and_report(command("Cannot copy " + structure_outfile + " into data directory")
+iv.run_and_report(command,"Cannot copy " + structure_outfile + " into data directory")
 
 
 print("Savannah samples after filtering:",int(savcount))
