@@ -31,18 +31,18 @@ ivory_dir = pathdir["ivory_pipeline_dir"][0]
 # fammatch archive; this must be done first as make_reference assumes it is done
 
 newarchive = "elephant_archive_" + refprefix
-progname = ivory_dir + "make_new_archive.py"
+progname = ivory_dir + "src/make_new_archive.py"
 command = ["python3",progname,pathsfile,newarchive]
 iv.run_and_report(command,"Unable to make fammatch archive")
 
 # reference files
-progname = ivory_dir + "make_reference.py"
+progname = ivory_dir + "src/make_reference.py"
 command = ["python3",progname,refprefix,pathsfile]
 iv.run_and_report(command,"Unable to make reference data files")
 
 # seizure raw data files
 
-progname = ivory_dir + "make_raw_seizure.py"
+progname = ivory_dir + "src/make_raw_seizure.py"
 command = ["python3",progname,seizuresheet]
 iv.run_and_report(command,"Unable to make seizure data files")
 
