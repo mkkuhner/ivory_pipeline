@@ -6,6 +6,10 @@
 # 3.  Fammatch database
 
 # Run this in the parent directory of all seizures 
+# It will assume that files pulled from the spreadsheet are in the
+# reference data directory mentioned in ivory_paths:
+# reference file is called REFPREFIX_raw.csv
+# seizure file is arbitrarily named and passed as input; should be .tsv
 
 ######################
 # main
@@ -14,15 +18,14 @@ import sys
 import ivory_lib as iv
 import os
 
-if len(sys.argv) != 5:
-  print("USAGE: python3 step0_setup.py refprefix refsheet seizuresheet ivory_paths")
+if len(sys.argv) != 4:
+  print("USAGE: python3 step0_setup.py refprefix seizurefile.tsv ivory_paths")
   print("refprefix is a NEW prefix for this reference release") 
-  print("refsheet is data pulled from the Master spreadsheet tab 'Reference Stats'")
-  print("seizuresheet is data pulled from the Master spreadsheet tab 'Ivory Stats'")
+  print("a file refprefix_raw.csv must exist in reference directory")
+  print("seizurefile.tsv is data pulled from the Master spreadsheet tab 'Ivory Stats'")
   exit(-1)
 
 refprefix = sys.argv[1]
-refsheet = sys.argv[2]
 seizuresheet = sys.argv[3]
 pathsfile = sys.argv[4]
 pathdir = iv.readivorypath(pathsfile)

@@ -11,7 +11,7 @@ scheme supersedes the old version containing the year.)
 
 A2)  Obtain the current ElephantMasterDatabase.xlsx file.  Save the tab
 named "Reference Genotypes Stats" as PREFIX_raw.csv (using comma as
-delimiter).
+delimiter).  Unclick "Save formula rather than values" if it is clicked.
 
 A3)  Run make_raw_ref_data.py with PREFIX_raw.csv and PREFIX_known.txt
 as the two arguments.  This creates a SCAT-style file with no header.

@@ -8,4 +8,4 @@ seizure_modifications_prefix	/home/mkkuhner/data/	seizure_modifications_REFELE_5
 map_prefix	/home/mkkuhner/scat/ivory_pipeline/aux/	mapfile_161220	
 seizure_data_dir	/home/mkkuhner/scat/seizures/datafiles/
 structure_executable	/home/mkkuhner/hybrids/structure_kernal_src/struture
-fammatch_archive_dir	/media/mkkuhner/ElephantDataArchives/elephant_archive/	elephant_msat_database.tsv
+fammatch_archive_dir	/media/mkkuhner/ElephantDataArchives/elephant_archive/	elephant_archive_REFELE_5.3/
