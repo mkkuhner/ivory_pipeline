@@ -49,7 +49,7 @@ xcel_sidname = "Match ID"
 
 ivorydict = iv.readivorypath(sys.argv[2])
 ivory_seizuremod = "seizure_modifications_prefix"
-seizuremodfilename = ivorydict[ivory_seizuremod][1] + ivorydict[ivory_seizuremod][2]
+seizuremodfilename = ivorydict[ivory_seizuremod][0] + ivorydict[ivory_seizuremod][1]
 reject_seizures, merge_seizure = read_seizure_mods(seizuremodfilename)
 
 masterlines = open(sys.argv[1],"r").readlines()
