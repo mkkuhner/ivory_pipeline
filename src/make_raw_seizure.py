@@ -48,6 +48,7 @@ xcel_seizurename = "OfficialSeizureName"
 xcel_sidname = "Match ID"
 
 ivorydict = iv.readivorypath(sys.argv[2])
+data_dir = ivorydict["seizure_data_dir"][0]
 ivory_seizuremod = "seizure_modifications_prefix"
 seizuremodfilename = ivorydict[ivory_seizuremod][0] + ivorydict[ivory_seizuremod][1]
 reject_seizures, merge_seizure = read_seizure_mods(seizuremodfilename)
@@ -92,7 +93,7 @@ for line in masterlines[1:]:
   outlines[seizure].append(outline2)
 
 for seizure in outlines:
-  seizurefile = open(seizure + "_raw.tsv","w")
+  seizurefile = open(datadir + seizure + "_raw.tsv","w")
   for line in outlines[seizure]:
     seizurefile.write(line)
   seizurefile.close()
