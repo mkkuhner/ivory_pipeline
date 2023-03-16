@@ -39,7 +39,7 @@ import sys
 import ivory_lib as iv
 
 if len(sys.argv) != 3:
-  print("USAGE: master2raw.py masterfile.tsv ivorypathfile")
+  print("USAGE: make_raw_seizure.py masterfile.tsv ivorypathfile")
   exit(-1)
 
 locinames = ["FH67","FH71","FH19","FH129","FH60","FH127","FH126","FH153","FH94","FH48","FH40","FH39","FH103","FH102","S03","S04" ]

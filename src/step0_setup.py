@@ -26,8 +26,8 @@ if len(sys.argv) != 4:
   exit(-1)
 
 refprefix = sys.argv[1]
-seizuresheet = sys.argv[3]
-pathsfile = sys.argv[4]
+seizuresheet = sys.argv[2]
+pathsfile = sys.argv[3]
 pathdir = iv.readivorypath(pathsfile)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
 
@@ -46,6 +46,6 @@ iv.run_and_report(command,"Unable to make reference data files")
 # seizure raw data files
 
 progname = ivory_dir + "src/make_raw_seizure.py"
-command = ["python3",progname,seizuresheet]
+command = ["python3",progname,seizuresheet,pathsfile]
 iv.run_and_report(command,"Unable to make seizure data files")
 
