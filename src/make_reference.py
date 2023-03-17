@@ -232,6 +232,11 @@ command = ["cp",forestfile,"../" + forestfile]
 iv.run_and_report(command,"Cannot copy " + forestfile + " into data directory")
 command = ["cp",structure_outfile,"../" + structure_outfile]
 iv.run_and_report(command,"Cannot copy " + structure_outfile + " into data directory")
+knownfile = refprefix + "_known.txt"
+command = ["cp",knownfile,"../" + knownfile]
+iv.run_and_report(command,"Cannot copy " + knownfile + " into data directory")
+hybfile = refprefix + "_hybt.txt"
+command = ["cp",hybfile,"../" + hybfile]
 
 
 print("Savannah samples after filtering:",int(savcount))
