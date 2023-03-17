@@ -93,7 +93,7 @@ for line in masterlines[1:]:
   outlines[seizure].append(outline2)
 
 for seizure in outlines:
-  seizurefile = open(datadir + seizure + "_raw.tsv","w")
+  seizurefile = open(data_dir + seizure + "_raw.tsv","w")
   for line in outlines[seizure]:
     seizurefile.write(line)
   seizurefile.close()
