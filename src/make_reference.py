@@ -237,6 +237,7 @@ command = ["cp",knownfile,"../" + knownfile]
 iv.run_and_report(command,"Cannot copy " + knownfile + " into data directory")
 hybfile = refprefix + "_hybt.txt"
 command = ["cp",hybfile,"../" + hybfile]
+iv.run_and_report(command,"Cannot copy " + hybfile + " into data directory")
 
 
 print("Savannah samples after filtering:",int(savcount))
