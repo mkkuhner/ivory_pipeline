@@ -195,8 +195,8 @@ for line in open(ebfile,"r"):
     speciesdict[id] = "F"
 
 # write savannah and forest files
-savannahfile = refprefix + "filtered_savannah.txt"
-forestfile = refprefix + "filtered_forest.txt"
+savannahfile = refprefix + "_filtered_savannah.txt"
+forestfile = refprefix + "_filtered_forest.txt"
 savannah_output = open(savannahfile,"w")
 forest_output = open(forestfile,"w")
 savcount = 0.0
