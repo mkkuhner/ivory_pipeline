@@ -48,6 +48,20 @@ if not os.path.isdir(seizure_dir):
   exit(-1)
 os.chdir(seizure_dir)
 
+# test if some species directory(ies) exist
+foundspecies = False
+for spec in specieslist:
+  if os.path.isdir(seizure_dir + "n" + spec):
+    foundspecies = True
+    break
+if not foundspecies:
+  print("FAILURE: No species specific directores within",seizure_dir,"exist.")
+  print("Looked for species:",end="")
+  for spec in specieslist:
+    print(" " + spec,end="")
+  print("\n")
+  exit(-1)
+ 
 # we assume that data have been obtained, validated, filtered, and
 # assigned to species by upstream code step1_fammatch.py
 
