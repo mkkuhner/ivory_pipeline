@@ -174,14 +174,16 @@ command.append(reference_path + reference_prefix+"_raw.csv")
 command.append(prefix + "_raw.tsv")
 iv.run_and_report(command,"Microsat validation failed")
 
-# run detect_duplicates
-command = ["python3",ivory_dir + "src/detect_duplicates.py",prefix+"_raw.tsv"]
-iv.run_and_report(command,"Duplicate samples detected")
-
 # run prep_scat_data
 command = ["python3",ivory_dir + "src/prep_scat_data.py",prefix]
 iv.run_and_report(command,"Failure in prep_scat_data.py")
 print("Data validated and prepared")
+
+# run detect_duplicates
+# this is done after prep_scat_data to avoid duplicate testing on
+# individuals with too much missing data
+command = ["python3",ivory_dir + "src/detect_duplicates.py",prefix+"_unknowns.txt"]
+iv.run_and_report(command,"Duplicate samples detected")
 
 ###
 # Separating the species and discarding hybrids

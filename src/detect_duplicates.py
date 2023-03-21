@@ -1,12 +1,16 @@
-# examine file PREFIX_raw.tsv and find any samples that are perfect
+# examine file PREFIX_unknowns.txt and find any samples that are perfect
 # matches when unknown data is taken into account.  If any are found,
 # return a list and an error code (to stop scripts) so that they can
 # be consolidated; it is an error to go forward with duplicates as
 # it messes up VORONOI, familial matching, and individual names.
 
+# This is run downstream of filtering for missing data, as otherwise it
+# flags duplicates involving individuals which will never be analyzed
+# (and such duplicates do exist in the database).
+
 import sys
 if len(sys.argv) != 2:
-  print("USAGE:  detect_duplicates PREFIX_raw.tsv")
+  print("USAGE:  detect_duplicates PREFIX_unknowns.txt")
   exit(-1)
 
 infilename = sys.argv[1]
@@ -15,10 +19,10 @@ data = {}
 
 # read in input data
 for line in open(infilename,"r"):
-  if line.startswith("MatchID"):  continue   # skip header
-  line = line.rstrip().split("\t")
+  line = line.rstrip().split()
   id = line[0]
-  msats = line[1:]
+  region = line[1]
+  msats = line[2:]
   # DEBUG
   if len(msats) != 16:
     print(msats)
