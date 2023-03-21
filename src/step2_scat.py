@@ -51,11 +51,11 @@ os.chdir(seizure_dir)
 # test if some species directory(ies) exist
 foundspecies = False
 for spec in specieslist:
-  if os.path.isdir(seizure_dir + "n" + spec):
+  if os.path.isdir("n" + spec):
     foundspecies = True
     break
 if not foundspecies:
-  print("FAILURE: No species specific directores within",seizure_dir,"exist.")
+  print("FAILURE: No species specific directories within",seizure_dir,"exist.")
   print("Looked for species:",end="")
   for spec in specieslist:
     print(" " + spec,end="")
