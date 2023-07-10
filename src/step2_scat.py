@@ -75,6 +75,8 @@ for species in specieslist:
   iv.run_and_report(command,"Could not access " + datafile)
 
   runfile = "runfile_"+species+".sh"
+  if runtype == "cluster":
+    runfile = "cluster_" + runfile
   command = ["cp",runfile,dirname]
   iv.run_and_report(command,"Could not access " + runfile)
 

@@ -42,33 +42,42 @@ def truncate_path(mypath,prefix):
   mypath = prefix + "/" + mypath[-1]
   return mypath
 
-def make_runfiles(clusterrun,species,prefix,seizelines,mapfile,regionfile):
-  # make Scat run file
+def finish_runline(runline,numind,mapfile,regionfile,datafile):
+  runline = runline.replace("NUMIND",str(numind))
+  runline = runline.replace("MAPFILE",mapfile)
+  runline = runline.replace("REGIONFILE",regionfile)
+  runline = runline.replace("DATAFILE",datafile)
+  return runline
+
+def make_laptop_runfiles(ivory_dir,species,prefix,seizelines,mapfile,regionfile,scat_execpath):
+  # make laptop flavor Scat run files
+  # we do NOT replace SEED as this must be done for each copy separately
   datafile = prefix + "_" + species + ".txt"
-  if clusterrun:
-    cluster_path = "/gscratch/wasser/mkkuhner/seizureruns/" 
-    runlines = open("../cluster_master_scat.sh","r").readlines()
-    runline = runlines[-1]
-    mapfile = cluster_path + truncate_path(mapfile,prefix)
-    regionfile = cluster_path + truncate_path(regionfile,prefix)
-    datafile = cluster_path + truncate_path(datafile,prefix)
-  else:
-    runlines = open("master_scat_runfile.sh","r").readlines()
-    assert len(runlines) == 1
-    runline = runlines[0]
-    datafile = "../../" + datafile
-  assert is_even(len(seizelines))
+  runlines = open("master_scat_runfile.sh","r").readlines()
+  assert len(runlines) == 1
+  runline = runlines[0]
+  my_datafile = "../../" + datafile
   runline = runline.replace("SCAT",scat_execpath)
   numind = len(seizelines) / 2
-  runline = runline.replace("NUMIND",str(numind))
-  # we do NOT replace SEED; that will be done downstream, as each
-  # separate Scat run needs its own seed.
-  runline = runline.replace("MAPFILE",mapfile)
-  runline = runline.replace("DATAFILE",datafile)
-  runline = runline.replace("REGIONFILE",regionfile)
+  runline = finish_runline(runline,numind,mapfile,regionfile,my_datafile)
   runfile = open("runfile_" + species + ".sh","w")
-  if clusterrun:
-    runfile.writelines(runlines[0:-1])
+  runfile.write(runline)
+  runfile.close()
+
+def make_cluster_runfiles(ivory_dir,species,prefix,seizelines,mapfile,regionfile):
+  # make cluster flavor Scat run files
+  # we do NOT replace SEED as this must be done for each copy separately
+  datafile = prefix + "_" + species + ".txt"
+  runlines = open(ivory_dir + "/src/cluster_master_scat.sh","r").readlines()
+  runline = runlines[-1]
+  cluster_path = "/gscratch/wasser/mkkuhner/seizureruns/" 
+  my_mapfile = cluster_path + truncate_path(mapfile,prefix)
+  my_regionfile = cluster_path + truncate_path(regionfile,prefix)
+  my_datafile = cluster_path + truncate_path(datafile,prefix)
+  numind = len(seizelines) / 2
+  runline = finish_runline(runline,numind,my_mapfile,my_regionfile,my_datafile)
+  runfile = open("cluster_runfile_" + species + ".sh","w")
+  runfile.writelines(runlines[0:-1])
   runfile.write(runline)
   runfile.close()
 
@@ -186,8 +195,10 @@ if use_canned_reference:
 
 if len(sav_seizure) > 0:
   make_species_scatfile("savannah",prefix,sav_seizure,sav_ref)
-  make_runfiles(clusterrun,"savannah",prefix,sav_seizure,savannahmap,zones_savannah)
+  make_laptop_runfiles(ivory_dir,"savannah",prefix,sav_seizure,savannahmap,zones_savannah,scat_execpath)
+  make_cluster_runfiles(ivory_dir,"savannah",prefix,sav_seizure,savannahmap,zones_savannah)
 
 if len(for_seizure) > 0:
   make_species_scatfile("forest",prefix,for_seizure,for_ref)
-  make_runfiles(clusterrun,"forest",prefix,for_seizure,forestmap,zones_forest)
+  make_laptop_runfiles(ivory_dir,"forest",prefix,for_seizure,forestmap,zones_forest,scat_execpath)
+  make_cluster_runfiles(ivory_dir,"forest",prefix,for_seizure,forestmap,zones_forest)

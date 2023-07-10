@@ -1,17 +1,7 @@
 # step1_fammatch.py (based on former phase1.py and phase3.py)
-# Take a seizure from raw file to completed fammatch.
-# It does not make the network diagram as this step requires
-# manual intervention.
+# Take a seizure from raw file to processed data, but does NOT
+# run any part of fammatch.
 # Run this program in the parent directory of all seizures.
-# If you do not have a fammatch archive, first run step0_newarchive.py.
-
-# This program ABSOLUTELY REQUIRES that the current fammatch archive
-# is using the same reference as the new material to be added.  If you
-# have changed the reference (or zones or maps) make a new archive
-# using step0_newarchive.py.
-
-# You do not have to run subsequent steps but can merrily continue
-# running this one on seizure after seizure.  
 
 # NB:  This program does not use the seizure_modifications file but 
 # instead runs everything; it does not omit or rename/merge any seizures.  
@@ -40,7 +30,7 @@ def check_seizure_present(sfile,seizurename):
 ## main program
 
 if len(sys.argv) != 3:
-  print("USAGE:  python3 step1_fammatch.py PREFIX pathsfile.tsv")
+  print("USAGE:  python3 step1_nofam.py PREFIX pathsfile.tsv")
   exit(-1)
 
 prefix = sys.argv[1]
@@ -61,8 +51,6 @@ reference_path, reference_prefix = pathdir["reference_prefix"]
 zones_path, zones_prefix = pathdir["zones_prefix"]
 map_path, map_prefix = pathdir["map_prefix"]
 seizure_data_dir = pathdir["seizure_data_dir"][0]
-arch_dir, arch_name = pathdir["fammatch_archive_dir"]
-meta_path, meta_prefix = pathdir["metadata_prefix"]
 
 homedir = os.path.abspath(".")
 if not homedir.endswith("/"):
@@ -81,12 +69,6 @@ if os.path.isdir(seizure_dir):
   print("the previous seizure directory before proceeding.")
   exit(-1)
 
-# fammatch archive should exist (use step0_newarchive.py to create it)
-if not os.path.isdir(arch_dir + arch_name):
-  print("Fammatch archive " + arch_dir + arch_name + " not found; terminating")
-  print("Use program step0_newarchive.py to make an archive")
-  exit(-1)
-
 # raw data file should exist
 rawdata = seizure_data_dir + prefix + "_raw.tsv"
 if not os.path.isfile(rawdata):
@@ -99,20 +81,6 @@ for species in specieslist:
   if not os.path.isfile(filterfile):
     print("Reference file",filterfile,"not found:  need to create filtered reference")
     exit(-1)
-
-# seizure should not already be in archive
-seizurelist = arch_dir + arch_name + "seizurelist.tsv"
-if os.path.isfile(seizurelist):
-  is_present,oldseizures = check_seizure_present(seizurelist, prefix)
-  if is_present:
-    print("Seizure",prefix,"is already in the archive")
-    print("If you need to rerun it, run remove_seizure_from_fammatch.py first")
-    exit(-1)
-else:
-  oldseizures = []
-
-# Back up previous fammatch archive
-iv.backup_archive(arch_dir, arch_name)
 
 # Create the seizure directory and its fammatch subdirectory
 command = ["mkdir",seizure_dir]
@@ -230,71 +198,4 @@ for species in specieslist:
     else:
       print("FAILURE: ",dirname," directory already exists")
       exit(-1)
-
-# separate by species and sector
-os.chdir("fammatch")
-outprefix = "outdir"
-for species in specieslist:
-  speciesdir = "n" + species
-  if not os.path.isdir("../" + speciesdir):  continue   # this species is not present
-
-  # create species subdirectory in fammatch directory
-  outdirname = outprefix + "_" + species
-  command = ["mkdir",outdirname]
-  iv.run_and_report(command,"Can't make species specific fammatch directory")
-  
-  # create SCAT sector-run command and run it
-  datafile = "../" + prefix + "_" + species + ".txt"
-  zonefile = zones_path + zones_prefix + "_" + species + ".txt"
-  command = [scat_path,"-Z","-H2",datafile,zonefile,outdirname,"16"]
-  iv.run_and_report(command,"Unable to run SCAT to determine sectors")
-
-# The remainder of the program is in a try loop.  If this fails
-# we restore from backup.  
-
-print("About to start familial matching")
-try:
-  os.chdir(seizure_dir)
-  # update seizure metadata
-  # note:  update_metadata.py will create this file if it does not exist
-  seizure_metafile = meta_path + meta_prefix + ".tsv"
-  prog = ivory_dir + "src/update_metadata.py"
-  command = ["python3",prog,seizure_metafile,prefix]
-  print("Calling update_metadata with the following")
-  print(command)
-  iv.run_and_report(command,"Unable to update seizure metadata")
-
-  # run prep_fammatch.py
-  os.chdir(homedir)     # return to root directory of all seizures
-  progname = ivory_dir + "src/prep_fammatch.py"
-  command = ["python3",progname]
-  command += [prefix, pathsfile]
-  iv.run_and_report(command,"Failure in program " + progname)
-
-  # run run_fammatch.py
-  # this calls rout2db.py to tidy up the fammatch output
-  progname = ivory_dir + "src/run_fammatch.py"
-  command = ["python3",progname]
-  command += [prefix,pathsfile]
-  iv.run_and_report(command,"Unable to run " + progname)
-  print("Fammatch runs completed and archived")
-
-  # everything seems to have succeeded, so we will add this seizure to the
-  # list of processed seizures
-  oldseizures.append(prefix + "\n")
-  outfile = open(seizurelist,"w")
-  for entry in oldseizures:
-    outfile.write(entry)
-  outfile.close()
-
-except RuntimeError as e:
-  # write failfile
-  failname = homedir + prefix + "/fammatch/FAILURE_REPORT"
-  failfile = open(failname,"w")
-  failfile.write(str(e) + "\n")
-  failfile.close()
-  print("FAILED:  Restoring from backups")
-  print("FAILURE REASON:  ",e)
-  iv.restore_archive(arch_dir)
-  exit(-1)
 

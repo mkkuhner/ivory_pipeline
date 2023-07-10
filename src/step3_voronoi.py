@@ -44,7 +44,7 @@ def run_and_report(command,errormsg):
 if len(sys.argv) != 3:
   print("USAGE:  python3 step3.py PREFIX pathsfile.tsv")
   print("This should be run in the parent directory of all seizures")
-  print("and the pathsfile must be the same as used in phase1.py and phase3.py")
+  print("and the pathsfile must be the same as used in step1_fammatch.py and step2_scat.py")
   exit(-1)
 
 prefix = sys.argv[1]

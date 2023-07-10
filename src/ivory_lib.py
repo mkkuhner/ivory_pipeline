@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import numpy as np
+import os
 
 ############################################################################
 # file reading
@@ -73,6 +74,48 @@ def latlong_to_grid(mylat,mylong,mapdata):
 ## distance between two lat/long pairs
 def dist_between(loc1,loc2):
   return haversine(loc1,loc2,Unit.KILOMETERS)
+
+##########################################################################
+# backups for fammatch archive
+
+# In these functions, arch_dir is the root directory of all archives and
+# arch_name is the DIRECTORY of the current archive--not the name of the
+# current archive as you might expect.
+
+def backup_archive(arch_dir, arch_name):
+  if not os.path.isdir(arch_dir + arch_name):
+    print("ERROR:  attempt to back up a non-existing directory")
+    exit(-1)
+  archive = arch_dir + arch_name
+  backupdir = archive[:-1] + "_backups/"
+  # delete previous backup directory
+  if os.path.isdir(backupdir):
+    command = ["rm","-rf",backupdir]
+    run_and_report(command,"Unable to delete old backup directory" + backupdir)
+  # copy archive to backup directory
+  command = ["cp","-r",archive,backupdir]
+  run_and_report(command,"Unable to back up archive")
+
+def restore_archive(arch_dir, arch_name):
+  archive = arch_dir + arch_name
+  backupdir = archive[:-1] + "_backups/"
+  forensicdir = archive[:-1] + "_forensics/"
+  assert os.path.isdir(backupdir)
+
+  # make copy of current state of archive directory, for debugging
+  if os.path.isdir(archive):
+    command = ["cp","-r",archive,forensicdir]
+    run_and_report(command,"Unable to snapshot archive for debugging")
+
+  # delete archive directory
+  if os.path.isdir(archive):
+    command = ["rm","-rf",archive]
+    run_and_report(command,"Unable to delete old archive " + archive)
+
+  # copy backup directory into archive directory
+  command = ["cp","-r",backupdir,archive]
+  run_and_report(command,"Unable to restore archive from backups")
+
 
 
 ##########################################################################
