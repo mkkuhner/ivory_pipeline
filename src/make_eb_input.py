@@ -36,8 +36,8 @@ for line in reflines:
   line = line.rstrip().split()
   sid = line[0]
   testsid = sid[0:11]
-  if sid not in refsids:
-    refsids.append(sid)
+  if testsid not in refsids:
+    refsids.append(testsid)
 print("Read",len(refsids),"known location individuals")
 
 if "CH0878" not in refsids:
@@ -82,7 +82,7 @@ for line in structlines[index:]:
 
   line = line.rstrip().split()
   sid = line[1]
-  if testsid not in refsids:
+  if sid not in refsids:
     print("Failed to find",sid,"in reference")
     exit(-1)
   p1 = line[-2]
