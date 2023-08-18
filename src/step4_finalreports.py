@@ -133,7 +133,7 @@ ivory_dir = pathdir["ivory_pipeline_dir"][0]
 mods = pathdir["seizure_modifications_prefix"]
 modfile = mods[0] + mods[1]
 archive = pathdir["fammatch_archive_dir"]
-archivefile = archive[0] + archive[1]
+archivefile = archive[0] + archive[1] + "elephant_msat_database.tsv"
 metadata = pathdir["metadata_prefix"]
 metafile = metadata[0] + metadata[1] + ".tsv"
 sector_metafile = ivory_dir + "aux/sector_metadata.tsv"
@@ -153,7 +153,7 @@ splist = ["forest","savannah"]
 # check that archive file exists
 if not os.path.isfile(archivefile):
   print("Cannot find fammatch archive:  did you forget to hook up the external HD?")
-  print("Location tried was",archivedir)
+  print("Location tried was",archivefile)
   exit(-1)
 
 # check that DM file exists
