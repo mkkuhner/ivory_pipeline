@@ -37,22 +37,6 @@ import math
 ##########################################################################
 # functions
 
-def readivorypath(pathsfile):
-  ivorypaths = {}
-  inlines = open(pathsfile,"r").readlines()
-  for line in inlines:
-    pline = line.rstrip().split("\t")
-    ivorypaths[pline[0]] = pline[1:]
-  return ivorypaths
-
-def run_and_report(command,errormsg):
-  process = Popen(command)
-  exit_code = process.wait()
-  if exit_code != 0:
-    print("FAILURE: " + errormsg)
-    print("Exit code " + str(exit_code))
-    exit(-1)
-
 def whichbin(item,binbounds):
   if item < binbounds[0]:  return None
   if item >= binbounds[-1]:  return len(binbounds) - 1
@@ -90,33 +74,11 @@ def read_sector_metadata(metafile):
     secdict[sec] = species
   return secdict
 
-def read_seizure_mods(modfile):
-  rejected_seizures = []
-  merged_seizures = {}
-  state = None
-  for line in open(modfile,"r"):
-    line = line.rstrip().split("\t")
-    if line[0] == "REJECT":
-      state = "reject"
-      continue
-    if line[0] == "MERGE":
-      state = "merge"
-      continue
-    if state == "reject":
-      assert len(line) == 1
-      rejected_seizures.append(line[0])
-      continue
-    if state == "merge":
-      # merge requires a new name and at least two old names
-      assert len(line) >= 3
-      newname = line[0]
-      for entry in line[1:]:
-        merged_seizures[entry] = newname
-  return rejected_seizures, merged_seizures
-
 
 ##########################################################################
 # main program
+
+import ivory_lib as iv
 
 if len(sys.argv) != 5:
   print("USAGE:  python3 step4_finalreports.py ivory_paths.tsv dms.tsv LR_cutoff minloci")
@@ -128,7 +90,7 @@ if len(sys.argv) != 5:
 
 # read ivory_paths and set up variables
 ivory_paths = sys.argv[1]
-pathdir = readivorypath(ivory_paths)
+pathdir = iv.readivorypath(ivory_paths)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
 mods = pathdir["seizure_modifications_prefix"]
 modfile = mods[0] + mods[1]
@@ -178,9 +140,9 @@ if not os.path.isfile(modfile):
 outdir = "fammatch_overall/"
 if os.path.isdir(outdir):
   command = ["rm","-rf",outdir]
-  run_and_report(command,"Unable to delete previous results in " + outdir)
+  iv.run_and_report(command,"Unable to delete previous results in " + outdir)
 command = ["mkdir",outdir]
-run_and_report(command,"Unable to create output directory " + outdir)
+iv.run_and_report(command,"Unable to create output directory " + outdir)
 
 # get sector info
 secdict = read_sector_metadata(sector_metafile)
@@ -192,10 +154,10 @@ reportfile = outdir + "fammatch_global.tsv"
 # I thought we could filter on LR here but we can't, as we need to calculate
 # numcompares; I therefore send None as the minimum LR
 command = ["python3",progname,archivefile,"report","ALL",reportfile,"None",str(minloci)]
-run_and_report(command,"Unable to pull report from fammatch database " + archivefile)
+iv.run_and_report(command,"Unable to pull report from fammatch database " + archivefile)
 
 # read seizure_modifications file
-rejected_seizures, merged_seizures = read_seizure_mods(modfile)
+rejected_seizures, merged_seizures = iv.read_seizure_mods(modfile)
 
 # read DM file; if we later find these entries in the database we will
 # discard them.  We discard DMs for rejected seizures here, and correct

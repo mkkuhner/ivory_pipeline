@@ -124,7 +124,6 @@ savannahmap = map_path + map_prefix+"_savannah.txt"
 forestmap = map_path + map_prefix+"_forest.txt"
 
 seizure_data_dir = pathdir["seizure_data_dir"][0]
-voronoi_exec = pathdir["voronoi_executable"][0]
 
 clusterrun = False
 if sys.argv[3] == "T":

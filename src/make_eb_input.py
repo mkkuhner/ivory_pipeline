@@ -1,3 +1,8 @@
+### functions
+
+def truncate_name(name):
+  return name[0:11]
+
 import sys
 
 if len(sys.argv) != 5 and len(sys.argv) != 6:
@@ -34,10 +39,9 @@ indcount = 0
 for line in reflines:
   indcount += 1
   line = line.rstrip().split()
-  sid = line[0]
-  testsid = sid[0:11]
-  if testsid not in refsids:
-    refsids.append(testsid)
+  sid = truncate_name(line[0])
+  if sid not in refsids:
+    refsids.append(sid)
 print("Read",len(refsids),"known location individuals")
 
 if "CH0878" not in refsids:
@@ -81,7 +85,7 @@ for line in structlines[index:]:
     break
 
   line = line.rstrip().split()
-  sid = line[1]
+  sid = truncate_name(line[1])
   if sid not in refsids:
     print("Failed to find",sid,"in reference")
     exit(-1)

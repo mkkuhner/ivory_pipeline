@@ -49,7 +49,8 @@ for line in open(ebfile,"r"):
   if sumhybs >= cutoff:
     speciesdict[id] = "H"
     hybcount += 1
-    call_list.append([id,sumhybs])
+    # DEBUG this appears wrong
+    # call_list.append([id,sumhybs])
   elif savannah >= forest:
     speciesdict[id] = "S"
     savcount += 1
