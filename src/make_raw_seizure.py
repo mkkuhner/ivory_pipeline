@@ -71,6 +71,8 @@ for line in masterlines[1:]:
     exit(-1)
   if " " in seizure:
     print("FAILURE: seizure named",seizure,"has a name containing a space")
+    print(line)
+    print("index=",seizure_ind)
     exit(-1)
   if seizure in reject_seizures:
     continue

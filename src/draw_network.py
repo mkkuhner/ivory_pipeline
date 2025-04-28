@@ -16,8 +16,6 @@ import csv
 from operator import itemgetter
 import networkx as nx
 import community as community_louvain
-
-import networkx as nx
 import graph_tool as gt
 import cairo
 

@@ -33,12 +33,15 @@ with open(sys.argv[2], newline="") as csvfile:
           exit(-1)
         pos2name[pos] = row[pos]
         pos2name[pos+1] = row[pos]
-        refalleles[row[pos]] = ["-999",]
+        refalleles[row[pos]] = set()
+        # this line says "-999" (missing data) is always valid
+        refalleles[row[pos]].add("-999")
       readhdr = False
       continue
 
     for pos in range(firstmarker,lastmarker+1):
-      refalleles[pos2name[pos]].append(row[pos])
+      refalleles[pos2name[pos]].add(row[pos])
+
 
 # now read in the seizure data 
 abberant = {}
