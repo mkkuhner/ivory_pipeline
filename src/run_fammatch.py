@@ -160,8 +160,8 @@ for sector in range(0,nsec):
   # make directory for runs
   rundir = seizuredir + "sub" + secname + "/"
   make_dir_if_needed(rundir)
-  safecopy(ivory_dir + "src/calculate_LRs.R", rundir + "calculate_LRs.R")
-  safecopy(ivory_dir + "src/LR_functions.R", rundir + "LR_functions.R")
+  safecopy(ivory_dir + "src/fammatch/calculate_LRs.R", rundir + "calculate_LRs.R")
+  safecopy(ivory_dir + "src/fammatch/LR_functions.R", rundir + "LR_functions.R")
 
   # get absolute paths to give to R scripts (safest)
   r_oldrefname = os.path.abspath(oldrefname)

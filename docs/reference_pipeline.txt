@@ -25,6 +25,9 @@ reference set (bearing in mind that the input file has 2 lines per
 individual).  Set NUMLOCI to your number of loci (16 for standard elephant
 microsat data) and MISSING to "-999".
 
+Prepend the file header_for_structure (found in ivory_pipeline/aux/)
+to the PREFIX_known.txt.
+
 3)  Run Structure.  You do not need to set any command line options as they
 are handled by "mainparams".  Your output file will have the name you gave
 it in "mainparams" followed by "_f".  This takes minutes.

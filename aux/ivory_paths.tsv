@@ -1,6 +1,6 @@
 ivory_pipeline_dir	/home/mkkuhner/scat/ivory_pipeline/
-scat_executable	/home/mkkuhner/scat/scat-master/src/SCAT3
-voronoi_executable	/home/mkkuhner/scat/voronoi-master/src/VORONOI
+scat_executable	/home/mkkuhner/scat/ivory_pipeline/src/scat-master/src/SCAT3
+voronoi_executable	/home/mkkuhner/scat/ivory_pipeline/voronoi-master/src/VORONOI
 reference_prefix	/home/mkkuhner/data/	REFELE_5.3
 zones_prefix	/home/mkkuhner/data/	zones_42
 metadata_prefix	/home/mkkuhner/data/	seizure_metadata_43c

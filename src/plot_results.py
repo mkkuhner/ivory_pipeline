@@ -193,7 +193,8 @@ def plot_summary(prefix,maxima,progname,statistic,figno,mapdata,crs_lonlat,repor
   if "med" in statistic:
     statname = "median"
   else:
-    statname = "best"
+    print("Unknown statistic",statistic,"encountered:  terminating")
+    exit(-1)
   m = makemap_for_summaries(crs_lonlat,mapdata)
   for species,color in zip(["savannah","forest"],[mygold,mygreen]):
     if species not in whichspecies:  continue
@@ -336,10 +337,6 @@ for specdir in dirs_to_do:
     medlong = statistics.median(scatlongs)
     maxima[species][sid]["scatmed"] = [medlat,medlong]
 
-    # scat bestsquare "scatbest"
-    bestlat, bestlong = latlong_of_maximum(scatgrid,minlat,minlong)
-    maxima[species][sid]["scatbest"] = [bestlat,bestlong]
-
     # scat heatmap
     plt.figure(figno)
     figno += 1
@@ -373,13 +370,6 @@ for specdir in dirs_to_do:
       medlong = statistics.median(vals)
       maxima[species][sid]["vormed"] = [medlat,medlong]
       masked_scatnums = []   # get rid of it, it's huge!
-
-      # best square voronoi "vorbest"
-      # this is not based on what we just read, but on the actual
-      # voronoi results from "_printprobs"
-      vorgrid = vordict[sid]
-      bestlat,bestlong = latlong_of_maximum(vorgrid,minlat,minlong)
-      maxima[species][sid]["vorbest"] = [bestlat,bestlong]
 
       # heatmap for VORONOI
       plt.figure(figno)
@@ -431,28 +421,22 @@ if use_vor["forest"]:  whichspecies_vor.append("forest")
 
 # scat median
 figno = plot_summary(prefix,maxima,"SCAT","scatmed",figno,mapdata,crs_lonlat,reportdir,whichspecies_scat)
-# scat bestsquare
-figno = plot_summary(prefix,maxima,"SCAT","scatbest",figno,mapdata,crs_lonlat,reportdir,whichspecies_scat)
 
 if use_vor["savannah"] or use_vor["forest"]:
   # voronoi median
   figno = plot_summary(prefix,maxima,"VORONOI","vormed",figno,mapdata,crs_lonlat,reportdir,whichspecies_vor)
-  # voronoi bestsquare
-  figno = plot_summary(prefix,maxima,"VORONOI","vorbest",figno,mapdata,crs_lonlat,reportdir,whichspecies_vor)
 
 # summary table
 outfile = reportdir + prefix + "_point_estimates.tsv"
 outfile = open(outfile,"w")
-outline = "SID\tspecies\tSCAT_median\tSCAT_best\tVORONOI_median\tVORONOI_best\n"
+outline = "SID\tspecies\tSCAT_median\tVORONOI_median\n"
 outfile.write(outline)
 for species in allspecies:
   for sid in maxima[species]:
     outline = [sid,species]
     outline.append(str_latlong(maxima[species][sid]["scatmed"]))
-    outline.append(str_latlong(maxima[species][sid]["scatbest"]))
     if use_vor[species]:
       outline.append(str_latlong(maxima[species][sid]["vormed"]))
-      outline.append(str_latlong(maxima[species][sid]["vorbest"]))
     outline = "\t".join(outline) + "\n"
     outfile.write(outline)
 outfile.close()

@@ -157,11 +157,11 @@ iv.run_and_report(command,"Unable to copy STRUCTURE output to working directory"
 # marshall files for ebhybrids
 command = ["cp",ivory_dir + "aux/ebscript_template.R","."]
 iv.run_and_report(command,"Failure to find ebscript template")
-command = ["cp",ivory_dir + "src/inferencefunctions.R","."]
+command = ["cp",ivory_dir + "src/EBhybrids/inferencefunctions.R","."]
 iv.run_and_report(command,"Failure to find EBhybrids source code")
-command = ["cp",ivory_dir + "src/calcfreqs.R","."]
+command = ["cp",ivory_dir + "src/EBhybrids/calcfreqs.R","."]
 iv.run_and_report(command,"Failure to find EBhybrids source code")
-command = ["cp",ivory_dir + "src/likelihoodfunctionsandem.R","."]
+command = ["cp",ivory_dir + "src/EBhybrids/likelihoodfunctionsandem.R","."]
 iv.run_and_report(command,"Failure to find EBhybrids source code")
 
 progname = ivory_dir + "src/make_eb_input.py"
