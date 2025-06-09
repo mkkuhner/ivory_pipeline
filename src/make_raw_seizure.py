@@ -64,10 +64,10 @@ for lname in locinames:
 
 outlines = {}
 for line in masterlines[1:]:
-  pline = line.rstrip().split("\t")
+  pline = line.rstrip().strip(" ").split("\t")
   seizure = pline[seizure_ind]
   if ", " in seizure:
-    print("FAILURE: seizure named",seizure,"needs to be in mary format")
+    print("FAILURE: seizure named",seizure,"needs to be in underscore-separated format")
     exit(-1)
   if " " in seizure:
     print("FAILURE: seizure named",seizure,"has a name containing a space")
