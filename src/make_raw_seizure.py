@@ -64,16 +64,24 @@ for lname in locinames:
 
 outlines = {}
 for line in masterlines[1:]:
-  pline = line.rstrip().strip(" ").split("\t")
+  pline = line.rstrip().split("\t")
   seizure = pline[seizure_ind]
   if ", " in seizure:
     print("FAILURE: seizure named",seizure,"needs to be in underscore-separated format")
     exit(-1)
-  if " " in seizure:
-    print("FAILURE: seizure named",seizure,"has a name containing a space")
-    print(line)
-    print("index=",seizure_ind)
-    exit(-1)
+  # this code exists because ElephantMasterDatabase5.32 has arbitrary
+  # spaces in seizure names!  It's a hack but necessary to get that
+  # version to run.
+  newseizure = ""
+  for c in seizure:
+    if c != " ":
+      newseizure += c
+  seizure = newseizure
+  #if " " in seizure:
+  #  print("FAILURE: seizure named",seizure,"has a name containing a space")
+  #  print(line)
+  #  print("index=",seizure_ind)
+  #  exit(-1)
   if seizure in reject_seizures:
     continue
   if seizure in merge_seizure:
