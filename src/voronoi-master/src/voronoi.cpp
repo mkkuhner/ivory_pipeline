@@ -583,7 +583,7 @@ int main ( int argc, char** argv)
   }
   // end MAP PORT
 
-  int nmcmc = 1000;
+  int nmcmc = 100;
   int skip = 100;
   //int firstsample = atoi(argv[1]);
   //int lastsample = atoi(argv[2]);
