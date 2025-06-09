@@ -84,6 +84,11 @@ for species in specieslist:
   command = ["cp",scat_path,dirname]
   iv.run_and_report(command,"Could not access scat executable " + scat_path)
 
+  # set up the prefix_mapinfo files in the species directory
+  mapinfofile = dirname + "/" + prefix + "_mapinfo"
+  mapfile = map_path + map_prefix + "_" + species + ".txt"
+  iv.write_mapinfo_from_map(mapfile, mapinfofile)
+
   # run setupscatruns.py (or cluster variant)
   if runtype == "laptop":
     progname = ivory_dir + "/src/setupscatruns.py"

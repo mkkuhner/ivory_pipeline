@@ -95,9 +95,9 @@ ivory_dir = pathdir["ivory_pipeline_dir"][0]
 mods = pathdir["seizure_modifications_prefix"]
 modfile = mods[0] + mods[1]
 archive = pathdir["fammatch_archive_dir"]
+refprefix = pathdir["reference_prefix"][0]
+archive += "elephant_archive_" + refprefix + "/"
 archivefile = archive[0] + archive[1] + "elephant_msat_database.tsv"
-metadata = pathdir["metadata_prefix"]
-metafile = metadata[0] + metadata[1] + ".tsv"
 sector_metafile = ivory_dir + "aux/sector_metadata.tsv"
 
 dmfile = sys.argv[2]

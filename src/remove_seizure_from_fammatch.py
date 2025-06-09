@@ -51,11 +51,13 @@ pathsfile = sys.argv[2]
 numsecs = 6
 
 pathdir = iv.readivorypath(pathsfile)
-arch_dir, arch_name = pathdir["fammatch_archive_dir"]
+arch_dir = pathdir["fammatch_archive_dir"]
+refprefix = pathdir["reference_prefix"][1]
+arch_name = "elephant_archive_" + refprefix + "/"
 archive = arch_dir + arch_name
 database_name = archive + "elephant_msat_database.tsv"
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
-meta_path, meta_prefix = pathdir["metadata_prefix"]
+metafile = archive + "seizure_metadata.tsv"
 data_dir = pathdir["seizure_data_dir"][0]
 
 # back up archive in case something goes wrong
@@ -87,7 +89,6 @@ try:
   # remove seizure from seizure_metadata.tsv, at the same time building
   # up a list of elephant names to remove elsewhere
   new_meta = []
-  metafile = meta_path + meta_prefix + ".tsv"
   for line in open(metafile,"r"):
     seizure, sid = line.rstrip().split("\t")
     if seizure != prefix:

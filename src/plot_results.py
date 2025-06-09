@@ -374,6 +374,7 @@ for specdir in dirs_to_do:
       # heatmap for VORONOI
       plt.figure(figno)
       figno += 1
+      vorgrid = vordict[sid]
       m = makemap_for_heatmaps(crs_lonlat,mapdata)
       m.pcolormesh(meshx,meshy,vorgrid,shading="flat",cmap=plt.cm.hot,transform=crs_lonlat)
       sm = plt.cm.ScalarMappable(cmap=plt.cm.hot)

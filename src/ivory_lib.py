@@ -21,9 +21,6 @@ def readivorypath(pathsfile):
     if not pline[1].endswith("/"):
       print("FAILURE: ivorypaths file line\n\t"+line+"\nmissing terminal '/' on directory name")
       exit(-1)
-    if pline[0] == "fammatch_archive_dir" and not pline[2].endswith("/"):
-      print("FAILURE: ivorypaths file line\n\t"+line+"\nmissing terminal '/' on directory name")
-      exit(-1)
     ivorypaths[pline[0]] = pline[1:]
   return ivorypaths
 
@@ -71,6 +68,49 @@ def read_seizure_mods(modfile):
       for entry in line[1:]:
         merged_seizures[entry] = newname
   return rejected_seizures, merged_seizures
+
+# make a _mapinfo based on a map
+def write_mapinfo_from_map(mapfilename, mapinfoname):
+  # ASSUMES MARGIN=7
+  margin = 7
+  lats = []
+  longs = []
+  for line in open(mapfilename,"r"):
+    line = line.rstrip().split()
+    lats.append(float(line[0]))
+    longs.append(float(line[1]))
+  lllat = min(lats) - margin
+  lllong = min(longs) - margin
+  # +1 in next two lines because if the upper right square is X,Y then the
+  # address of the actual corner is X+1,Y+1.
+  urlat = max(lats) + 1 + margin
+  urlong = max(longs) + 1 + margin
+  latdim = urlat - lllat
+  longdim = urlong - lllong
+  if latdim > longdim:
+    diff = latdim - longdim
+    lllong -= diff/2
+    urlong += diff - diff/2
+  elif longdim > latdim:
+    diff = longdim - latdim
+    lllat -= diff/2
+    urlat += diff - diff/2
+  latdim = urlat - lllat
+  longdim = urlong - lllong
+  if (latdim != longdim):
+    print("FAILURE: grid not square")
+    exit(-1)
+  outfile = open(mapinfoname,"w")
+  # following code cribbed from readboundary.cpp
+  outline = "Lower left grid square at " + str(int(lllat)) + ", " + str(int(lllong)) + "\n"
+  outfile.write(outline)
+  outline = "Upper right grid square at " + str(int(urlat)) + ", " + str(int(urlong)) + "\n"
+  outfile.write(outline)
+  outline = "North-South extent of grid:  " + str(int(latdim)) + " squares\n"
+  outfile.write(outline)
+  outline = "East-West extent of grid:  " + str(int(longdim)) + " squares\n"
+  outfile.write(outline)
+  outfile.close()
 
 
 ##########################################################################

@@ -62,15 +62,16 @@ seizuredir = prefix + "/fammatch/"
 
 pathdir = iv.readivorypath(pathfile)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
-archiveroot, fam_db = pathdir["fammatch_archive_dir"]
+archiveroot = pathdir["fammatch_archive_dir"][0]
+refprefix = pathdir["reference_prefix"][1]
+fam_db = "elephant_archive_" + refprefix + "/"
 archivedir = archiveroot + fam_db
 database = archivedir + "elephant_msat_database.tsv"
-metadir, metafile = pathdir["metadata_prefix"]
-metafile = metadir + metafile + ".tsv"
+metafile = archivedir + "seizure_metadata.tsv"
 
 if not os.path.isdir(archivedir):
   print("Cannot find fammatch archive:  did you forget to hook up the external HD?")
-  print("Location tried was",archive_dir)
+  print("Location tried was",archivedir)
   exit(-1)
 
 old_inputs_dir = archivedir + "old_inputs/"

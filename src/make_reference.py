@@ -5,7 +5,6 @@
 
 # this includes:
 #   reference data by forest and savannah for SCAT
-#   reference data by sectors for fammatch
 
 import sys
 import os
@@ -84,13 +83,13 @@ pathdir = iv.readivorypath(pathsfile)
 
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
 scat_dir, scat_exec = pathdir["scat_executable"]
-reference_path, non_used = pathdir["reference_prefix"]
+reference_path, reference_prefix = pathdir["reference_prefix"]
+if reference_prefix != refprefix:
+  print("Reference version requested does not match ivory_paths.tsv file")
+  exit(-1)
 zones_path, zones_prefix = pathdir["zones_prefix"]
 map_path, map_prefix = pathdir["map_prefix"]
-meta_path, meta_prefix = pathdir["metadata_prefix"]
-fammatch_archive_dir, fammatch_archive_name = pathdir["fammatch_archive_dir"]
 structure_dir, structure_exec = pathdir["structure_executable"]
-new_fammatch_archive_name = "elephant_archive_" + refprefix
 
 # read raw reference file
 refname = reference_path + refprefix + "_raw.csv"

@@ -27,7 +27,7 @@ if not new_archname.endswith("/"):
 
 # read ivory_paths.tsv file
 pathdir = iv.readivorypath(pathsfile)
-arch_dir, old_archname = pathdir["fammatch_archive_dir"]
+arch_dir = pathdir["fammatch_archive_dir"][0]
 
 # base directory must exist
 if not os.path.isdir(arch_dir):
@@ -55,36 +55,3 @@ except:
   exit(-1)
 
 print("New archive created as",arch_dir + new_archname)
-
-# Edit ivory_paths to point at new archive
-found_archive = False
-found_meta = False
-pathdata = open(pathsfile,"r").readlines()
-newpathdata = []
-for line in pathdata:
-  if line.startswith("fammatch_archive_dir"):
-    newline = ["fammatch_archive_dir",arch_dir,new_archname]
-    newline = "\t".join(newline) + "\n"
-    newpathdata.append(newline)
-    found_archive = True
-  elif line.startswith("metadata_prefix"):
-    parts = line.split("\t")
-    newline = [parts[0],arch_dir + new_archname,parts[2]]
-    newline = "\t".join(newline)  # parts didn't get rstrip(), so no xtra "\n" needed
-    newpathdata.append(newline)
-    found_meta = True
-  else:
-    newpathdata.append(line)
-print("Name of fammatch archive changed in",pathsfile)
-
-if not found_archive:
-  print("Could not find fammatch_archive_dir entry in",pathsfile)
-  print("Hand-edit this file to add the new archive before proceeding")
-elif not found_meta:
-  print("Could not find metadata_prefix entry in",pathsfile)
-  print("Hand-edit this file to add the new archive before proceeding")
-else:
-  pathout = open(pathsfile,"w")
-  for line in newpathdata:
-    pathout.write(line)
-  pathout.close()

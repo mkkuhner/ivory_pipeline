@@ -61,8 +61,9 @@ reference_path, reference_prefix = pathdir["reference_prefix"]
 zones_path, zones_prefix = pathdir["zones_prefix"]
 map_path, map_prefix = pathdir["map_prefix"]
 seizure_data_dir = pathdir["seizure_data_dir"][0]
-arch_dir, arch_name = pathdir["fammatch_archive_dir"]
-meta_path, meta_prefix = pathdir["metadata_prefix"]
+arch_dir = pathdir["fammatch_archive_dir"][0]
+arch_name = "elephant_archive_" + reference_prefix + "/"
+seizure_metafile = arch_dir + arch_name + "seizure_metadata.tsv"
 
 homedir = os.path.abspath(".")
 if not homedir.endswith("/"):
@@ -257,7 +258,6 @@ try:
   os.chdir(seizure_dir)
   # update seizure metadata
   # note:  update_metadata.py will create this file if it does not exist
-  seizure_metafile = meta_path + meta_prefix + ".tsv"
   prog = ivory_dir + "src/update_metadata.py"
   command = ["python3",prog,seizure_metafile,prefix]
   print("Calling update_metadata with the following")

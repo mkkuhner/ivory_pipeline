@@ -71,15 +71,15 @@ outfile.write(outline)
 outline = "Ivory pipeline directory: " + ivory_dir + "\n\n"
 outfile.write(outline)
 
-code = get_github_code(scat_dir)
-outline = "SCAT GitHub version: " + code + "\n"
-outfile.write(outline)
+#code = get_github_code(scat_dir)
+#outline = "SCAT GitHub version: " + code + "\n"
+#outfile.write(outline)
 outline = "SCAT executable: " + scat_dir + scat_exe + "\n\n"
 outfile.write(outline)
 
-code = get_github_code(vor_dir)
-outline = "VORONOI GitHub version: " + code + "\n"
-outfile.write(outline)
+#code = get_github_code(vor_dir)
+#outline = "VORONOI GitHub version: " + code + "\n"
+#outfile.write(outline)
 outline = "VORONOI executable: " + vor_dir + vor_exe + "\n\n"
 outfile.write(outline)
 
