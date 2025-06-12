@@ -94,10 +94,10 @@ pathdir = iv.readivorypath(ivory_paths)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
 mods = pathdir["seizure_modifications_prefix"]
 modfile = mods[0] + mods[1]
-archive = pathdir["fammatch_archive_dir"]
-refprefix = pathdir["reference_prefix"][0]
+archive = pathdir["fammatch_archive_dir"][0]
+refprefix = pathdir["reference_prefix"][1]
 archive += "elephant_archive_" + refprefix + "/"
-archivefile = archive[0] + archive[1] + "elephant_msat_database.tsv"
+archivefile = archive + "elephant_msat_database.tsv"
 sector_metafile = ivory_dir + "aux/sector_metadata.tsv"
 
 dmfile = sys.argv[2]

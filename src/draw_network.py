@@ -269,6 +269,13 @@ for line in open(numfile,"r"):
 with open(nodefile,"r") as nodecsv:
   nodereader = csv.reader(nodecsv)
   nodes = [n for n in nodereader][1:]
+for node in nods:
+  if node not in name_to_num:
+    print("Unable to find seizure",node,"in file",numfile)
+    print("If you have added seizures since this file was created,")
+    print("you will need to update it with the new seizures, giving")
+    print("each one a unique number")
+    exit(-1)
 nodes = [name_to_num[n[0]] for n in nodes]
 print("Found",len(nodes),"nodes")
 
