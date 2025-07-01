@@ -1,6 +1,7 @@
 # library of useful functions for ivory_pipeline
 
-from haversine import haversine, Unit
+#from haversine import haversine, Unit
+from geopy import distance
 from subprocess import Popen
 import math
 import matplotlib.pyplot as plt
@@ -139,7 +140,8 @@ def latlong_to_grid(mylat,mylong,mapdata):
 
 ## distance between two lat/long pairs
 def dist_between(loc1,loc2):
-  return haversine(loc1,loc2,Unit.KILOMETERS)
+  return distance.distance(loc1,loc2).km
+  # return haversine(loc1,loc2,Unit.KILOMETERS)
 
 ##########################################################################
 # backups for fammatch archive
