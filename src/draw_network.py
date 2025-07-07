@@ -344,7 +344,9 @@ else:
 
 outline_color = "k"      # outline nodes in black
 # colors for Louvain clustering
-printcolors = ["#608CFF","#E1A2FF","#FF83BF","#FF9B5C","#F8FB9F","#00FFA1","#46E0E3","#FFFFFF"]
+# the last three colors are arbitrary placeholders and will invoke
+# a warning if used
+printcolors = ["#608CFF","#E1A2FF","#FF83BF","#FF9B5C","#F8FB9F","#00FFA1","#46E0E3","#FFFFFF","#AAAAAA","AAAAAA","#AAAAAA"]
 
 # set up vertex properties
 filldict,textdict,sizedict,port_to_fill = read_portcolors(name_to_num,num_to_port,colorfile)
@@ -369,6 +371,9 @@ for vertex in sgraph.vertices():
   # DEBUG remove when done
   if mypart < 0 or mypart >= len(printcolors):
     print("mypart was",mypart,"but length of printcolors is",len(printcolors))
+    exit(-1)
+  if mypart > 7:
+    print("Louvain coloring color list exceeded; colors will now repeat.  Fix if undesired!")
   sgraph.vertex_properties["partition_fill_color"][vertex] = printcolors[mypart]
 
 # set node size conditionally (by year or outdegree)
