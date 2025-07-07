@@ -49,8 +49,8 @@ def get_year(seizurename):
   # special case code for a handful of irregularly named seizures
   if seizurename == "PHL_2009_4.9t":  return 2009
   if seizurename == "COD_03-12_22_elephants":  return 2022
-  if seizurename == "COD_SEA_2021":  return 2021
-  if seizurename == "COD_SJose_2021":  return 2021
+  if seizurename == "COD-SEA_2021":  return 2021
+  if seizurename == "COD-SJose_2021":  return 2021
 
   date = seizurename.split("_")[1]
   year = int(date.split("-")[1])
