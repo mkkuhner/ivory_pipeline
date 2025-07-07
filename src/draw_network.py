@@ -366,6 +366,9 @@ for vertex in sgraph.vertices():
   sgraph.vertex_properties["port_fill_color"][vertex] = filldict[key]
   # color by Louvain partition
   mypart = sgraph.vertex_properties["mary_partition"][vertex]
+  # DEBUG remove when done
+  if mypart < 0 or mypart >= len(printcolors):
+    print("mypart was",mypart,"but length of printcolors is",len(printcolors))
   sgraph.vertex_properties["partition_fill_color"][vertex] = printcolors[mypart]
 
 # set node size conditionally (by year or outdegree)
