@@ -20,8 +20,8 @@ with open(sys.argv[2], newline="") as csvfile:
   for row in reader:
 
     if readhdr:
-      if row[0] != "Match ID":
-        print("ERROR. Expected a header starting with 'Match ID', found:",row[0],"in",sys.argv[2])
+      if row[0] != "MatchID" and row[0] != "SampleID":
+        print("ERROR. Expected a header starting with 'MatchID' or 'SampleID', found:",row[0],"in",sys.argv[2])
         exit()
       # figure out where the msats are; the number of columns cannot be relied
       # on between database releases

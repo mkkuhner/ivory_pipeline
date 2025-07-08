@@ -12,6 +12,7 @@ year_size = False
 
 ######################################################################
 
+import sys, os
 import csv
 from operator import itemgetter
 import networkx as nx
@@ -20,6 +21,11 @@ import graph_tool as gt
 import cairo
 
 import pickle
+
+# colors for Louvain clustering
+# the last three colors are arbitrary placeholders and will invoke
+# a warning if used
+printcolors = ["#608CFF","#E1A2FF","#FF83BF","#FF9B5C","#F8FB9F","#00FFA1","#46E0E3","#FFFFFF","#AAAAAA","AAAAAA","#AAAAAA"]
 
 ###########################################################
 # functions
@@ -233,28 +239,30 @@ def nx2gt(nxG):
 #########################################################################
 #### main program
 
-import sys
-
-if len(sys.argv) != 5:
-  print("USAGE:  python3 draw_network.py minlink ivory_paths seizure_numbering.tsv layout.pkl")
-  print("Uses files seizure_edges.csv, seizure_nodes.csv in the working directory")
-  print("If you need a new layout, write None for layout.pkl")
+if len(sys.argv) != 4:
+  print("USAGE:  python3 draw_network.py minlink ivory_paths layout.pkl")
+  print("To make a new layout, write None for layout.pkl")
   exit(-1)
 
 minlink = float(sys.argv[1])
 pathsfile = sys.argv[2]
-numfile = sys.argv[3]
-if sys.argv[4] == "None":
+if sys.argv[3] == "None":
   layoutfilename = None
 else:
-  layoutfilename = sys.argv[4]
+  layoutfilename = sys.argv[3]
+  layoutfilename = os.path.abspath(layoutfilename)
 
 pathdir = readivorypath(pathsfile)
 ivory_dir = pathdir["ivory_pipeline_dir"][0]
 
+os.chdir("fammatch_overall")
+
 nodefile = "seizure_nodes.csv"
 edgefile = "seizure_edges.csv"
-colorfile = ivory_dir + "aux/port_colors.tsv"
+colorfile = pathdir["port_colors"]
+colorfile = "".join(colorfile)
+numfile = pathdir["seizure_numbering"]
+numfile = "".join(numfile)
 
 ####
 # read file that relates name, number, and port
@@ -343,11 +351,6 @@ else:
 
 
 outline_color = "k"      # outline nodes in black
-# colors for Louvain clustering
-# the last three colors are arbitrary placeholders and will invoke
-# a warning if used
-printcolors = ["#608CFF","#E1A2FF","#FF83BF","#FF9B5C","#F8FB9F","#00FFA1","#46E0E3","#FFFFFF","#AAAAAA","AAAAAA","#AAAAAA"]
-
 # set up vertex properties
 filldict,textdict,sizedict,port_to_fill = read_portcolors(name_to_num,num_to_port,colorfile)
 
