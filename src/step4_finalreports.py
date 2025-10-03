@@ -74,6 +74,11 @@ def read_sector_metadata(metafile):
     secdict[sec] = species
   return secdict
 
+def make_seizepair(sz1,sz2):
+  seizepair = [sz1,sz2]
+  seizepair.sort()
+  return tuple(seizepair)
+
 
 ##########################################################################
 # main program
@@ -101,7 +106,9 @@ archivefile = archive + "elephant_msat_database.tsv"
 sector_metafile = ivory_dir + "aux/sector_metadata.tsv"
 
 dmfile = sys.argv[2]
-LR_cutoff = math.log(float(sys.argv[3]),10)
+LR_cutoff = float(sys.argv[3])
+LR_cutoff = math.pow(10.0,LR_cutoff)
+print("cutoff = ",LR_cutoff)
 minloci = int(sys.argv[4])
 
 # constants
@@ -210,11 +217,13 @@ for line in open(reportfile,"r"):
     continue
   # merged seizure
   if sz1 in merged_seizures:
-    sz1 = merged_seizures[sz1]
-    line[sz1_index] = merged_seizures[sz1]
+    new_sz1 = merged_seizures[sz1]
+    sz1 = new_sz1
+    line[sz1_index] = new_sz1
   if sz2 in merged_seizures:
-    sz2 = merged_seizures[sz2]
-    line[sz2_index] = merged_seizures[sz2]
+    new_sz2 = merged_seizures[sz2]
+    sz2 = new_sz2
+    line[sz2_index] = new_sz2
   if sz1 == sz2:  # this is a within-seizure match now, discard
     continue
   s1 = line[s1_index]
@@ -240,6 +249,9 @@ dmpairs = {}
 ncompares = {}
 allpairs = set()
 
+# for simscore table
+detailed_matches = {}
+
 # score pairs and identify DMs
 for species in splist:
   LRs[species] = []
@@ -248,18 +260,21 @@ for species in splist:
   ncompares[species] = {}
   for key in datalines[species]:
     line = datalines[species][key]
-    # removed some mangled-elephant-name code here, hopefully no longer needed!
-    # problem elephants were 64.230 and UWA.EBB.029
     sz1 = line[sz1_index]
     sz2 = line[sz2_index]
     myLRs = [float(x) for x in line[dm_ind:loci_ind]]
     top_LR = max(myLRs)
     LRs[species].append(top_LR)
-    seizepair = [sz1,sz2]
-    seizepair.sort()
-    seizepair = tuple(seizepair)
+    seizepair = make_seizepair(sz1,sz2)
     if seizepair not in ncompares[species]:
       ncompares[species][seizepair] = 0
+    if seizepair not in detailed_matches:
+      detailed_matches[seizepair] = {}
+    if species not in detailed_matches[seizepair]:
+      detailed_matches[seizepair][species] = {}
+      detailed_matches[seizepair][species]["DMs"] = 0
+      detailed_matches[seizepair][species]["FMs"] = 0 
+      
     ncompares[species][seizepair] += 1
     if top_LR >= LR_cutoff:
       allseizures.add(sz1)
@@ -269,10 +284,12 @@ for species in splist:
         if seizepair not in dmpairs[species]:
           dmpairs[species][seizepair] = []
         dmpairs[species][seizepair].append(top_LR)
+        detailed_matches[seizepair][species]["DMs"] += 1
       else:                  # not a DM
         if seizepair not in relpairs[species]:
           relpairs[species][seizepair] = []
         relpairs[species][seizepair].append(top_LR)
+        detailed_matches[seizepair][species]["FMs"] += 1
         
   # handle pre-identified DMs
   for match in dms[species]: 
@@ -281,6 +298,13 @@ for species in splist:
     allpairs.add(seizepair)
     if seizepair not in dmpairs[species]:
       dmpairs[species][seizepair] = []
+    if seizepair not in detailed_matches:
+      detailed_matches[seizepair] = {}
+    if species not in detailed_matches[seizepair]:
+      detailed_matches[seizepair][species] = {}
+      detailed_matches[seizepair][species]["DMs"] = 0
+      detailed_matches[seizepair][species]["FMs"] = 0
+    detailed_matches[seizepair][species]["DMs"] += 1
     dmpairs[species][seizepair].append(dm_LR)
     LRs[species].append(dm_LR)
     if seizepair not in ncompares[species]:
@@ -303,9 +327,6 @@ for species in splist:
     mybin = whichbin(bestLL, fpbins[species])
     if mybin is not None:
       observed[species][mybin] += 1
-    # DEBUG
-      #if species == "forest":
-      #  print(math.log(bestLL,10.0))
   # obtain weights for each bin 
   numcompares = len(LRs[species])
   print(species)
@@ -376,3 +397,36 @@ for sz1, sz2 in matchpairs:
   eline = ",".join(eline) + "\n"
   edgefile.write(eline)
 edgefile.close()
+
+# detail file
+detailfile = open(outdir + "detailed_scores.tsv","w")
+eline = "Seizure1\tSeizure2\tSimscore\tFor_DMs\tFor_FMs\tSav_DMs\tSav_FMs\n"
+detailfile.write(eline)
+for sz1, sz2 in matchpairs:
+  seizepair = (sz1, sz2)
+  if sz1 == sz2:
+    continue
+  sim = similarity[seizepair]
+  if sim >= 1.5:
+    if "forest" in detailed_matches[seizepair]:
+      f_dms = detailed_matches[seizepair]["forest"]["DMs"]
+      f_fms = detailed_matches[seizepair]["forest"]["FMs"]
+    else:
+      f_dms = 0
+      f_fms = 0
+    if "savannah" in detailed_matches[seizepair]:
+      s_dms = detailed_matches[seizepair]["savannah"]["DMs"]
+      s_fms = detailed_matches[seizepair]["savannah"]["FMs"]
+    else:
+      s_dms = 0
+      s_fms = 0
+    if f_dms + f_fms + s_dms + s_fms == 0:
+      print("found a zero seizure pair, why?",seizepair)
+      continue
+    sim = round(sim,3)
+    eline = [sz1, sz2, sim, f_dms, f_fms, s_dms, s_fms]
+    eline = [str(x) for x in eline]
+    eline = "\t".join(eline) + "\n"
+    detailfile.write(eline)
+detailfile.close()
+

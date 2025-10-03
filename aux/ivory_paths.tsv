@@ -1,5 +1,5 @@
 ivory_pipeline_dir	/home/mkkuhner/scat/ivory_pipeline/
-zones_prefix	/home/mkkuhner/scat/ivory_pipeline/aux/	zones_44
+zones_prefix	/home/mkkuhner/scat/ivory_pipeline/aux/	zones_45
 map_prefix	/home/mkkuhner/scat/ivory_pipeline/aux/	mapfile_161220	
 scat_executable	/home/mkkuhner/scat/ivory_pipeline/src/scat-master/src/	SCAT3
 voronoi_executable	/home/mkkuhner/scat/ivory_pipeline/voronoi-master/src/	VORONOI

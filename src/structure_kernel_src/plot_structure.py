@@ -81,7 +81,7 @@ lats = []
 longs = []
 for pop, probs in data.items():
   maxprob = max(probs)
-  if maxprob > 0.66:
+  if maxprob > 0.5:
     bestpop = probs.index(maxprob)
     mycolor = colors[bestpop]
   else:
@@ -89,7 +89,7 @@ for pop, probs in data.items():
   latlong = zones[pop]
   lat = latlong[0]
   long = latlong[1]
-  plt.plot(long,lat,transform=crs_lonlat,marker="o",markerfacecolor=mycolor,markersize=10,markeredgecolor=mycolor)
+  plt.plot(long,lat,transform=crs_lonlat,marker="o",markerfacecolor=mycolor,markersize=10,markeredgecolor="k")
 
 plt.savefig("plot" + str(k) + ".pdf")
 plt.show()
