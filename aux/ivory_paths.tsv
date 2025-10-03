@@ -9,4 +9,4 @@ seizure_data_dir	/home/mkkuhner/scat/seizures5.8/datafiles/
 fammatch_archive_dir	/media/mkkuhner/ElephantDataArchives/elephant_archive/	
 seizure_modifications_prefix	/home/mkkuhner/scat/ivory_pipeline/aux/	seizure_modifications_example
 port_colors	/home/mkkuhner/scat/ivory_pipeline/src/	port_colors.tsv
-seizure_numbering	/home/mkkuhner/scat/ivory_pipeline/src	seizure_numbering_sample.tsv
+seizure_numbering	/home/mkkuhner/scat/ivory_pipeline/src/	seizure_numbering_sample.tsv
