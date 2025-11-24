@@ -96,7 +96,6 @@ centerlatlong = zonedata[centerreg]
 print("zone center was",centerreg,"at latlong",centerlatlong[0],centerlatlong[1])
 
 # find out what zone the elephant was in (shame we lost that info!)
-print("getting locdata")
 locdata = {}
 refdir, refprefix = pathdir["reference_prefix"]
 reffile = refdir + refprefix + "_known.txt"

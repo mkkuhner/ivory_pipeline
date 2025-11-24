@@ -89,13 +89,13 @@ def write_mapinfo_from_map(mapfilename, mapinfoname):
   latdim = urlat - lllat
   longdim = urlong - lllong
   if latdim > longdim:
-    diff = latdim - longdim
-    lllong -= diff/2
-    urlong += diff - diff/2
+    diff = int(latdim - longdim)
+    lllong -= int(diff/2)
+    urlong += diff - int(diff/2)
   elif longdim > latdim:
-    diff = longdim - latdim
-    lllat -= diff/2
-    urlat += diff - diff/2
+    diff = int(longdim - latdim)
+    lllat -= int(diff/2)
+    urlat += diff - int(diff/2)
   latdim = urlat - lllat
   longdim = urlong - lllong
   if (latdim != longdim):

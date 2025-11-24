@@ -10,6 +10,7 @@ INCLUDE = -I. -I..
 #CFLAGS = -g $(INCLUDE)
 CFLAGS = -O2  $(INCLUDE)
 #CFLAGS = -g -a -O2 -pg -DNDEBUG $(INCLUDE)
+#CFLAGS = -g $(INCLUDE)
 
 #LDFLAGS = -llapack -lg2c -lm
 #LDFLAGS = -static /usr/lib/libm.a /usr/lib/gcc-lib/i386-redhat-linux/3.2.3/libg2c.a /lib/ssa/gcc-lib/i386-redhat-linux-gnu/3.5-tree-ssa/libg2c.a /usr/lib/liblapack.a

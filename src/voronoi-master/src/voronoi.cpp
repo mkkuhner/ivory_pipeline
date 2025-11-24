@@ -473,7 +473,7 @@ void ReadScatInfile(ifstream& locatefile, const string& infile, int skip, int nm
     locatefile >> y;
     locatefile >> dummy;
 
-    if(x>XMAX || x<XMIN || y>YMAX || y<YMIN){
+    if(x>=XMAX || x<XMIN || y>=YMAX || y<YMIN){
       cerr << "Error: x or y out of bounds" << endl;
       cerr << "file = " << infile << endl;
       cerr << "x= " << x << endl;
@@ -919,7 +919,6 @@ cout << "Reading " << TAG << endl;
   }
 
   for(int i =0; i<NIND; i++){
-    cout << "Printing name of sample" << i << "which is " << sampleids[i] << endl;
     printprobsfile << "#" << sampleids[i] << endl;
     for(int j = 0; j<GRIDSIZE; j++){
       float lati = XCenterpoint(j);

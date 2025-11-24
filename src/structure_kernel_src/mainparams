@@ -18,12 +18,12 @@ Basic Program Parameters
 
 Input/Output files
 
-#define INFILE   TEST_structure.txt   // (str) name of input data file
-#define OUTFILE  TEST_known_structure.txt  //(str) name of output data file
+#define INFILE   REFELE_5.82_structure.txt   // (str) name of input data file
+#define OUTFILE  REFELE_5.82_known_structure.txt  //(str) name of output data file
 
 Data file format
 
-#define NUMINDS    2417    // (int) number of diploid individuals in data file
+#define NUMINDS    2538    // (int) number of diploid individuals in data file
 #define NUMLOCI    16    // (int) number of loci in data file
 #define PLOIDY       2    // (int) ploidy of data
 #define MISSING     -999    // (int) value given to missing genotype data

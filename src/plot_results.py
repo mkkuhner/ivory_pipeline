@@ -17,33 +17,12 @@ import statistics
 import subprocess
 from subprocess import Popen, PIPE
 import pickle
+import ivory_lib as iv
 
 
 ###################################################
 # functions
 
-def readivorypath(pathsfile):
-  ivorypaths = {}
-  inlines = open(pathsfile,"r").readlines()
-  for line in inlines:
-    pline = line.rstrip().split("\t")
-    ivorypaths[pline[0]] = pline[1:]
-  return ivorypaths
-
-def run_and_report(command,errormsg):
-  process = Popen(command)
-  exit_code = process.wait()
-  if exit_code != 0:
-    print("FAILURE: " + errormsg)
-    exit(-1)
-
-def latlong_to_grid(mylat,mylong,mapdata):
-  minlat,minlong,maxlat,maxlong,dim = mapdata
-  assert minlat <= mylat <= maxlat
-  assert minlong <= mylong <= maxlong
-  gridlat = int(math.floor(mylat) - minlat)
-  gridlong = int(math.floor(mylong) - minlong)
-  return gridlat,gridlong
 
 # this routine collects SCAT results for one sample
 # from the 9 SCAT output directories of a typical run
@@ -63,7 +42,7 @@ def read_scat(scatdirs,mapdata):
       line = line.rstrip().split()
       latlong = [float(x) for x in line[0:2]]   # omitting the likelihood
       data.append(latlong)
-      gridlat,gridlong = latlong_to_grid(latlong[0],latlong[1],mapdata)
+      gridlat,gridlong = iv.latlong_to_grid(latlong[0],latlong[1],mapdata)
       gridcounts[gridlat][gridlong] += 1
   return data, gridcounts
 
@@ -82,30 +61,9 @@ def read_voronoi(printprobs,mapdata):
       mylong = float(line[1])
       myprob = float(line[2])
       # convert to grid coordinates
-      gridlat, gridlong = latlong_to_grid(mylat,mylong,mapdata)
+      gridlat, gridlong = iv.latlong_to_grid(mylat,mylong,mapdata)
       vordict[sid][gridlat][gridlong] = myprob
   return vordict
-
-# read the PREFIX_mapinfo file
-def read_mapinfo(mapfile):
-  mapinfolines = open(mapfile,"r").readlines()
-  if len(mapinfolines) != 4:
-    print("Error: file",prefix+"_mapinfo","was",len(mapinfolines),"lines long",)
-    print("should have been 4.")
-    exit(-1)
-  ll = mapinfolines[0].rstrip().split(",")
-  lllat = int(ll[0].split()[-1])
-  lllong = int(ll[1])
-  ur = mapinfolines[1].rstrip().split(",")
-  urlat = int(ur[0].split()[-1])
-  urlong = int(ur[1])
-  nsdim = int(mapinfolines[2].rstrip().split(":")[1].split()[0])
-  ewdim = int(mapinfolines[3].rstrip().split(":")[1].split()[0])
-  if (nsdim != ewdim):
-    print("FAILURE: grid not square,",sys.argv[0],"assumes a square grid")
-    exit(-1)
-  dim = nsdim
-  return [lllat,lllong,urlat,urlong,dim]
 
 
 # read a map file (use if mapinfo not available)
@@ -232,7 +190,7 @@ if len(sys.argv) != 3:
 prefix = sys.argv[1]
 pathfile = sys.argv[2]
 
-pathdir = readivorypath(pathfile)
+pathdir = iv.readivorypath(pathfile)
 # fill in which variables we need here
 map_path,map_prefix = pathdir["map_prefix"]
 
@@ -243,7 +201,7 @@ os.chdir(prefix)
 reportdir = "reports/"
 if not os.path.isdir(reportdir):
   command = ["mkdir",reportdir]
-  run_and_report(command,"Unable to create reports directory")
+  iv.run_and_report(command,"Unable to create reports directory")
 
 # diagnose which results are available
 use_vor = {}
@@ -285,7 +243,7 @@ for specdir in dirs_to_do:
   # read map info to establish the grid
   mapfile = prefix + "_mapinfo"
   if os.path.isfile(mapfile):  # found a mapinfo file
-    mapdata = read_mapinfo(mapfile)
+    mapdata = iv.read_mapinfo(mapfile)
   else:   # no mapinfo file, go back to original map
     mapfile = map_path + map_prefix + "_" + species + ".txt"
     mapdata = mapinfo_from_map(mapfile)
@@ -359,7 +317,7 @@ for specdir in dirs_to_do:
       # --done this way so we can take a median.
       masked_scatnums = []
       for lat, long in scatnums:
-        gridlat,gridlong = latlong_to_grid(lat,long,mapdata)
+        gridlat,gridlong = iv.latlong_to_grid(lat,long,mapdata)
         for i in range(0,regions[gridlat][gridlong]):
           masked_scatnums.append([lat,long])
 
